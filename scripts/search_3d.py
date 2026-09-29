@@ -28,10 +28,17 @@ def main():
     ap.add_argument("--horizon", type=float, default=6.0)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", type=str, default="results/search3d/run")
+    ap.add_argument("--fcap", type=float, default=None, help="per-hand grip capacity [N] (curriculum; default 650)")
+    ap.add_argument("--hook-tol", type=float, default=None, help="hook tolerance beyond the tip [m] (curriculum)")
+    ap.add_argument("--x0", type=str, default="", help="warm start from a previous search .pkl (x_best)")
     a = ap.parse_args()
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     sp = SearchParams(horizon=a.horizon, popsize=a.pop, generations=a.gens, sigma0=a.sigma)
     ep = EnvParams(model=ModelParams(m=a.m), T=a.T)
+    if a.fcap is not None:
+        ep.grasp.f_cap_hand = a.fcap
+    if a.hook_tol is not None:
+        ep.grasp.hook_tol = a.hook_tol
     env = CliffEnv(ep)
     phi0 = a.phi0
     x0 = None
@@ -42,6 +49,11 @@ def main():
         if phi0 is None:
             phi0 = (pol.t_start_device % a.T) / a.T
         print(f"planar init: device start phase {phi0:.3f}, release at t={x0[pol.K*pol.nu:pol.K*pol.nu+2]}")
+    if a.x0:
+        prev = pickle.load(open(a.x0, "rb"))
+        x0 = prev["search"]["x_best"]
+        if phi0 is None:
+            phi0 = prev["phi0"]
     if phi0 is None:
         phi0 = 0.0
     ep.phi0 = phi0

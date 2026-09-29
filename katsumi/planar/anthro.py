@@ -44,6 +44,8 @@ class Body:
     mu_out: float = 1.0                    # friction/hook coefficient against pulls away from the wall
     mu_in: float = 2.0                     # coefficient against pulls towards the wall (fingertips on the face)
     clearance: np.ndarray = field(default_factory=lambda: np.array([0.04, 0.12, 0.12, 0.07, 0.10]))
+    stature: float = 1.75
+    arm_scale: float = 1.0
 
     @property
     def lengths(self):
@@ -74,23 +76,34 @@ def _combine(parts):
     return M, c, I
 
 
+STATURE_REF = 1.75
+
+
 def make_body(m: float, cap_scale: float = 1.0, grip_scale: float = 1.0, grip_offset: float = 0.12,
-              mu_out: float | None = None) -> Body:
+              mu_out: float | None = None, stature: float = STATURE_REF, arm_scale: float = 1.0,
+              cap_with_size: bool = False) -> Body:
     """Build the lumped planar body for total mass m [kg].
 
-    cap_scale  : multiplies joint torque capacities (plan Sec. 13.1: {0.7, 1.0, 1.3})
-    grip_scale : multiplies grip capacity
-    grip_offset: distance from the wrist centre to the ledge contact line on the fingers (PIP) [m]
+    cap_scale    : multiplies joint torque capacities (plan Sec. 13.1: {0.7, 1.0, 1.3})
+    grip_scale   : multiplies grip capacity
+    grip_offset  : distance from the wrist centre to the ledge contact line on the fingers (PIP) [m]
+    stature      : body height [m]; all segment lengths scale with stature / 1.75 (masses stay = m)
+    arm_scale    : extra scale of upper arm, forearm and hand lengths (ape index; 1.0 = de Leva proportions)
+    cap_with_size: if True, joint torque and grip capacities scale with (stature / 1.75)^2 * (m / 66)
+                   (muscle cross-section proxy) -- the "capacity follows build" comparison of plan Sec. 5.3
     """
+    ks = stature / STATURE_REF
     # de Leva 1996, male: mass fraction, length [m] for 1.75 m, CoM fraction from proximal, radius of gyration (sagittal)
-    f_hand, L_hand, c_hand, k_hand = 0.0061, 0.0862, 0.7900, 0.628   # length: wrist -> 3rd metacarpale
-    f_fa, L_fa, c_fa, k_fa = 0.0162, 0.2689, 0.4574, 0.276
-    f_ua, L_ua, c_ua, k_ua = 0.0271, 0.2817, 0.5772, 0.285
-    f_tr, L_tr, c_tr, k_tr = 0.4346, 0.5319, 0.4486, 0.372
-    f_hd, L_hd, c_hd, k_hd = 0.0694, 0.2429, 0.5976, 0.362
-    f_th, L_th, c_th, k_th = 0.1416, 0.4222, 0.4095, 0.329
-    f_sh, L_sh, c_sh, k_sh = 0.0433, 0.4340, 0.4459, 0.255
-    f_ft, L_ft, c_ft, k_ft = 0.0137, 0.2581, 0.4415, 0.257
+    ka = ks * arm_scale
+    f_hand, L_hand, c_hand, k_hand = 0.0061, 0.0862 * ka, 0.7900, 0.628   # length: wrist -> 3rd metacarpale
+    f_fa, L_fa, c_fa, k_fa = 0.0162, 0.2689 * ka, 0.4574, 0.276
+    f_ua, L_ua, c_ua, k_ua = 0.0271, 0.2817 * ka, 0.5772, 0.285
+    f_tr, L_tr, c_tr, k_tr = 0.4346, 0.5319 * ks, 0.4486, 0.372
+    f_hd, L_hd, c_hd, k_hd = 0.0694, 0.2429 * ks, 0.5976, 0.362
+    f_th, L_th, c_th, k_th = 0.1416, 0.4222 * ks, 0.4095, 0.329
+    f_sh, L_sh, c_sh, k_sh = 0.0433, 0.4340 * ks, 0.4459, 0.255
+    f_ft, L_ft, c_ft, k_ft = 0.0137, 0.2581 * ks, 0.4415, 0.257
+    grip_offset = grip_offset * ka
     total_frac = 2 * (f_hand + f_fa + f_ua + f_th + f_sh + f_ft) + f_tr + f_hd
     scale = m / total_frac  # forces exact total mass m (de Leva fractions sum to ~1.0)
 
@@ -110,13 +123,13 @@ def make_body(m: float, cap_scale: float = 1.0, grip_scale: float = 1.0, grip_of
     L2 = L_ua
     M2, C2, I2 = m_u, (1 - c_ua) * L_ua, I_u
     # L3: shoulder -> hip (trunk + head). cervicale ~0.05 above the shoulder-joint level.
-    L3 = 0.50
+    L3 = 0.50 * ks
     m_t = f_tr * scale
     I_t = m_t * (k_tr * L_tr) ** 2
     m_hd = f_hd * scale
     I_hd = m_hd * (k_hd * L_hd) ** 2
-    com_tr = c_tr * L_tr - 0.05
-    com_hd = -(0.05 + (1 - c_hd) * L_hd)              # head CoM above the shoulder line
+    com_tr = c_tr * L_tr - 0.05 * ks
+    com_hd = -(0.05 * ks + (1 - c_hd) * L_hd)         # head CoM above the shoulder line
     M3, C3, I3 = _combine([(m_t, com_tr, I_t), (m_hd, com_hd, I_hd)])
     # L4: hip -> knee
     m_thigh, I_thigh = seg(f_th, L_th, k_th)
@@ -126,18 +139,25 @@ def make_body(m: float, cap_scale: float = 1.0, grip_scale: float = 1.0, grip_of
     m_s, I_s = seg(f_sh, L_sh, k_sh)
     m_ft, I_ft = seg(f_ft, L_ft, k_ft)
     L5 = L_sh
-    M5, C5, I5 = _combine([(m_s, c_sh * L_sh, I_s), (m_ft, L_sh + 0.08, I_ft)])
+    M5, C5, I5 = _combine([(m_s, c_sh * L_sh, I_s), (m_ft, L_sh + 0.08 * ks, I_ft)])
 
     links = [
         Link("forearm+hand", L1, M1, C1, I1, tip=L1),
         Link("upper arm", L2, M2, C2, I2, tip=L2),
         Link("trunk+head", L3, M3, C3, I3, tip=L3),
         Link("thigh", L4, M4, C4, I4, tip=L4),
-        Link("shank+foot", L5, M5, C5, I5, tip=L5 + 0.10),
+        Link("shank+foot", L5, M5, C5, I5, tip=L5 + 0.10 * ks),
     ]
     body = Body(m=m, links=links)
+    body.stature = stature
+    body.arm_scale = arm_scale
+    if cap_with_size:
+        size_factor = ks ** 2 * (m / 66.0)
+        cap_scale = cap_scale * size_factor
+        grip_scale = grip_scale * size_factor
     body.tau_cap = body.tau_cap * cap_scale
     body.f_cap = body.f_cap * grip_scale
+    body.clearance = body.clearance * ks
     if mu_out is not None:
         body.mu_out = mu_out
     assert abs(sum(l.mass for l in links) - m) < 1e-9

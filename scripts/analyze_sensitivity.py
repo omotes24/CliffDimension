@@ -19,10 +19,12 @@ LABELS = {
 
 
 def load_rows(d, tag, T=20.0, m=60.0):
-    files = glob.glob(os.path.join(d, f"rows_{tag}_T{T:g}_m{m:g}.csv"))
+    files = glob.glob(os.path.join(d, f"rows_{tag}_T{T:g}_m{m:g}*.csv"))
     if not files:
         return None
-    df = pd.read_csv(files[0])
+    df = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
+    df["phi_l"] = df["phi_l"].round(4)
+    df = df.sort_values("ok", ascending=False).drop_duplicates(["T", "m", "phi_l"], keep="first")
     df = df[df["ok"] == 1]
     return df
 

@@ -105,6 +105,60 @@ def fig_heatmaps(df, out, m_sel=None):
     plt.close(fig)
 
 
+def fig_tm_maps(df, out):
+    """T x m maps of the minimum-over-phase quantities (plan Sec. 15.1: T x m heat maps)."""
+    ok = df[df["ok"] == 1]
+    if ok["T"].nunique() < 2 or ok["m"].nunique() < 2:
+        return None
+    rows = []
+    for (T, m), d in ok.groupby(["T", "m"]):
+        b = d.loc[d["req_cap_BW"].idxmin()]
+        rows.append(dict(T=T, m=m, cap=b["req_cap_BW"], capN=b["req_cap_N"], phi=b["phi_l"], tau=b["d_f"], E=b["effort"],
+                         n_ok=len(d), out_cap=d[d["outbound"]]["req_cap_BW"].min() if d["outbound"].any() else np.nan,
+                         ret_cap=d[~d["outbound"]]["req_cap_BW"].min() if (~d["outbound"]).any() else np.nan))
+    s = pd.DataFrame(rows)
+    s.to_csv(os.path.join(out, "tm_map.csv"), index=False)
+    Ts = sorted(s["T"].unique()); ms = sorted(s["m"].unique())
+    quantities = [("cap", "min required capacity [BW]", SEQ), ("phi", "best release phase φ_ℓ", SEQ),
+                  ("tau", "flight time τ at best phase [s]", SEQ), ("E", "E_eff at best phase [-]", SEQ)]
+    fig, axes = plt.subplots(1, 4, figsize=(15, 3.4))
+    for ax, (q, lab, cmap) in zip(axes, quantities):
+        M = np.full((len(ms), len(Ts)), np.nan)
+        for r in s.itertuples():
+            M[ms.index(r.m), Ts.index(r.T)] = getattr(r, q)
+        im = ax.imshow(M, aspect="auto", cmap=cmap, origin="lower")
+        ax.set_xticks(range(len(Ts))); ax.set_xticklabels([f"{T:g}" for T in Ts], fontsize=7.5)
+        ax.set_yticks(range(len(ms))); ax.set_yticklabels([f"{m:g}" for m in ms], fontsize=7.5)
+        ax.set_xlabel("period T [s]  (one-way T/2)"); ax.set_title(lab, fontsize=9.5); ax.grid(False)
+        if len(Ts) * len(ms) <= 60:
+            for i in range(len(ms)):
+                for j in range(len(Ts)):
+                    if not np.isnan(M[i, j]):
+                        ax.text(j, i, f"{M[i, j]:.2f}", ha="center", va="center", fontsize=6.5, color=INK)
+        plt.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
+    axes[0].set_ylabel("body mass m [kg]")
+    fig.tight_layout()
+    fig.savefig(os.path.join(out, "tm_maps.png"), dpi=200)
+    fig.savefig(os.path.join(out, "tm_maps.pdf"))
+    plt.close(fig)
+    # outbound - return difference map (diverging)
+    fig, ax = plt.subplots(figsize=(4.2, 3.4))
+    M = np.full((len(ms), len(Ts)), np.nan)
+    for r in s.itertuples():
+        M[ms.index(r.m), Ts.index(r.T)] = 100 * (r.ret_cap - r.out_cap) / r.out_cap
+    v = np.nanmax(np.abs(M)) if np.isfinite(M).any() else 1
+    im = ax.imshow(M, aspect="auto", cmap=DIV, origin="lower", vmin=-v, vmax=v)
+    ax.set_xticks(range(len(Ts))); ax.set_xticklabels([f"{T:g}" for T in Ts], fontsize=7.5)
+    ax.set_yticks(range(len(ms))); ax.set_yticklabels([f"{m:g}" for m in ms], fontsize=7.5)
+    ax.set_xlabel("period T [s]"); ax.set_ylabel("m [kg]"); ax.grid(False)
+    ax.set_title("H1: (best return − best outbound) / best outbound [%]", fontsize=8.5)
+    plt.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
+    fig.tight_layout()
+    fig.savefig(os.path.join(out, "tm_h1_diff.png"), dpi=200)
+    plt.close(fig)
+    return s
+
+
 def fig_h1_h2(df, out):
     """H1: outbound vs return best capacity; H2: shortest-distance phase vs minimum-load phase."""
     rows = []
@@ -220,6 +274,9 @@ def main():
         fig_heatmaps(df, a.out, m_sel=m)
     s = fig_h1_h2(df, a.out)
     print(s)
+    tm = fig_tm_maps(df, a.out)
+    if tm is not None:
+        print(tm.round(3).to_string(index=False))
     for T in sorted(df["T"].unique()):
         for m in sorted(df["m"].unique()):
             fig_phi0_strategy(df, a.out, T_sel=T, m_sel=m)
