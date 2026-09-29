@@ -1,6 +1,6 @@
 """Write LaTeX macros with the headline numbers of the Stage-1 experiments (paper/numbers.tex)
 and the LaTeX tables used in the manuscript (paper/tab_*.tex)."""
-import argparse, glob, json, os, sys
+import argparse, glob, json, os, re, sys
 import numpy as np
 import pandas as pd
 
@@ -20,6 +20,7 @@ def main():
     ap.add_argument("--sens", default="results/figs/sensitivity.csv")
     ap.add_argument("--audit", default="results/figs/audit.json")
     ap.add_argument("--out", default="paper")
+    ap.add_argument("--build", default="results/build")
     a = ap.parse_args()
     files = sorted(glob.glob(os.path.join(a.grid, f"rows_{a.tag}_T*_m*.csv")))
     df = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
@@ -42,6 +43,7 @@ def main():
         r = d[~d["outbound"]]
         near_cap = d.loc[d["phi_l"].idxmin(), "req_cap_BW"] if len(d) else np.nan
         rows.append(dict(T=T, m=m, best_phi=b["phi_l"], best_cap=b["req_cap_BW"], best_capN=b["req_cap_N"],
+                         best_dir="outbound" if b["phi_l"] < 0.5 else "return",
                          out_cap=o["req_cap_BW"].min() if len(o) else np.nan, out_phi=o.loc[o["req_cap_BW"].idxmin(), "phi_l"] if len(o) else np.nan,
                          ret_cap=r["req_cap_BW"].min() if len(r) else np.nan, ret_phi=r.loc[r["req_cap_BW"].idxmin(), "phi_l"] if len(r) else np.nan,
                          near_cap=near_cap, tau=b["d_f"], v0x=b["v0x"], v0y=b["v0y"], x_catch=b["x_catch"],
@@ -49,6 +51,15 @@ def main():
     s = pd.DataFrame(rows)
     macros["bestphimin"] = fmt(s["best_phi"].min(), 3)
     macros["bestphimax"] = fmt(s["best_phi"].max(), 3)
+    macros["outphimin"] = fmt(s["out_phi"].min(), 2); macros["outphimax"] = fmt(s["out_phi"].max(), 2)
+    macros["retphimin"] = fmt(s["ret_phi"].min(), 2); macros["retphimax"] = fmt(s["ret_phi"].max(), 2)
+    macros["ptov"] = fmt(100 * ((s["worst_cap"] - s["best_cap"]) / s["best_cap"]).mean(), 0)
+    macros["nret"] = str(int((s["best_dir"] == "return").sum())) if "best_dir" in s else "--"
+    macros["ncond"] = str(len(s))
+    macros["Tmin"] = fmt(s["T"].min(), 0); macros["Tmax"] = fmt(s["T"].max(), 0)
+    macros["mmin"] = fmt(s["m"].min(), 0); macros["mmax"] = fmt(s["m"].max(), 0)
+    macros["nT"] = str(s["T"].nunique()); macros["nm"] = str(s["m"].nunique())
+    macros["bestcapmin"] = fmt(s["best_cap"].min()); macros["bestcapmax"] = fmt(s["best_cap"].max())
     macros["hOnediffmax"] = fmt(100 * (s["ret_cap"] - s["out_cap"]).abs().max() / s["out_cap"].mean(), 1)
     macros["hTwopenalty"] = fmt(100 * ((s["near_cap"] - s["best_cap"]) / s["best_cap"]).mean(), 1)
     macros["hTwopenaltymax"] = fmt(100 * ((s["near_cap"] - s["best_cap"]) / s["best_cap"]).max(), 1)
@@ -86,10 +97,42 @@ def main():
             for r in se.itertuples():
                 f.write(f"{r.factor} & {r.min_cap_BW:.2f} & {r.mean_cap_BW:.2f} & {r.best_phi:.2f} \\\\\n")
             f.write("\\bottomrule\n\\end{tabular}\n")
+    # body-size sweep table (results/build): stature / arm-length ratio at T = 20 s, m = 66 kg
+    build_dir = a.build
+    if os.path.isdir(build_dir):
+        tags = sorted(set(re.match(r"rows_(.+?)_T", os.path.basename(f)).group(1)
+                          for f in glob.glob(os.path.join(build_dir, "rows_*_T*.csv"))))
+        brow = []
+        ref_row = ok[(ok["T"] == 20.0) & (ok["m"] == 66.0)]
+        if len(ref_row):
+            bb = ref_row.loc[ref_row["req_cap_BW"].idxmin()]
+            brow.append(("1.75", "1.00", bb["req_cap_BW"], ref_row["req_cap_BW"].mean(), bb["phi_l"], bb["d_f"], len(ref_row)))
+        for tag in tags:
+            fs = glob.glob(os.path.join(build_dir, f"rows_{tag}_T*.csv"))
+            d = pd.concat([pd.read_csv(f) for f in fs], ignore_index=True)
+            d["phi_l"] = d["phi_l"].round(4)
+            d = d.sort_values("ok", ascending=False).drop_duplicates(["T", "m", "phi_l"])
+            d = d[d["ok"] == 1]
+            if len(d) == 0:
+                continue
+            bb = d.loc[d["req_cap_BW"].idxmin()]
+            mt = re.match(r"stature(\d+)", tag)
+            ma = re.match(r"arm(\d+)", tag)
+            H = f"{int(mt.group(1))/100:.2f}" if mt else "1.75"
+            A = f"{int(ma.group(1))/100:.2f}" if ma else "1.00"
+            brow.append((H, A, bb["req_cap_BW"], d["req_cap_BW"].mean(), bb["phi_l"], bb["d_f"], len(d)))
+        if brow:
+            brow.sort(key=lambda r: (r[1], r[0]))
+            with open(os.path.join(a.out, "tab_build.tex"), "w") as f:
+                f.write("\\begin{tabular}{rrrrrrr}\n\\toprule\n身長 [m] & 腕長比 & 最小容量 [BW] & 平均容量 [BW] & 最良 $\\phi_\\ell$ & $\\tau$ [s] & 収束数 \\\\\n\\midrule\n")
+                for H, A, cmin, cmean, ph, tau, n in brow:
+                    f.write(f"{H} & {A} & {cmin:.2f} & {cmean:.2f} & {ph:.3f} & {tau:.2f} & {n} \\\\\n")
+                f.write("\\bottomrule\n\\end{tabular}\n")
     # main table: best per (T, m)
+    s_tab = s[s["T"].isin([16, 19, 20, 24]) & s["m"].isin([60, 75])] if len(s) > 12 else s
     with open(os.path.join(a.out, "tab_best.tex"), "w") as f:
-        f.write("\\begin{tabular}{rrrrrrrrr}\n\\toprule\n$T$ [s] & $m$ [kg] & 最良 $\\phi_\\ell$ & 容量 [BW] & 往路最良 & 復路最良 & 最短距離時 & $\\tau$ [s] & $\\bm v_0$ [m/s] \\\\\n\\midrule\n")
-        for r in s.itertuples():
+        f.write("\\begin{tabular}{rrrrrrrrr}\n\\toprule\n$T$ [s] & $m$ [kg] & 最良 $\\phi_\\ell$ & 容量 [BW] & 往路最良 & 復路最良 & $\\phi_\\ell=0$ & $\\tau$ [s] & $\\bm v_0$ [m/s] \\\\\n\\midrule\n")
+        for r in s_tab.itertuples():
             f.write(f"{r.T:g} & {r.m:g} & {r.best_phi:.3f} & {r.best_cap:.2f} & {r.out_cap:.2f} ({r.out_phi:.2f}) & "
                     f"{r.ret_cap:.2f} ({r.ret_phi:.2f}) & {r.near_cap:.2f} & {r.tau:.2f} & ({r.v0x:.2f}, {r.v0y:.2f}) \\\\\n")
         f.write("\\bottomrule\n\\end{tabular}\n")

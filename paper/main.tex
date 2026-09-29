@@ -136,35 +136,56 @@ $\Upk$ は上図的に導入した epigraph 変数で，$\Upk\times1300$\,N が�
 
 \section{結果}
 \subsection{離手位相と必要把持容量}
-図~\ref{fig:reqcap} に $T\in\{16,19,20,24\}$\,s（片道 8--12\,s；大会条件は $T=19,20$\,s），$m\in\{60,75\}$\,kg，離手位相 $\phi_\ell$ 16 点
-（計 \ncases 条件，収束 \nok 条件）の必要両手把持容量を体重比で示す．
-必要容量は \capmin--\capmax\,BW（\capminN--\capmaxN\,N）に収まり，
-往路中盤 $\phi_\ell\approx$ \bestphimin--\bestphimax で最小となる．
-$\phi_\ell=0$（先端間 1.80\,m，高低差 0.90\,m）では落下高さが，$\phi_\ell=0.5$（2.70\,m，等高）では
-必要な水平速度が，それぞれ捕捉後の張力を押し上げる．
-最短距離となる位相で離手すると最良位相より平均 \hTwopenalty\,\%（最大 \hTwopenaltymax\,\%）大きな容量を要し，
+図~\ref{fig:reqcap} に代表条件（$T\in\{16,19,20,24\}$\,s，$m\in\{60,75\}$\,kg）の離手位相 $\phi_\ell$ 16 点に対する
+必要両手把持容量を体重比で示す（全 \nT\ 周期 $\times$ \nm\ 体重 $\times$ 16 位相 $=$ \ncases 条件中 \nok 条件が収束）．
+位相依存は往路・復路に一つずつ谷をもつ二谷構造で，谷は往路 $\phi_\ell\approx$ \outphimin--\outphimax
+（A が中程まで下がり，先端間 2.2--2.3\,m）と復路 $\phi_\ell\approx$ \retphimin--\retphimax（同じ幾何で装置速度が反転）にある．
+山は $\phi_\ell=0$（先端間 1.80\,m だが落下高さ 0.90\,m）と $\phi_\ell=0.5$（等高だが 2.70\,m）で，
+落下高さと水平距離のどちらも捕捉後の張力を押し上げる．
+山と谷の差は平均 \ptov\,\% で，同じ選手でも離手位相の選び方で必要容量が 1 割変わる．
+最短距離となる $\phi_\ell=0$ で離手すると最良位相より平均 \hTwopenalty\,\%（最大 \hTwopenaltymax\,\%）大きな容量を要し，
 「最短距離＝最小負担ではない」（計画書 H2）が縮約モデルの範囲で成立する．
-往路最良と復路最良の差は最大 \hOnediffmax\,\% であり，復路が常に有利とは言えない（H1）．
-体重 75\,kg は 60\,kg より体重比で大きな容量を要する（平均 \capseventyfive\ vs \capsixty\,BW）．
-これは関節トルク上限を絶対値で固定したためで，計画書 \S5.3 の「体重効果を消さない」設計の帰結である．
-表~\ref{tab:best} に条件別の最良解を示す．滞空時間は \taumin--\taumax\,s，
-振り時間は \dsmin--\dsmax\,s（複数回の振り込み），捕捉時の手先相対速度は \vrelmin--\vrelmax\,m/s であった．
+往路谷と復路谷の差は最大 \hOnediffmax\,\% にとどまり，\ncond 条件中 \nret 条件で復路が最小であった．
+復路が常に有利とは言えず（H1），どちらの谷を使うかは装置位相と準備時間で決めてよい程度の差である．
 最適解では振り終盤・捕捉衝撃・捕捉後の振れの 3 箇所で $U$ が同時に $\Upk$ に達しており，
-把持容量が全区間で支配的な制約である．
+把持容量が全区間で支配的な制約である（図~\ref{fig:traj}）．
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{../results/figs/reqcap_vs_phase.pdf}
-\caption{離手位相 $\phi_\ell=(t_\ell \bmod T)/T$ と必要両手把持容量．灰色は復路（$\phi_\ell\ge0.5$，A 上昇・B 接近）．
-$\times$ は収束解が得られなかった条件．}
+\caption{離手位相 $\phi_\ell=(t_\ell \bmod T)/T$ と必要両手把持容量（代表条件）．灰色は復路（$\phi_\ell\ge0.5$，A 上昇・B 接近）．
+$\times$ は収束解が得られなかった条件（いずれも装置折り返し点 $\phi_\ell=0$ 近傍）．}
 \label{fig:reqcap}
-\end{figure}
+\end{figure*}
+
+\subsection{$T$--$m$ マップと体格}
+図~\ref{fig:tm} に，各 $(T,m)$ で位相について最小化した必要容量・最良位相・滞空時間・努力を示す
+（$T$：\Tmin--\Tmax\,s を 1\,s 刻み，$m$：\mmin--\mmax\,kg を 3\,kg 刻み）．
+最小必要容量は \bestcapmin--\bestcapmax\,BW で，$m$ に対して体重比でも増加する（60\,kg で \capsixty，75\,kg で \capseventyfive\,BW）．
+これは関節トルク上限を絶対値で固定したためであり，計画書 \S5.3 の「体重効果を消さない」設計の帰結である．
+$T$ の効きは小さく，滞空時間 \taumin--\taumax\,s の間に装置が動く距離（数 cm）が小さいためである．
+身長 $H$ と腕長比を変えた体格掃引（$T=20$\,s，$m=66$\,kg）は表~\ref{tab:build} に示す．
+\IfFileExists{tab_build.tex}{}{（体格掃引は計算中）}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{../results/figs/tm_maps.pdf}
+\caption{$T\times m$ マップ（位相について最小化）．左から必要容量 [BW]，最良離手位相，滞空時間，努力指標．}
+\label{fig:tm}
+\end{figure*}
 
 \begin{table}[t]
 \centering\scriptsize
-\caption{条件別の最良離手（必要容量 [BW]，括弧内は位相）．「最短距離時」は $\phi_\ell=0$ の値．}
+\caption{代表条件の最良離手（容量は必要両手把持容量 [BW]，括弧内は位相）．}
 \label{tab:best}
-\input{tab_best}
+\resizebox{\linewidth}{!}{\input{tab_best}}
+\end{table}
+
+\begin{table}[t]
+\centering\scriptsize
+\caption{体格掃引（$T=20$\,s，$m=66$\,kg，能力は絶対値固定）：位相について最小化した必要容量．}
+\label{tab:build}
+\IfFileExists{tab_build.tex}{\input{tab_build}}{（計算中）}
 \end{table}
 
 \begin{figure}[t]
@@ -176,37 +197,44 @@ $\times$ は収束解が得られなかった条件．}
 \end{figure}
 
 \subsection{離手タイミングの許容幅}
-最良解に対し離手指令を $\delta\in[-0.2,0.2]$\,s ずらし，関節は計画軌道への PD 追従
-（活性化時定数 40\,ms，飽和付き），捕捉は有限剛性（40\,kN/m）の順応把持として 1\,ms RK4 で
-再積分した（表~\ref{tab:win}）．
-掌が B の上面に掛かる「捕捉窓」は最大 \catchwinmax\,ms（中央値 \catchwinmed\,ms）と極めて狭い．
-離手時刻のずれは振りの角速度を通じて射出方向を変え，到達高さを 1\,cm/ms 程度動かすためである．
-さらに $\delta=0$ でも順応把持で再積分した負荷は計画値 $U^*$ の \loadratio 倍（最大 \loadratiomax 倍）となった．
+代表条件の最良解に対し離手指令を $\delta\in[-0.2,0.2]$\,s ずらし，関節は計画軌道への PD 追従
+（フィードバック分に 40\,ms の活性化フィルタ，トルク飽和），捕捉は有限剛性（40\,kN/m）の順応把持として
+1\,ms RK4 で再積分した（表~\ref{tab:win}）．
+掌が B の上面に掛かる「捕捉窓」は \catchwinmed\,ms（中央値，最大 \catchwinmax\,ms）と極めて狭い．
+離手時刻のずれは振りの角速度を通じて射出方向を変え，到達高さを約 1\,cm/ms 動かすためである．
+さらに $\delta=0$ でも順応把持で再積分した負荷は計画値 $U^*$ の \loadratio 倍（中央値，最大 \loadratiomax 倍）となった．
 剛体衝突を仮定した最適解は制約境界上にあり，実行誤差に対する余裕をもたない．
 飛行中の手先補正（到達制御）を持たない開ループ計画では，離手精度 $\pm5$\,ms が要求されることになる．
 
 \begin{table}[t]
 \centering\scriptsize
-\caption{離手窓の再積分（計画追従モード）．捕捉窓は掌が掛かる $\delta$ の幅．$U$ は $\delta=0$ の値．}
+\caption{離手窓の再積分（計画追従モード）．捕捉窓は掌が掛かる $\delta$ の幅．$U$ は $\delta=0$ の再積分値．}
 \label{tab:win}
-\IfFileExists{tab_windows.tex}{\input{tab_windows}}{（計算中）}
+\resizebox{\linewidth}{!}{\IfFileExists{tab_windows.tex}{\input{tab_windows}}{（計算中）}}
 \end{table}
 
 \subsection{感度解析}
 表~\ref{tab:sens} に $T=20$\,s，$m=60$\,kg，5 位相での一因子感度を示す．
-関節能力の $\pm30\%$ と捕捉均し時間 $\Delta_c$ が必要容量に最も効き，
-折り返し時間 $\epsilon$ の影響は小さい．
+壁から離れる向きの摩擦・引掛り係数 $\mu_{\rm out}$ を 0.6 に下げると必要容量は約 10\,\%，
+関節能力を 30\,\% 下げると約 7\,\% 増え，折り返し時間 $\epsilon$，捕捉均し時間 $\Delta_c$，
+手先相対速度上限の影響は 1--2\,\% にとどまる．
+すなわち本課題は把持の「引っ掛かり」と上肢・体幹の能力に律速され，装置側の細部には鈍感である．
+メッシュを 2 倍（振り 300・飛行 60・保持 120 区間）にした再解では必要容量が $+1.0\%$，
+努力が $+0.1\%$ 変化し，離散化による不確かさは 1\,\% 程度である．
 \begin{table}[t]
 \centering\scriptsize
 \caption{一因子感度（$T=20$\,s，$m=60$\,kg，$\phi_\ell\in\{0.125,0.25,0.375,0.625,0.75\}$）}
 \label{tab:sens}
-\IfFileExists{tab_sens.tex}{\input{tab_sens}}{（計算中）}
+\resizebox{\linewidth}{!}{\IfFileExists{tab_sens.tex}{\input{tab_sens}}{（計算中）}}
 \end{table}
 
 \subsection{3次元環境}
 図~\ref{fig:3d} に構築した環境の初期状態を示す．
-平面解を矢状面関節へ転写して CMA-ES で探索する枠組みを実装し，動作を確認した．
-本格的な探索・学習（計画書 \S10--12）は研究室 GPU サーバで実施する．
+平面解を矢状面関節へ転写して初期化した CMA-ES 探索（$T=20$\,s，$m=66$\,kg，個体数 32，300 世代，
+研究室サーバ 22 並列）では，胸を B へ向ける再配向は達成されたが（最接近時の胸法線の $x$ 成分 0.95），
+両手捕捉には至らず（手先中点と B 先端の最短距離 0.89\,m），振りの途中で把持容量を超えて剥離した．
+把持容量を 1000\,N とする緩和条件から段階的に戻すカリキュラムと，
+より長い探索を同サーバで継続している．
 \begin{figure}[t]
 \centering
 \includegraphics[width=.7\linewidth]{../results/figs/hang3d.png}
@@ -216,12 +244,12 @@ $\times$ は収束解が得られなかった条件．}
 
 \section{議論と限界}
 縮約モデルは矢状面のみを扱い，空中での 180 度の向き変え，左右の手の時間差（H3），
-横ずれを含まない．把持は両手合算で，容量は体重によらない絶対値である．
+横ずれを含まない．把持は両手合算で，容量は体重・体格によらない絶対値である（体格に比例させる設定はコード上の選択肢として用意した）．
 捕捉を完全非弾性衝突とし力積を $\Delta_c=50$\,ms に均す近似は，順応把持による再積分で
 1.3--1.8 倍の差を生じた．
 これらの差は「最適解の脆さ」としてではなく，学習段階で閉ループ補正・余裕を含む方策を
 求めるべき理由として読むべきである．
-必要容量 2.3--2.6\,BW は，3\,cm 縁での両手ぶら下がり能力の上位値に相当し，
+必要容量 2.3--2.9\,BW は，3\,cm 縁での両手ぶら下がり能力の上位値に相当し，
 本課題が把持能力に律速されることを示す．
 世界モデル型学習の価値（経験効率，H4）は本稿では未検証であり，
 同一環境上で SAC・DreamerV3~\cite{hafner2025} と比較する計画である．

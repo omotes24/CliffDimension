@@ -9,12 +9,12 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 LABELS = {
-    "ref": "基準（ε=0.20 s，能力×1.0，Δc=50 ms，v_rel≤4 m/s，μ_out=1.0）",
-    "eps010": "折り返し ε = 0.10 s", "eps040": "折り返し ε = 0.40 s",
-    "cap070": "関節能力 ×0.7", "cap130": "関節能力 ×1.3",
-    "dc030": "捕捉均し時間 Δc = 30 ms", "dc100": "捕捉均し時間 Δc = 100 ms",
+    "ref": "基準（$\\epsilon=0.20$ s，能力$\\times1.0$，$\\Delta_c=50$ ms，$v_{\\rm rel}\\le4$ m/s，$\\mu_{\\rm out}=1.0$）",
+    "eps010": "折り返し $\\epsilon=0.10$ s", "eps040": "折り返し $\\epsilon=0.40$ s",
+    "cap070": "関節能力 $\\times0.7$", "cap130": "関節能力 $\\times1.3$",
+    "dc030": "捕捉均し時間 $\\Delta_c=30$ ms", "dc100": "捕捉均し時間 $\\Delta_c=100$ ms",
     "vrel3": "手先相対速度上限 3 m/s", "vrel5": "手先相対速度上限 5 m/s",
-    "mu060": "摩擦・引掛り μ_out = 0.6", "mu150": "摩擦・引掛り μ_out = 1.5",
+    "mu060": "摩擦・引掛り $\\mu_{\\rm out}=0.6$", "mu150": "摩擦・引掛り $\\mu_{\\rm out}=1.5$",
 }
 
 

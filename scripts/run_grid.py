@@ -28,7 +28,8 @@ def hs_residuals(r, body):
 
 
 def solve_case(T, m, phi_l, prev, params_kw, tag, outdir, d_s_guesses=(3.0, 2.0, 4.0)):
-    body = make_body(m, **params_kw.pop("body_kw", {}))
+    body_kw = params_kw.pop("body_kw", {})
+    body = make_body(m, **body_kw)
     p = ReducedParams(fixed_release_phase=phi_l, wait_in_cost=False, **params_kw)
     best = None
     tried = []
@@ -56,6 +57,7 @@ def solve_case(T, m, phi_l, prev, params_kw, tag, outdir, d_s_guesses=(3.0, 2.0,
         best = min(tried, key=lambda x: x.get("U_peak", 9))
     best["solve_s"] = time.time() - t0
     best["param_tag"] = tag
+    best["body_kw"] = body_kw
     return best, body
 
 
