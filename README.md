@@ -22,6 +22,10 @@ scripts/
   analyze_grid.py      figures / tables (H1, H2, heatmaps, start-phase strategy)    -> results/figs
   run_windows.py       release-window analysis                                     -> results/windows
   run_sensitivity.sh   one-factor sensitivity (eps, capability, delta_c, v_rel, mu) -> results/sens
+  polish_grid.py       re-solve local-optimum outliers from their phase neighbours (warm start)
+  extra_figs.py        device / windows / sensitivity / 3-D search / body-size figures  -> results/figs
+  paper_numbers.py     LaTeX macros + tables for paper/ (numbers.tex, tab_*.tex)
+  make_outputs.sh      whole reporting pipeline: analysis -> figures -> tables -> PDF -> deliverables
   check_solution.py    audit of one solution (HS residuals, re-integration, metrics, plot)
   search_3d.py         3-D CMA-ES search (glacus)                                  -> results/search3d
   render_episode.py    offscreen rendering (MUJOCO_GL=osmesa or egl)
@@ -40,10 +44,17 @@ python -m pytest tests -q                # ~2 min
 
 ```bash
 python scripts/solve_one.py --T 20 --m 66 --phi0 0.0                  # one case (T = full period 20 s)
-python scripts/run_grid.py --T 16 19 20 24 --m 60 75 --nphi 16 --workers 8 --tag ref
+python scripts/run_grid.py --T 16 17 18 19 20 21 22 23 24 --m 60 63 66 69 72 75 --nphi 16 --workers 20 --tag ref
+python scripts/polish_grid.py --tag ref --workers 20 --passes 2       # warm-start re-solve of outliers
 python scripts/analyze_grid.py --tag ref                              # figures in results/figs
-python scripts/run_windows.py --tag ref --best-only                    # release windows
+python scripts/run_windows.py --tag ref --best-only                    # release windows (54 best cases)
 bash scripts/run_sensitivity.sh                                        # sensitivity grid
+# body-size sweep (T = 20 s, m = 66 kg): stature 1.60–1.85 m, arm length ±5 %
+for H in 1.60 1.65 1.70 1.80 1.85; do python scripts/run_grid.py --T 20 --m 66 --nphi 16 --tag stature${H/./} \
+       --params "{\"body_kw\": {\"stature\": $H}}" --out results/build; done
+python scripts/run_grid.py --T 20 --m 66 --nphi 16 --tag arm095 --params '{"body_kw": {"arm_scale": 0.95}}' --out results/build
+python scripts/run_grid.py --T 20 --m 66 --nphi 16 --tag arm105 --params '{"body_kw": {"arm_scale": 1.05}}' --out results/build
+bash scripts/make_outputs.sh                                           # figures, tables, PDF
 ```
 Objective: minimise the peak grasp utilisation `U_peak` (epigraph) with the effort integral as
 regulariser; `U_peak × 1300 N` is the two-hand grip capacity required to execute the release phase.

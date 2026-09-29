@@ -39,6 +39,10 @@ def analyse(pkl, deltas, modes=("plan", "hang")):
     return out
 
 
+def _analyse_star(args):
+    return analyse(*args)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--grid", default="results/grid")
@@ -46,6 +50,8 @@ def main():
     ap.add_argument("--out", default="results/windows")
     ap.add_argument("--best-only", action="store_true", help="only the minimum-U* phase of each (T, m)")
     ap.add_argument("--fine", type=float, default=0.03, help="half-width of the fine (5 ms) region around 0")
+    ap.add_argument("--workers", type=int, default=1)
+    ap.add_argument("--resume", action="store_true", help="keep rows already in the output JSON")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     files = sorted(glob.glob(os.path.join(a.grid, f"rows_{a.tag}_T*_m*.csv")))
@@ -58,14 +64,32 @@ def main():
         df = df.loc[idx]
     deltas = np.unique(np.round(np.concatenate([np.arange(-0.20, 0.2001, 0.01), np.arange(-a.fine, a.fine + 1e-9, 0.005)]), 3))
     rows = []
+    jpath = os.path.join(a.out, f"windows_{a.tag}.json")
+    if a.resume and os.path.exists(jpath):
+        rows = json.load(open(jpath))
+    done = {(w["T"], w["m"], round(w["phi_l"], 4)) for w in rows}
+    pkls = []
     for r in df.itertuples():
         pkl = os.path.join(a.grid, f"sol_{a.tag}_T{r.T:g}_m{r.m:g}_phi{r.phi_l:.3f}.pkl")
-        if not os.path.exists(pkl):
-            continue
-        res = analyse(pkl, deltas)
+        if os.path.exists(pkl) and (r.T, r.m, round(r.phi_l, 4)) not in done:
+            pkls.append(pkl)
+    print(f"{len(rows)} rows kept, {len(pkls)} to analyse", flush=True)
+
+    def _emit(res):
         rows.append(res)
         print({k: v for k, v in res.items() if not k.endswith("detail") and not k.endswith("deltas")}, flush=True)
-        json.dump(rows, open(os.path.join(a.out, f"windows_{a.tag}.json"), "w"), indent=1, default=float)
+        json.dump(rows, open(jpath, "w"), indent=1, default=float)
+
+    if a.workers > 1:
+        import multiprocessing as mp
+        with mp.Pool(a.workers) as pool:
+            for res in pool.imap_unordered(_analyse_star, [(pk, deltas) for pk in pkls]):
+                _emit(res)
+    else:
+        for pk in pkls:
+            _emit(analyse(pk, deltas))
+    rows.sort(key=lambda w: (w["T"], w["m"]))
+    json.dump(rows, open(jpath, "w"), indent=1, default=float)
     summ = pd.DataFrame([{k: v for k, v in r.items() if not k.endswith("detail") and not k.endswith("deltas")} for r in rows])
     summ.to_csv(os.path.join(a.out, f"windows_{a.tag}.csv"), index=False)
     print(summ)

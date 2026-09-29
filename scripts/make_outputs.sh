@@ -51,6 +51,14 @@ mkdir -p "$OUT/figures" "$OUT/data"
 cp results/figs/*.png results/figs/*.pdf "$OUT/figures/" 2>/dev/null || true
 cp results/figs/grid_ref_all.csv results/figs/summary_h1_h2.csv results/figs/audit.json paper/best_per_condition.csv "$OUT/data/" 2>/dev/null || true
 cp results/windows/windows_ref.csv results/figs/sensitivity.csv "$OUT/data/" 2>/dev/null || true
+# self-contained LaTeX source (figures copied next to main.tex, paths rewritten)
+PS="$OUT/paper_src"; rm -rf "$PS"; mkdir -p "$PS/figs"
+cp paper/main.tex paper/numbers.tex paper/tab_*.tex paper/miru2025j.cls paper/miru2025j.bst paper/latexmkrc paper/miru_logo_color.png "$PS/"
+for f in $(grep -o "\.\./results/figs/[A-Za-z0-9_./-]*" paper/main.tex | sort -u); do cp "paper/$f" "$PS/figs/" 2>/dev/null || true; done
+cp paper/figs/Cliff_Front_Section_R5.tex paper/figs/Cliff_Front_Section_R5.pdf "$PS/figs/" 2>/dev/null || true
+sed -i 's#\.\./results/figs/#figs/#g' "$PS/main.tex"
+( cd "$PS" && latexmk -r latexmkrc main.tex > /dev/null 2>&1 && latexmk -c > /dev/null 2>&1 && rm -f main.dvi ) || echo "WARNING: standalone paper_src did not compile"
+ls "$PS/main.pdf" > /dev/null 2>&1 && rm -f "$PS/main.pdf"
 git add -A >/dev/null 2>&1 || true
 git bundle create "$OUT/CliffDimension.bundle" --all > /dev/null 2>&1 || true
 rm -f "$OUT/CliffDimension_src.zip"
