@@ -84,10 +84,10 @@ def main():
         macros["nwin"] = str(len(w))
         wt = w[["T", "m", "phi_l", "U_star", "plan_catch_window_s", "plan_U0_catch", "plan_U0_hold", "plan_U0_max", "plan_reason0", "hang_U0_max", "hang_reason0"]].copy()
         with open(os.path.join(a.out, "tab_windows.tex"), "w") as f:
-            f.write("\\begin{tabular}{rrrrrrrl}\n\\toprule\n$T$ & $m$ & $\\phi_\\ell$ & $U^*$ & 捕捉窓 [ms] & $U_{\\rm catch}$ & $U_{\\rm hold}$ & 再積分結果 \\\\\n\\midrule\n")
+            f.write("\\begin{tabular}{rrrrrrr}\n\\toprule\n$T$ & $m$ & $\\phi_\\ell$ & $U^*$ & 捕捉窓 [ms] & $U_{\\rm catch}$ & $U_{\\rm hold}$ \\\\\n\\midrule\n")
             for r in wt.itertuples():
                 f.write(f"{r.T:g} & {r.m:g} & {r.phi_l:.3f} & {r.U_star:.2f} & {1e3*r.plan_catch_window_s:.0f} & "
-                        f"{r.plan_U0_catch:.2f} & {r.plan_U0_hold:.2f} & {str(r.plan_reason0).replace('_',' ')} \\\\\n")
+                        f"{r.plan_U0_catch:.2f} & {r.plan_U0_hold:.2f} \\\\\n")
             f.write("\\bottomrule\n\\end{tabular}\n")
     # sensitivity table
     if os.path.exists(a.sens):
@@ -131,10 +131,10 @@ def main():
     # main table: best per (T, m)
     s_tab = s[s["T"].isin([16, 19, 20, 24]) & s["m"].isin([60, 75])] if len(s) > 12 else s
     with open(os.path.join(a.out, "tab_best.tex"), "w") as f:
-        f.write("\\begin{tabular}{rrrrrrrrr}\n\\toprule\n$T$ [s] & $m$ [kg] & 最良 $\\phi_\\ell$ & 容量 [BW] & 往路最良 & 復路最良 & $\\phi_\\ell=0$ & $\\tau$ [s] & $\\bm v_0$ [m/s] \\\\\n\\midrule\n")
+        f.write("\\begin{tabular}{rrrrrr}\n\\toprule\n$T$ [s] & $m$ [kg] & 往路谷 & 復路谷 & $\\phi_\\ell=0$ & $\\tau$ [s] \\\\\n\\midrule\n")
         for r in s_tab.itertuples():
-            f.write(f"{r.T:g} & {r.m:g} & {r.best_phi:.3f} & {r.best_cap:.2f} & {r.out_cap:.2f} ({r.out_phi:.2f}) & "
-                    f"{r.ret_cap:.2f} ({r.ret_phi:.2f}) & {r.near_cap:.2f} & {r.tau:.2f} & ({r.v0x:.2f}, {r.v0y:.2f}) \\\\\n")
+            f.write(f"{r.T:g} & {r.m:g} & {r.out_cap:.2f} ({r.out_phi:.2f}) & "
+                    f"{r.ret_cap:.2f} ({r.ret_phi:.2f}) & {r.near_cap:.2f} & {r.tau:.2f} \\\\\n")
         f.write("\\bottomrule\n\\end{tabular}\n")
     for k in ["resSmax", "verSpos", "verFhand", "solvemed", "catchwinmax", "catchwinmed", "loadratio", "loadratiomax", "nwin"]:
         macros.setdefault(k, "--")

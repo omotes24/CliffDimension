@@ -88,6 +88,12 @@ def worker(args):
     T, m, phis, params_kw, tag, outdir = args
     prev = None
     rows = []
+    # start the phase sweep away from the device turnaround (phi = 0 is a kink of the device motion and
+    # the hardest cold start); go around cyclically so that phi = 0 is warm-started from phi = 1 - 1/n
+    phis = list(phis)
+    if len(phis) > 1:
+        k0 = int(np.argmin([abs(p - 0.25) for p in phis]))
+        phis = phis[k0:] + phis[:k0]
     for phi_l in phis:
         fn = os.path.join(outdir, f"sol_{tag}_T{T:g}_m{m:g}_phi{phi_l:.3f}.pkl")
         try:
