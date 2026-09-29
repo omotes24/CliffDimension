@@ -9,44 +9,45 @@ from katsumi.planar.model import PlanarChain
 
 
 # ------------------------------------------------------------------ device -------------
-@pytest.mark.parametrize("T", [8.0, 9.5, 10.0, 12.0])
+@pytest.mark.parametrize("T", [16.0, 19.0, 20.0, 24.0])
 @pytest.mark.parametrize("eps", [0.10, 0.20, 0.40])
 def test_device_endpoints_and_period(T, eps):
+    """T is the full period: x(0)=1.80, x(T/2)=2.70, x(T)=1.80."""
     for smooth in (True, False):
         s0 = device.device_state(0.0, T, eps, smooth)
-        sT = device.device_state(T, T, eps, smooth)
-        s2 = device.device_state(2 * T, T, eps, smooth)
+        sT = device.device_state(0.5 * T, T, eps, smooth)
+        s2 = device.device_state(T, T, eps, smooth)
         assert abs(s0["x"] - 1.80) < 1e-12 and abs(s0["h"] - 0.90) < 1e-12
         assert abs(sT["x"] - 2.70) < 1e-9 and abs(sT["h"] - 0.0) < 1e-9
         assert abs(s2["x"] - 1.80) < 1e-9 and abs(s2["h"] - 0.90) < 1e-9
-        t = np.linspace(0, 6 * T, 4001)
+        t = np.linspace(0, 3 * T, 4001)
         a = device.device_state(t, T, eps, smooth)
-        b = device.device_state(t + 2 * T, T, eps, smooth)
+        b = device.device_state(t + T, T, eps, smooth)
         assert np.allclose(a["x"], b["x"], atol=1e-9)
         # root-to-root distance = tip-to-tip + 2d
         assert np.allclose(a["x"] + 2 * device.D_LEDGE, a["x"] + 0.060)
 
 
 def test_smooth_profile_is_c1_and_matches_numeric_derivative():
-    T, eps = 10.0, 0.2
-    t = np.linspace(0, 2 * T, 200001)
+    T, eps = 20.0, 0.2
+    t = np.linspace(0, T, 200001)
     s = device.device_state(t, T, eps, True)
     dt = t[1] - t[0]
     xd_num = np.gradient(s["x"], dt)
     assert np.max(np.abs(xd_num[5:-5] - s["xd"][5:-5])) < 1e-4
     xdd_num = np.gradient(s["xd"], dt)
     assert np.max(np.abs(xdd_num[5:-5] - s["xdd"][5:-5])) < 1e-2
-    # end-point speed is zero, mid-travel speed is 0.9/(T-eps)
+    # end-point speed is zero, mid-travel speed is 0.9/(T/2-eps)
     assert abs(s["xd"][0]) < 1e-12
-    assert abs(np.max(s["xd"]) - 0.9 / (T - eps)) < 1e-9
+    assert abs(np.max(s["xd"]) - 0.9 / (0.5 * T - eps)) < 1e-9
 
 
 def test_casadi_device_matches_numpy():
-    T, eps = 9.5, 0.2
+    T, eps = 19.0, 0.2
     t = ca.SX.sym("t")
     d = device.device_ca(t, T, eps)
     f = ca.Function("f", [t], [d["x"], d["h"], d["vB"][0], d["vA"][1], d["aB"][0]])
-    for tt in np.linspace(0.0, 4 * T, 97):
+    for tt in np.linspace(0.0, 2 * T, 97):
         x, h, vb, va, ab = [float(v) for v in f(tt)]
         s = device.device_state(tt, T, eps, True)
         assert abs(x - s["x"]) < 1e-12 and abs(h - s["h"]) < 1e-12

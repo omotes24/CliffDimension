@@ -37,7 +37,7 @@ def load(grid, tag):
         if c in df:
             df[c] = pd.to_numeric(df[c], errors="coerce")
     df["ok"] = df["ok"].astype(int)
-    df["outbound"] = df["phi_l"] < 1.0
+    df["outbound"] = df["phi_l"] < 0.5
     return df
 
 
@@ -53,12 +53,12 @@ def fig_reqcap_vs_phase(df, out):
             ax.plot(d["phi_l"][ok], d["req_cap_BW"][ok], "-o", color=CAT[j % 3], ms=3.5, lw=1.6, label=f"m = {m:g} kg")
             if (~ok).any():
                 ax.plot(d["phi_l"][~ok], np.full((~ok).sum(), ax.get_ylim()[1] if ax.get_ylim()[1] > 1 else 3.0), "x", color=CAT[j % 3], ms=5)
-        ax.axvspan(1.0, 2.0, color="#f2f2f0", zorder=0)
-        ax.text(0.5, 0.97, "outbound (A↓, B→far)", transform=ax.get_xaxis_transform(), ha="center", va="top", fontsize=7.5, color=INK2)
-        ax.text(1.5, 0.97, "return (A↑, B→near)", transform=ax.get_xaxis_transform(), ha="center", va="top", fontsize=7.5, color=INK2)
-        ax.set_title(f"T = {T:g} s", fontsize=10)
-        ax.set_xlabel("release phase φ_ℓ")
-        ax.set_xlim(-0.05, 2.0)
+        ax.axvspan(0.5, 1.0, color="#f2f2f0", zorder=0)
+        ax.text(0.25, 0.97, "outbound (A↓, B→far)", transform=ax.get_xaxis_transform(), ha="center", va="top", fontsize=7.5, color=INK2)
+        ax.text(0.75, 0.97, "return (A↑, B→near)", transform=ax.get_xaxis_transform(), ha="center", va="top", fontsize=7.5, color=INK2)
+        ax.set_title(f"T = {T:g} s (one-way {T/2:g} s)", fontsize=10)
+        ax.set_xlabel("release phase φ_ℓ = (t_ℓ mod T)/T")
+        ax.set_xlim(-0.025, 1.0)
     axes[0].set_ylabel("required two-hand grip capacity [BW]")
     axes[0].legend(loc="lower left", fontsize=8)
     fig.tight_layout()
@@ -83,8 +83,9 @@ def fig_heatmaps(df, out, m_sel=None):
                 r = d[(d["T"] == T) & (d["phi_l"] == ph) & (d["ok"] == 1)]
                 if len(r):
                     M[i, j] = r[q].values[0]
+        dphi = 0.5 * (phis[1] - phis[0]) if len(phis) > 1 else 0.03
         im = ax.imshow(M, aspect="auto", cmap=SEQ, origin="lower",
-                       extent=[phis[0] - 0.0625, phis[-1] + 0.0625, -0.5, len(Ts) - 0.5])
+                       extent=[phis[0] - dphi, phis[-1] + dphi, -0.5, len(Ts) - 0.5])
         ax.set_yticks(range(len(Ts)))
         ax.set_yticklabels([f"{T:g}" for T in Ts])
         ax.set_xlabel("release phase φ_ℓ")
@@ -111,7 +112,7 @@ def fig_h1_h2(df, out):
         best_o = o.loc[o["req_cap_BW"].idxmin()] if len(o) else None
         best_r = r.loc[r["req_cap_BW"].idxmin()] if len(r) else None
         best = d.loc[d["req_cap_BW"].idxmin()]
-        # shortest tip-to-tip distance at release (x = 1.8 at phi = 0 / 2)
+        # shortest tip-to-tip distance at release (x = 1.8 at phi = 0 / 1)
         d = d.assign(x_release=[device.device_state(ph * T, T, 0.2)["x"] for ph in d["phi_l"]])
         nearest = d.loc[d["x_release"].idxmin()]
         rows.append(dict(T=T, m=m,
@@ -153,22 +154,22 @@ def fig_h1_h2(df, out):
     return s
 
 
-def fig_phi0_strategy(df, out, cap_factor=1.25, T_sel=10.0, m_sel=67.5):
+def fig_phi0_strategy(df, out, cap_factor=1.25, T_sel=20.0, m_sel=60.0):
     """Given a start phase phi0 and an athlete whose capacity is cap_factor x 1300 N, which release phase
-    minimises effort incl. waiting?  E_total = E_eff(phi_l) + U_wait^2 * wait, wait = (phi_l - phi0 - d_s/T) mod 2 * T."""
+    minimises effort incl. waiting?  E_total = E_eff(phi_l) + U_wait^2 * wait, wait = ((phi_l - phi0 - d_s/T) mod 1) * T."""
     d = df[(df["T"] == T_sel) & (df["m"] == m_sel) & (df["ok"] == 1)].sort_values("phi_l")
     if len(d) == 0:
         return
     f_cap = 1300.0 * cap_factor
     U_wait = m_sel * G / f_cap
     feas = d[d["U_peak"] * 1300.0 <= f_cap]
-    phi0s = np.linspace(0, 2, 33)
+    phi0s = np.linspace(0, 1, 33)
     best_phi, best_E, waits = [], [], []
     for p0 in phi0s:
         cands = []
         for r in feas.itertuples():
             swing_phase = r.d_s / T_sel
-            wait = ((r.phi_l - swing_phase - p0) % 2.0) * T_sel
+            wait = ((r.phi_l - swing_phase - p0) % 1.0) * T_sel
             cands.append((r.effort + U_wait ** 2 * wait, r.phi_l, wait))
         if cands:
             e, ph, w = min(cands)

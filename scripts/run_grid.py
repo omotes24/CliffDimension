@@ -1,10 +1,10 @@
 """Stage-1 main experiment: release-phase map of the reduced model.
 
-For every (T, m) the NLP is solved for a grid of release phases phi_l in [0, 2) with the
+For every (T, m) (T = full device period) the NLP is solved for a grid of release phases phi_l in [0, 1) with the
 "required grip capacity" objective (minimise U_peak, effort as regulariser). Results are
 appended to a CSV and each solution is pickled, so partial runs are usable.
 
-usage: python scripts/run_grid.py --out results/grid --T 8 9.5 10 12 --m 60 67.5 75 --nphi 16 --workers 2
+usage: python scripts/run_grid.py --out results/grid --T 16 19 20 24 --m 60 75 --nphi 16 --workers 2
 """
 import argparse, os, sys, time, pickle, json, csv, traceback
 import multiprocessing as mp
@@ -44,7 +44,7 @@ def solve_case(T, m, phi_l, prev, params_kw, tag, outdir, d_s_guesses=(3.0, 2.0,
     if best is None:
         for d_s in d_s_guesses:
             nlp = PlanarNLP(body, T, phi_l, p)
-            nlp.set_initial(d_w=2 * T - d_s, d_s=d_s)
+            nlp.set_initial(d_w=T - d_s, d_s=d_s)
             r = nlp.solve(print_level=0, max_iter=2500, tol=1e-4, max_cpu_time=900)
             r["cold_start"] = 1
             tried.append(r)
@@ -114,7 +114,7 @@ def worker(args):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="results/grid")
-    ap.add_argument("--T", type=float, nargs="+", default=[8, 9.5, 10, 12])
+    ap.add_argument("--T", type=float, nargs="+", default=[16, 19, 20, 24])
     ap.add_argument("--m", type=float, nargs="+", default=[60, 67.5, 75])
     ap.add_argument("--nphi", type=int, default=16)
     ap.add_argument("--phis", type=float, nargs="*", default=None)
@@ -124,7 +124,7 @@ def main():
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     params_kw = json.loads(a.params)
-    phis = a.phis if a.phis else list(np.arange(a.nphi) * 2.0 / a.nphi)
+    phis = a.phis if a.phis else list(np.arange(a.nphi) / a.nphi)
     jobs = [(T, m, phis, params_kw, a.tag, a.out) for T in a.T for m in a.m]
     if a.workers > 1:
         with mp.Pool(a.workers) as pool:

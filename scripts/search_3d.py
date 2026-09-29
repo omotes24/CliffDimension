@@ -17,7 +17,7 @@ from katsumi.mujoco.search import SearchParams, SplinePolicy, run_cmaes, rollout
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--T", type=float, default=10.0)
+    ap.add_argument("--T", type=float, default=20.0)
     ap.add_argument("--m", type=float, default=66.0)
     ap.add_argument("--phi0", type=float, default=None)
     ap.add_argument("--planar", type=str, default="")
@@ -40,7 +40,7 @@ def main():
         pol = SplinePolicy(env, sp)
         x0 = pol.init_from_planar(a.planar)
         if phi0 is None:
-            phi0 = (pol.t_start_device % (2 * a.T)) / a.T
+            phi0 = (pol.t_start_device % a.T) / a.T
         print(f"planar init: device start phase {phi0:.3f}, release at t={x0[pol.K*pol.nu:pol.K*pol.nu+2]}")
     if phi0 is None:
         phi0 = 0.0

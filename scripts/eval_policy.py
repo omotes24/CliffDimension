@@ -33,7 +33,7 @@ def run_trials(policy_fn, T, m, n_per_bin, seed=0, fail_penalty_U=3.0):
     rows = []
     for b in range(8):
         for i in range(n_per_bin):
-            phi0 = (b + rng.uniform(0, 1)) * 0.25
+            phi0 = (b + rng.uniform(0, 1)) * 0.125          # 8 bins over one full period
             obs = env.reset(T=T, phi0=phi0)
             t = 0.0
             while True:
@@ -59,7 +59,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sac", type=str, default="")
     ap.add_argument("--cma", type=str, default="")
-    ap.add_argument("--T", type=float, nargs="+", default=[9.5, 10.0])
+    ap.add_argument("--T", type=float, nargs="+", default=[19.0, 20.0])
     ap.add_argument("--m", type=float, nargs="+", default=[60, 66, 75])
     ap.add_argument("--n", type=int, default=5, help="trials per phase bin (25 -> 200 per condition)")
     ap.add_argument("--out", type=str, default="results/eval/eval.json")

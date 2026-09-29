@@ -5,6 +5,7 @@
 \usepackage{booktabs}
 \usepackage{url}
 \usepackage{multirow}
+\IfFileExists{numbers.tex}{\input{numbers.tex}}{}
 \makeatletter
 \renewcommand{\signame}{}          % 「第28回画像の認識・理解シンポジウム」を空欄にする
 \makeatother
@@ -23,7 +24,7 @@
 どれだけの把持容量が必要か」を求めた．
 手先を基底とする平面5リンク人体を Hermite--Simpson 直接コロケーションで多相最適化し，
 離散化誤差を利用した非物理解を排除する不変量制約と 1\,ms 再積分による監査を導入した．
-片道時間 $T\in\{8,9.5,10,12\}$\,s，体重 $m\in\{60,75\}$\,kg，離手位相16点の計128条件で，
+装置周期 $T\in\{16,19,20,24\}$\,s（片道 $T/2=8$--$12$\,s），体重 $m\in\{60,75\}$\,kg，離手位相16点の計128条件で，
 必要両手把持容量は体重比 \textbf{2.3--2.6 BW} の範囲にあり，往路後半の離手が最小となること，
 最短距離の離手は最小負荷の離手と一致しないこと，離手指令の許容幅が閉ループ補正なしでは
 $\pm5$\,ms 程度しかないことを示した．
@@ -51,17 +52,17 @@ $\pm5$\,ms 程度しかないことを示した．
 \subsection{装置と座標系}
 $+x$ を A から B，$+y$ を鉛直上向きとし，B の把持面高さを $y=0$ に置く．
 先端点を $\bm p_A(t)=(0,h(t))$，$\bm p_B(t)=(x(t),0)$ とし，
-$u=t \bmod 2T$，$\phi=u/T\in[0,2)$ に対して進行率 $\rho_\epsilon(\phi)$ を用いて
+装置周期を $T$（片道 $T/2$），$u=t \bmod T$，位相 $\phi=u/T\in[0,1)$ とし，進行率 $\rho_\epsilon(\phi)$ を用いて
 $x=1.80+0.90\rho_\epsilon$，$h=0.90(1-\rho_\epsilon)$ [m] とする．
 $\rho_\epsilon$ は端点で速度が 0 になる平滑化三角波（折り返し時間 $\epsilon=0.20$\,s）であり，
-$\phi<1$ が往路（A 下降・B 遠ざかる），$\phi\ge1$ が復路である．
+$\phi<0.5$ が往路（A 下降・B 遠ざかる），$\phi\ge0.5$ が復路である．
 同じ $(x,h)$ が往路と復路で 1 回ずつ現れ，装置速度の向きだけが反転する．
 \subsection{突起形状}
 突起は前面から 3\,cm 張り出し，鉛直高さ 5\,cm，その下 15\,cm が本体前面（手首の移動を制限する面），
 それより下は開放空間である（体を本体の下に振り込める）．
 先端上縁には手への食い込みを避ける R\,5\,mm の丸みを与えた（\texttt{edge\_radius}）．
 \subsection{成功条件と負荷指標}
-A を両手で把持し胸を A に向けた静止状態から開始し，$2T$ 以内に離手，B を両手で捕捉して 2.0\,s
+A を両手で把持し胸を A に向けた静止状態から開始し，1 周期 $T$ 以内に離手，B を両手で捕捉して 2.0\,s
 保持できれば成功とする．
 把持負荷は両手合計の突起反力 $\bm R$ に対し $U=\|\bm R\|/F_{\mathrm{cap}}$，
 $\Upk=\max_t U$ で表す（$F_{\mathrm{cap}}$ は両手の把持容量，基準値 1300\,N）．
@@ -134,13 +135,105 @@ $\Upk$ は上図的に導入した epigraph 変数で，$\Upk\times1300$\,N が�
 \end{table}
 
 \section{結果}
-（グリッド計算完了後に記入）
+\subsection{離手位相と必要把持容量}
+図~\ref{fig:reqcap} に $T\in\{16,19,20,24\}$\,s（片道 8--12\,s；大会条件は $T=19,20$\,s），$m\in\{60,75\}$\,kg，離手位相 $\phi_\ell$ 16 点
+（計 \ncases 条件，収束 \nok 条件）の必要両手把持容量を体重比で示す．
+必要容量は \capmin--\capmax\,BW（\capminN--\capmaxN\,N）に収まり，
+往路中盤 $\phi_\ell\approx$ \bestphimin--\bestphimax で最小となる．
+$\phi_\ell=0$（先端間 1.80\,m，高低差 0.90\,m）では落下高さが，$\phi_\ell=0.5$（2.70\,m，等高）では
+必要な水平速度が，それぞれ捕捉後の張力を押し上げる．
+最短距離となる位相で離手すると最良位相より平均 \hTwopenalty\,\%（最大 \hTwopenaltymax\,\%）大きな容量を要し，
+「最短距離＝最小負担ではない」（計画書 H2）が縮約モデルの範囲で成立する．
+往路最良と復路最良の差は最大 \hOnediffmax\,\% であり，復路が常に有利とは言えない（H1）．
+体重 75\,kg は 60\,kg より体重比で大きな容量を要する（平均 \capseventyfive\ vs \capsixty\,BW）．
+これは関節トルク上限を絶対値で固定したためで，計画書 \S5.3 の「体重効果を消さない」設計の帰結である．
+表~\ref{tab:best} に条件別の最良解を示す．滞空時間は \taumin--\taumax\,s，
+振り時間は \dsmin--\dsmax\,s（複数回の振り込み），捕捉時の手先相対速度は \vrelmin--\vrelmax\,m/s であった．
+最適解では振り終盤・捕捉衝撃・捕捉後の振れの 3 箇所で $U$ が同時に $\Upk$ に達しており，
+把持容量が全区間で支配的な制約である．
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../results/figs/reqcap_vs_phase.pdf}
+\caption{離手位相 $\phi_\ell=(t_\ell \bmod T)/T$ と必要両手把持容量．灰色は復路（$\phi_\ell\ge0.5$，A 上昇・B 接近）．
+$\times$ は収束解が得られなかった条件．}
+\label{fig:reqcap}
+\end{figure}
+
+\begin{table}[t]
+\centering\scriptsize
+\caption{条件別の最良離手（必要容量 [BW]，括弧内は位相）．「最短距離時」は $\phi_\ell=0$ の値．}
+\label{tab:best}
+\input{tab_best}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../results/figs/traj_best.png}
+\caption{代表解（$T=20$\,s，$m=60$\,kg，最良位相）のスティック図と把持利用率 $U(t)$．
+青：A での振り，赤：飛行，緑：B での保持．$\blacktriangledown$ は捕捉負荷．}
+\label{fig:traj}
+\end{figure}
+
+\subsection{離手タイミングの許容幅}
+最良解に対し離手指令を $\delta\in[-0.2,0.2]$\,s ずらし，関節は計画軌道への PD 追従
+（活性化時定数 40\,ms，飽和付き），捕捉は有限剛性（40\,kN/m）の順応把持として 1\,ms RK4 で
+再積分した（表~\ref{tab:win}）．
+掌が B の上面に掛かる「捕捉窓」は最大 \catchwinmax\,ms（中央値 \catchwinmed\,ms）と極めて狭い．
+離手時刻のずれは振りの角速度を通じて射出方向を変え，到達高さを 1\,cm/ms 程度動かすためである．
+さらに $\delta=0$ でも順応把持で再積分した負荷は計画値 $U^*$ の \loadratio 倍（最大 \loadratiomax 倍）となった．
+剛体衝突を仮定した最適解は制約境界上にあり，実行誤差に対する余裕をもたない．
+飛行中の手先補正（到達制御）を持たない開ループ計画では，離手精度 $\pm5$\,ms が要求されることになる．
+
+\begin{table}[t]
+\centering\scriptsize
+\caption{離手窓の再積分（計画追従モード）．捕捉窓は掌が掛かる $\delta$ の幅．$U$ は $\delta=0$ の値．}
+\label{tab:win}
+\IfFileExists{tab_windows.tex}{\input{tab_windows}}{（計算中）}
+\end{table}
+
+\subsection{感度解析}
+表~\ref{tab:sens} に $T=20$\,s，$m=60$\,kg，5 位相での一因子感度を示す．
+関節能力の $\pm30\%$ と捕捉均し時間 $\Delta_c$ が必要容量に最も効き，
+折り返し時間 $\epsilon$ の影響は小さい．
+\begin{table}[t]
+\centering\scriptsize
+\caption{一因子感度（$T=20$\,s，$m=60$\,kg，$\phi_\ell\in\{0.125,0.25,0.375,0.625,0.75\}$）}
+\label{tab:sens}
+\IfFileExists{tab_sens.tex}{\input{tab_sens}}{（計算中）}
+\end{table}
+
+\subsection{3次元環境}
+図~\ref{fig:3d} に構築した環境の初期状態を示す．
+平面解を矢状面関節へ転写して CMA-ES で探索する枠組みを実装し，動作を確認した．
+本格的な探索・学習（計画書 \S10--12）は研究室 GPU サーバで実施する．
+\begin{figure}[t]
+\centering
+\includegraphics[width=.7\linewidth]{../results/figs/hang3d.png}
+\caption{MuJoCo 3 次元環境（A に両手把持した初期状態，右が B）．}
+\label{fig:3d}
+\end{figure}
 
 \section{議論と限界}
-（記入予定）
+縮約モデルは矢状面のみを扱い，空中での 180 度の向き変え，左右の手の時間差（H3），
+横ずれを含まない．把持は両手合算で，容量は体重によらない絶対値である．
+捕捉を完全非弾性衝突とし力積を $\Delta_c=50$\,ms に均す近似は，順応把持による再積分で
+1.3--1.8 倍の差を生じた．
+これらの差は「最適解の脆さ」としてではなく，学習段階で閉ループ補正・余裕を含む方策を
+求めるべき理由として読むべきである．
+必要容量 2.3--2.6\,BW は，3\,cm 縁での両手ぶら下がり能力の上位値に相当し，
+本課題が把持能力に律速されることを示す．
+世界モデル型学習の価値（経験効率，H4）は本稿では未検証であり，
+同一環境上で SAC・DreamerV3~\cite{hafner2025} と比較する計画である．
 
 \section{まとめ}
-（記入予定）
+クリフディメンションの背面飛び移りを，装置運動・3\,cm 突起・有限把持容量を含む力学課題として
+定式化し，決定論的な軌道最適化により離手位相ごとの必要把持容量と離手許容幅を求めた．
+往路中盤の離手が最小負荷であること，最短距離の離手は最小負荷でないこと，
+開ループ計画では $\pm5$\,ms の離手精度が要るという構造を明らかにした．
+併せて 33 自由度の 3 次元環境と有限容量把持モデルを検証済みの形で公開し，
+学習法比較の共通基盤とした．
+コード・結果は \url{https://github.com/omotes24/CliffDimension} にある．
 
 \begin{thebibliography}{9}
 \bibitem{plan} 表紘太朗, ``Katsumi: クリフディメンションにおける力学・強化学習・世界モデル（実験計画書）,'' d-hacks, 2026.

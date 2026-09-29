@@ -22,13 +22,13 @@ G = 9.81
 class EnvParams:
     model: ModelParams = field(default_factory=ModelParams)
     grasp: GraspParams = field(default_factory=GraspParams)
-    T: float = 10.0
+    T: float = 20.0                   # full device period [s] (one-way 10 s)
     eps: float = 0.20
     phi0: float = 0.0
     control_dt: float = 0.02
     hold_time: float = 2.0
-    episode_extra: float = 4.0        # episode limit 2T + 4 s
-    release_deadline_factor: float = 2.0
+    episode_extra: float = 4.0        # episode limit T + 4 s (T = full period)
+    release_deadline_factor: float = 1.0
     fail_height: float = -4.0         # virtual failure plane (plan Sec. 7.3)
     chest_angle_start: float = 20.0
     chest_angle_catch: float = 30.0
@@ -315,7 +315,7 @@ class CliffEnv:
             d.qpos[0:3] - pB, d.qpos[3:7], d.qvel[0:6],
             qj, qdj,
             gl - com, gr - com, com - pA, com - pB,
-            pA, pB, vA, vB, [np.sin(np.pi * self.phi), np.cos(np.pi * self.phi), p.T, p.model.m],
+            pA, pB, vA, vB, [np.sin(2 * np.pi * self.phi), np.cos(2 * np.pi * self.phi), p.T, p.model.m],
             mode(self.hands["left"]), mode(self.hands["right"]),
             self.hands["left"].force / p.grasp.f_cap_hand, self.hands["right"].force / p.grasp.f_cap_hand,
             [self.hands["left"].U, self.hands["right"].U, self.hands["left"].slip, self.hands["right"].slip],

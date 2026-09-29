@@ -9,12 +9,16 @@ Tip points
     p_A(t) = (0,     h(t))      A moves vertically
     p_B(t) = (x(t),  0   )      B moves horizontally, its grip surface is y = 0
 
+Period convention: T is the FULL period of the device (one cycle out and back), the one-way travel
+time is T/2. The device phase is phi = (t mod T) / T in [0, 1): phi < 0.5 outbound (A descends,
+B moves away), phi >= 0.5 return.
+
 Specified end-point conditions (Table in Sec. 1)
-    x(0) = 1.80, x(T) = 2.70, x(2T) = 1.80   [m]
-    h(0) = 0.90, h(T) = 0.00, h(2T) = 0.90   [m]
+    x(0) = 1.80, x(T/2) = 2.70, x(T) = 1.80   [m]
+    h(0) = 0.90, h(T/2) = 0.00, h(T) = 0.90   [m]
     root-to-root horizontal distance = x(t) + 2 d,  d = 0.030 m
 
-Two progress functions rho(phi) in [0, 1] are provided
+Two progress functions rho in [0, 1] are provided
     * triangle wave (eq. 2)      -- exact position reference, velocity jumps at turnarounds
     * smoothed wave  (eq. 4)     -- finite acceleration at turnarounds, parameter eps
 
@@ -29,7 +33,7 @@ try:  # CasADi is optional for the pure-numpy users of this module
 except Exception:  # pragma: no cover
     ca = None
 
-X0, XT = 1.80, 2.70          # tip-to-tip horizontal distance at phi = 0 and phi = 1
+X0, XT = 1.80, 2.70          # tip-to-tip horizontal distance at phi = 0 and phi = 0.5
 H0 = 0.90                    # height difference at phi = 0
 AMP = XT - X0                # 0.90 m amplitude of both motions
 D_LEDGE = 0.030              # ledge depth (projection normal to the face) [m]
@@ -56,21 +60,22 @@ def _dr(q):
 
 
 def rho_triangle(u, T):
-    """Triangle wave progress, eq. (2). u = t mod 2T. Returns rho, drho/dt, d2rho/dt2 (=0)."""
-    phi = u / T
-    outbound = phi <= 1.0
-    rho = np.where(outbound, phi, 2 - phi)
-    drho = np.where(outbound, 1.0 / T, -1.0 / T)
+    """Triangle wave progress, eq. (2). u = t mod T (T = full period). Returns rho, drho/dt, d2rho/dt2 (=0)."""
+    Th = 0.5 * T
+    s = u / Th
+    outbound = s <= 1.0
+    rho = np.where(outbound, s, 2 - s)
+    drho = np.where(outbound, 1.0 / Th, -1.0 / Th)
     return rho, drho, np.zeros_like(rho)
 
 
-def _rho_half_smooth_np(u, T, eps):
-    """Smoothed outbound half period, 0 <= u <= T (eq. 4). Returns rho, rho_dot, rho_ddot."""
-    k = 1.0 / (T - eps)
+def _rho_half_smooth_np(u, Th, eps):
+    """Smoothed outbound half period, 0 <= u <= Th (= T/2) (eq. 4). Returns rho, rho_dot, rho_ddot."""
+    k = 1.0 / (Th - eps)
     s1 = u / eps
-    s2 = (T - u) / eps
+    s2 = (Th - u) / eps
     seg1 = u < eps
-    seg3 = u > T - eps
+    seg3 = u > Th - eps
     rho = np.where(seg1, k * eps * _r_int(s1),
                    np.where(seg3, 1.0 - k * eps * _r_int(s2), k * (u - 0.5 * eps)))
     drho = np.where(seg1, k * _r(s1), np.where(seg3, k * _r(s2), k))
@@ -79,11 +84,12 @@ def _rho_half_smooth_np(u, T, eps):
 
 
 def rho_smooth(u, T, eps):
-    """Smoothed progress over the full period 0 <= u < 2T (outbound then return)."""
+    """Smoothed progress over the full period 0 <= u < T (outbound then return)."""
     u = np.asarray(u, dtype=float)
-    outbound = u <= T
-    ub = np.where(outbound, u, 2 * T - u)
-    rho, drho, ddrho = _rho_half_smooth_np(ub, T, eps)
+    Th = 0.5 * T
+    outbound = u <= Th
+    ub = np.where(outbound, u, T - u)
+    rho, drho, ddrho = _rho_half_smooth_np(ub, Th, eps)
     sign = np.where(outbound, 1.0, -1.0)
     return rho, sign * drho, ddrho  # d/dt of rho(2T-u) = -rho'(2T-u); second derivative sign cancels
 
@@ -92,9 +98,10 @@ def device_state(t, T, eps=0.20, smooth=True):
     """Return dict with positions/velocities/accelerations of tips A and B at absolute time(s) t.
 
     x  : tip-to-tip horizontal distance,   h : height of A above B's grip surface
+    T  : full period [s] (one-way travel time T/2), phi = (t mod T) / T in [0, 1)
     """
     t = np.asarray(t, dtype=float)
-    u = np.mod(t, 2 * T)
+    u = np.mod(t, T)
     if smooth:
         rho, drho, ddrho = rho_smooth(u, T, eps)
     else:
@@ -118,14 +125,15 @@ def device_state(t, T, eps=0.20, smooth=True):
 def rho_smooth_ca(t, T, eps):
     """CasADi symbolic smoothed progress. Returns (rho, rho_dot, rho_ddot) as functions of absolute time t."""
     assert ca is not None
-    u = ca.fmod(t, 2 * T)
-    outbound = u <= T
-    ub = ca.if_else(outbound, u, 2 * T - u)
-    k = 1.0 / (T - eps)
+    Th = 0.5 * T
+    u = ca.fmod(t, T)
+    outbound = u <= Th
+    ub = ca.if_else(outbound, u, T - u)
+    k = 1.0 / (Th - eps)
     s1 = ub / eps
-    s2 = (T - ub) / eps
+    s2 = (Th - ub) / eps
     seg1 = ub < eps
-    seg3 = ub > T - eps
+    seg3 = ub > Th - eps
     rho = ca.if_else(seg1, k * eps * _r_int(s1),
                      ca.if_else(seg3, 1.0 - k * eps * _r_int(s2), k * (ub - 0.5 * eps)))
     drho = ca.if_else(seg1, k * _r(s1), ca.if_else(seg3, k * _r(s2), k))

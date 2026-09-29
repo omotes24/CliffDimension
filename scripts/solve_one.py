@@ -9,7 +9,7 @@ from katsumi.planar.nlp import PlanarNLP, ReducedParams
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--T", type=float, default=10.0)
+    ap.add_argument("--T", type=float, default=20.0)
     ap.add_argument("--m", type=float, default=66.0)
     ap.add_argument("--phi0", type=float, default=0.0)
     ap.add_argument("--d_w", type=float, default=0.0)

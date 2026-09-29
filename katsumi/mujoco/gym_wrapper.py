@@ -15,9 +15,9 @@ except Exception as e:  # pragma: no cover
 from .env import CliffEnv, EnvParams
 from .build_model import ModelParams
 
-TRAIN_T = [8, 8.5, 9, 10.5, 11, 11.5, 12]
+TRAIN_T = [16, 17, 18, 21, 22, 23, 24]        # full periods (one-way 8..12 s, plan Sec. 11.1)
 TRAIN_M = [60, 63, 66, 69, 72, 75]
-VAL_T = [8.25, 8.75, 9.25, 10.75, 11.25, 11.75]
+VAL_T = [16.5, 17.5, 18.5, 21.5, 22.5, 23.5]
 VAL_M = [61.5, 64.5, 67.5, 70.5, 73.5]
 
 
@@ -54,7 +54,7 @@ class CliffGym(gym.Env):
         else:
             T = float(self.rng.choice(self.T_set))
             m = float(self.rng.choice(self.m_set))
-            phi0 = float(self.rng.uniform(0, 2)) if self.phi0_set is None else float(self.rng.choice(self.phi0_set))
+            phi0 = float(self.rng.uniform(0, 1)) if self.phi0_set is None else float(self.rng.choice(self.phi0_set))
         self.env = self._env_for(m)
         obs = self.env.reset(T=T, phi0=phi0)
         return obs, dict(T=T, m=m, phi0=phi0)

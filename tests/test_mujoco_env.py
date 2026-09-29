@@ -10,7 +10,7 @@ from katsumi.mujoco.build_model import build_xml, ModelParams
 
 @pytest.fixture(scope="module")
 def env():
-    return CliffEnv(EnvParams(T=10.0, phi0=0.0))
+    return CliffEnv(EnvParams(T=20.0, phi0=0.0))
 
 
 def _hold_action(env):
@@ -27,7 +27,7 @@ def test_model_mass_and_dof():
 def test_cliff_geometry_and_period(env):
     m, d = env.model, env.data
     T = env.p.T
-    for t in (0.0, T, 2 * T, 3.3 * T):
+    for t in (0.0, 0.5 * T, T, 1.65 * T):
         env._set_mocap(t)
         mujoco.mj_forward(m, d)
         s = device.device_state(t, T, env.p.eps)
@@ -44,7 +44,7 @@ def test_cliff_geometry_and_period(env):
     env._set_mocap(0.0)
     s0 = device.device_state(0.0, T, env.p.eps)
     assert abs(s0["x"] - 1.80) < 1e-12 and abs(s0["h"] - 0.90) < 1e-12
-    sT = device.device_state(T, T, env.p.eps)
+    sT = device.device_state(0.5 * T, T, env.p.eps)
     assert abs(sT["x"] - 2.70) < 1e-9 and abs(sT["h"]) < 1e-9
 
 
@@ -157,7 +157,7 @@ def test_catch_impulse_balance(env):
 
 # ------------------------------------------------------------------ P1: low-speed catch --
 def test_low_speed_catch_on_B():
-    p = EnvParams(T=10.0, phi0=0.0)
+    p = EnvParams(T=20.0, phi0=0.0)
     e = CliffEnv(p)
     e.reset()
     m, d = e.model, e.data
@@ -191,7 +191,7 @@ def test_low_speed_catch_on_B():
 
 # ------------------------------------------------------------------ constraints ----------
 def test_no_grasp_from_behind_or_below():
-    p = EnvParams(T=10.0, phi0=0.0)
+    p = EnvParams(T=20.0, phi0=0.0)
     e = CliffEnv(p)
     e.reset()
     m, d = e.model, e.data
@@ -217,7 +217,7 @@ def test_timestep_convergence_of_hang_forces():
     peaks = {}
     for ts in (0.002, 0.001, 0.0005):
         mp = ModelParams(timestep=ts)
-        e = CliffEnv(EnvParams(model=mp, T=10.0, phi0=0.0))
+        e = CliffEnv(EnvParams(model=mp, T=20.0, phi0=0.0))
         e.reset()
         a = np.concatenate([e.joint_targets_from_qpos(), [1.0, 1.0]])
         a_sw = a.copy()

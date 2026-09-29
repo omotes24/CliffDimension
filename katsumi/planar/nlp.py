@@ -1,6 +1,6 @@
 """Multi-phase direct collocation (Hermite-Simpson) for the planar reduced model.
 
-Phases (absolute device time t; the athlete starts at device phase phi0, i.e. t0 = phi0 * T)
+Phases (absolute device time t; T = full device period; the athlete starts at phase phi0 in [0,1), t0 = phi0 * T)
     W  wait      : static hang on A, duration d_w >= 0 (no dynamics; grip effort accumulates)
     S  swing     : pinned on A, duration d_s, joint torques build the swing
     F  flight    : free chain, duration d_f, only internal torques
@@ -34,7 +34,7 @@ from .model import PlanarChain, NQ, NTH, NTAU
 class ReducedParams:
     eps: float = 0.20            # device turnaround smoothing [s]
     T_hold: float = 2.0          # required hold time on B [s]
-    release_deadline_factor: float = 2.0   # release before 2T (plan Sec. 7.3)
+    release_deadline_factor: float = 1.0   # release within one full period T (plan Sec. 7.3: 2 x one-way time)
     N_S: int = 150
     N_F: int = 30
     N_H: int = 60
@@ -55,7 +55,7 @@ class ReducedParams:
     w_E: float = 1.0
     w_U: float = 10.0
     U_max: float = 2.5                # upper bound on U_peak (2.5 -> required capacity up to 2.5 x f_cap is explored)
-    fixed_release_phase: float | None = None   # if set: release exactly at device phase phi_l (t_l = (phi_l + 2) T)
+    fixed_release_phase: float | None = None   # if set: release exactly at device phase phi_l in [0,1) (t_l = (phi_l + 1) T)
     wait_in_cost: bool = True
     w_smooth: float = 1e-3
     # joint ranges [rad] for the "facing -x" convention (elbow, shoulder, hip, knee); mirrored when facing +x
@@ -241,11 +241,11 @@ class PlanarNLP:
         self.wait_effort = (d_w / nW) * Uw2 / p.t_ref
         if p.wait_in_cost:
             self.effort_terms.append(self.wait_effort)
-        a_peak = device.H0 * 1.5 / ((T - p.eps) * p.eps)          # peak |h_ddot|
+        a_peak = device.H0 * 1.5 / ((0.5 * T - p.eps) * p.eps)    # peak |h_ddot| (one-way time T/2)
         opti.subject_to(U_peak >= b.m * (G + a_peak) / f_cap)
         if p.fixed_release_phase is not None:
             # release exactly at device phase phi_l, one period after the (irrelevant) start phase
-            opti.subject_to(t_l == (p.fixed_release_phase + 2.0) * T)
+            opti.subject_to(t_l == (p.fixed_release_phase + 1.0) * T)
 
         # ---- S: swing on A ----------------------------------------------------------------------
         Bm = ca.DM(chain.B)
@@ -488,6 +488,7 @@ class PlanarNLP:
         v["t_l"] = v["t_s0"] + v["d_s"]
         v["t_c"] = v["t_l"] + v["d_f"]
         v["t_h0"] = v["t_c"]
-        v["phi_l"] = (v["t_l"] % (2 * self.T)) / self.T
-        v["phi_c"] = (v["t_c"] % (2 * self.T)) / self.T
+        v["phi_l"] = (v["t_l"] % self.T) / self.T
+        v["phi_c"] = (v["t_c"] % self.T) / self.T
+        v["T_convention"] = "period"
         return v
