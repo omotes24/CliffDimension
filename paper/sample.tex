@@ -1,0 +1,78 @@
+% MIRU2025 LaTeXクラスファイルの使い方 Ver.1
+\documentclass[MIRU,submit]{miru2025j}
+\usepackage[dvipdfmx]{graphicx}
+%\usepackage{latexsym}
+%\usepackage[fleqn]{amsmath}
+%\usepackage[psamsfonts]{amssymb}
+
+\begin{document}
+
+\title{MIRU2025 \LaTeXe\ クラスファイルの使い方}
+
+\affiliate{Tokyo}{第一大学}
+\affiliate{Osaka}{第二大学（現在，第三コーポレーション勤務）}
+
+ \author{画像 花子}{Hanako GAZO}{Tokyo}[hanako@gazo.ac.jp]
+ \author{認識 太郎}{Taro NINSHIKI}{Osaka}[taro@ninshiki.co.jp]
+ \author{理解 次郎}{Jiro RIKAI}{Osaka}[jiro@rikai.co.jp]
+ \author{John Smith}{John Smith}{Osaka,Tokyo}[john@rikai.co.jp]
+
+
+\maketitle
+
+\section*{概要}
+本稿は，MIRU2025用のサンプルです．最初に概要を記述してください．
+
+\section{はじめに}
+本稿はMIRU2025用の原稿サンプルです．
+p\LaTeXe\ に基づいて作成しています．
+
+\section{原稿の書き方}
+
+\subsection{言語}
+使用言語は，日本語または英語です．
+
+\subsection{ページ数}
+ページ数は\textcolor{red}{参考文献を除いて}最大4ページです．
+
+\subsection{著者名と所属}
+著者名と所属，連絡先メールアドレスを原稿に記載して下さい
+（口頭発表候補論文の評価方法はシングルブラインドです）．
+
+\subsection{キーワード}
+キーワードは省略して下さい．
+
+\section{本文}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=.3\linewidth]{miru_logo_color.png}
+    \caption{Caption for PNG}
+    \label{fig:my_label}
+\end{figure}
+
+%\input{example_paper_text_jp.tex}
+
+%\bibliographystyle{miru2025j}
+%\bibliography{myref}
+
+\begin{thebibliography}{9}% 文献数が10未満の時 {9}
+\bibitem{1}
+W. Rice, A. C. Wine, and B. D. Grain,
+diffusion of impurities during epitaxy,
+Proc. IEEE, vol.~52, no.~3, pp.~284--290, March 1964.
+\bibitem{2}
+ H. Tong, Nonlinear Time Series: A Dynamical System Approach, J. B. Elsner, ed., Oxford University Press, Oxford, 1990.
+\bibitem{3}
+H. K. Hartline, A. B. Smith, and F. Ratlliff,
+Inhibitoryinteraction in the retina,
+in Handbook of Sensory Physiology,
+ed. M. G. F. Fuortes, pp.~381--390, Springer-Verlag, Berlin.
+\bibitem{4}
+Y. Yamamoto, S. Machida, and K. Igeta,
+``Micro-cavity semiconductors with enhanced spontaneous emission,''
+Proc. 16th European Conf. on Opt. Commun.,
+no.~MoF4.6, pp.~3--13, Amsterdam, The Netherlands, Sept.1990.
+\end{thebibliography}
+
+\end{document}

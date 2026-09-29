@@ -340,12 +340,10 @@ class PlanarNLP:
         opti.subject_to(imp_res[0:2] / f_cap == 0)
         opti.subject_to(imp_res[2:] / 10.0 == 0)
         self._grasp_cone(opti, Lam, "B")
-        U_catch = ca.sqrt(Lam[0] ** 2 + Lam[1] ** 2 + 1e-8) / p.delta_catch   # equivalent |R| / f_cap over delta_catch
-        opti.subject_to(U_catch <= U_peak)
-        self.effort_terms.append(U_catch ** 2 * p.delta_catch / p.t_ref)
+        U_imp = ca.sqrt(Lam[0] ** 2 + Lam[1] ** 2 + 1e-8) / p.delta_catch    # impulse spread over delta_catch, / f_cap
         self.vars["thd_plus"] = thd_plus
         self.vars["Lam"] = Lam
-        self.U_catch = U_catch
+        self.U_imp = U_imp
         d_c = 0.0
         t_h0 = t_c
 
@@ -373,6 +371,15 @@ class PlanarNLP:
         opti.subject_to(opti.bounded(-1, ca.vec(UmH), 1))
         opti.subject_to(XH[0:NTH, 0] == qF_end[2:])
         opti.subject_to(XH[NTH:, 0] == thd_plus)
+        # catch load = impulse pulse superposed on the sustained tension right after the catch (Sec. 6.3 / 6.4)
+        U_H0 = ca.sqrt(RH[0, 0] ** 2 + RH[1, 0] ** 2 + 1e-8)
+        U_catch = U_imp + U_H0
+        opti.subject_to(U_catch <= U_peak)
+        self.effort_terms.append(U_imp ** 2 * p.delta_catch / p.t_ref)
+        self.U_catch = U_catch
+        # muscle activation continuity across the phase boundaries (rate limit applies within phases)
+        opti.subject_to(UF[:, 0] == US[:, -1])
+        opti.subject_to(UH[:, 0] == UF[:, -1])
 
         self.durs = dict(d_w=d_w, d_s=d_s, d_f=d_f)
         self.effort = sum(self.effort_terms)
@@ -469,6 +476,7 @@ class PlanarNLP:
             v[k] = float(sol.value(x))
         v["U_peak"] = float(sol.value(self.U_peak))
         v["U_catch"] = float(sol.value(self.U_catch))
+        v["U_imp"] = float(sol.value(self.U_imp))
         v["wait_effort"] = float(sol.value(self.wait_effort))
         v["effort"] = float(sol.value(self.effort))
         v["d_c"] = 0.0
