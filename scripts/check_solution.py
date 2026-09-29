@@ -1,6 +1,6 @@
 """Audit a saved solution: HS residuals at quarter points, RK4 re-integration, metrics, plot."""
 import pickle, numpy as np, sys
-sys.path.insert(0, ".")
+sys.path.insert(0, __import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.abspath(__file__))))
 from katsumi.planar.anthro import make_body
 from katsumi.planar.model import PlanarChain, NTH, NQ
 from katsumi import device

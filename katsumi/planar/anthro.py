@@ -74,15 +74,15 @@ def _combine(parts):
     return M, c, I
 
 
-def make_body(m: float, cap_scale: float = 1.0, grip_scale: float = 1.0, grip_offset: float = 0.11) -> Body:
+def make_body(m: float, cap_scale: float = 1.0, grip_scale: float = 1.0, grip_offset: float = 0.12) -> Body:
     """Build the lumped planar body for total mass m [kg].
 
     cap_scale  : multiplies joint torque capacities (plan Sec. 13.1: {0.7, 1.0, 1.3})
     grip_scale : multiplies grip capacity
-    grip_offset: distance from the wrist centre to the ledge contact line on the fingers [m]
+    grip_offset: distance from the wrist centre to the ledge contact line on the fingers (PIP) [m]
     """
     # de Leva 1996, male: mass fraction, length [m] for 1.75 m, CoM fraction from proximal, radius of gyration (sagittal)
-    f_hand, L_hand, c_hand, k_hand = 0.0061, 0.1879, 0.7900, 0.628
+    f_hand, L_hand, c_hand, k_hand = 0.0061, 0.0862, 0.7900, 0.628   # length: wrist -> 3rd metacarpale
     f_fa, L_fa, c_fa, k_fa = 0.0162, 0.2689, 0.4574, 0.276
     f_ua, L_ua, c_ua, k_ua = 0.0271, 0.2817, 0.5772, 0.285
     f_tr, L_tr, c_tr, k_tr = 0.4346, 0.5319, 0.4486, 0.372
