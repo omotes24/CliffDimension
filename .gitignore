@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+results/*.npz
+results/*.pkl
+results/cache/
+*.aux
+*.log
+*.dvi
+*.out
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+.DS_Store
