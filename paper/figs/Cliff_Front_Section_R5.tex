@@ -1,0 +1,208 @@
+% !TeX program = platex
+% UTF-8. Compile with pLaTeX (twice) and dvipdfmx.
+% All drawing elements are editable TikZ vectors; no external images are required.
+% Dimension interpretation used in this drawing:
+%   projection normal to the front face = 3 cm
+%   vertical height of the grip/ledge   = 5 cm
+%   ledge underside to body lower edge  = 15 cm
+%   long-axis length L                  = sufficiently long; not specified numerically
+%   fillet radius of the tip upper edge  = 5 mm (edge_radius in the simulation model)
+% The unspecified upper height, body depth, supports and hand are schematic.
+\documentclass[a4paper,10pt,dvipdfmx]{jarticle}
+\usepackage[landscape,margin=12mm]{geometry}
+\usepackage[dvipdfmx]{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,patterns}
+\usepackage[dvipdfmx,hidelinks]{hyperref}
+\usepackage{pxjahyper}
+\usepackage[haranoaji]{pxchfon}
+\renewcommand{\familydefault}{\sfdefault}
+\renewcommand{\kanjifamilydefault}{\gtdefault}
+\hypersetup{pdftitle={クリフの正面図と断面図},pdfauthor={d-hacks B3 omote}}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\definecolor{Ink}{HTML}{24303B}
+\definecolor{Slate}{HTML}{69737D}
+\definecolor{Line}{HTML}{CBD1D6}
+\definecolor{Body}{HTML}{F0F2F4}
+\definecolor{Ledge}{HTML}{245B76}
+\definecolor{LedgeFill}{HTML}{DCEAF0}
+\definecolor{Hand}{HTML}{A76A3E}
+\definecolor{HandFill}{HTML}{F6EDE6}
+\definecolor{Contact}{HTML}{9E4D3F}
+\tikzset{
+  edge/.style={draw=Ink,line width=.65pt},
+  dim/.style={<->,>=Latex,line width=.5pt,draw=Ink},
+  ext/.style={draw=Slate,line width=.35pt},
+  leader/.style={draw=Slate,line width=.45pt},
+  txt/.style={font=\small,text=Ink,inner sep=0pt},
+  note/.style={font=\footnotesize,text=Slate,inner sep=0pt},
+  lab/.style={font=\small\bfseries,text=Ink,inner sep=0pt}
+}
+\begin{document}
+\noindent
+\begin{tikzpicture}[x=1mm,y=1mm,line cap=round,line join=round]
+\path[use as bounding box] (0,0) rectangle (273,182);
+
+% ---- Page heading (separate from all drawing annotations) ----
+\node[anchor=west,font=\LARGE\bfseries,text=Ink,inner sep=0pt] at (0,175)
+  {クリフの正面図と断面図};
+\node[anchor=west,note] at (0,164)
+  {本体前面に付く把持用の突起と，その下の有限な本体面を示す。};
+\draw[Line,line width=.7pt] (0,157) -- (273,157);
+
+% ---- Shared physical scale for the specified cross-sectional dimensions ----
+% 1 physical centimetre = 2.3 drawing millimetres.
+\def\sc{2.3}
+\pgfmathsetmacro{\depth}{3*\sc}
+\pgfmathsetmacro{\gripH}{5*\sc}
+\pgfmathsetmacro{\underH}{15*\sc}
+\def\gripTop{104}
+\pgfmathsetmacro{\gripBottom}{\gripTop-\gripH}
+\pgfmathsetmacro{\bodyBottom}{\gripBottom-\underH}
+\def\bodyTop{130}
+
+% ================================================================
+% (a) Front view: observer on the player's side, looking at the face.
+% ================================================================
+\node[anchor=west,lab] at (0,149) {(a) 正面図};
+\node[anchor=west,note] at (0,141) {選手側から本体前面を見る};
+
+% Schematic supports (not cables and not an assumed pendulum mechanism).
+\draw[Ink,line width=.9pt] (30,130) -- (30,136);
+\draw[Ink,line width=.9pt] (88,130) -- (88,136);
+\draw[Ink,line width=.5pt] (28.5,134.7) -- (31.5,135.5);
+\draw[Ink,line width=.5pt] (86.5,134.7) -- (89.5,135.5);
+\node[note] at (59,134.5) {上部から支持};
+
+% Body and continuous front ledge.
+\filldraw[edge,fill=Body] (13,\bodyBottom) rectangle (105,\bodyTop);
+\filldraw[draw=Ledge,line width=.75pt,fill=LedgeFill]
+  (13,\gripBottom) rectangle (105,\gripTop);
+\draw[Ledge,line width=1.35pt] (13,\gripTop) -- (105,\gripTop);
+\node[txt] at (50,119) {本体前面};
+\node[font=\small\bfseries,text=Ledge,inner sep=0pt] at (50,98.2)
+  {把持用の突起};
+\node[txt] at (50,76) {突起の下に続く本体面};
+
+% Front-view height dimensions (same scale as cross section).
+\foreach \Y in {\gripTop,\gripBottom,\bodyBottom}{
+  \draw[ext] (107,\Y) -- (116,\Y);
+}
+\draw[dim] (113,\gripBottom) -- (113,\gripTop);
+\node[anchor=west,txt] at (117,98.25) {$5\,\mathrm{cm}$};
+\draw[dim] (113,\bodyBottom) -- (113,\gripBottom);
+\node[anchor=west,txt] at (117,75.25) {$15\,\mathrm{cm}$};
+
+% Section plane A--A. The arrows point towards the right-hand sectional view.
+\draw[Ink,dash pattern=on 4pt off 2pt on .7pt off 2pt,line width=.45pt]
+  (77,133) -- (77,53);
+\draw[-{Latex[length=1.8mm]},Ink,line width=.55pt] (73.5,133) -- (81,133);
+\draw[-{Latex[length=1.8mm]},Ink,line width=.55pt] (73.5,53) -- (81,53);
+\node[anchor=east,note] at (72.3,133) {A};
+\node[anchor=east,note] at (72.3,53) {A};
+
+% Longitudinal length: no invented numerical value.
+\draw[ext] (13,56) -- (13,43);
+\draw[ext] (105,56) -- (105,43);
+\draw[dim] (13,45) -- (105,45);
+\node[txt,fill=white,inner sep=1mm] at (59,45) {$L$：十分長い};
+\node[anchor=north,align=center,note] at (59,35)
+  {突起は長手方向に連続する。\\下端より下は開放されている。};
+
+% ================================================================
+% (b) Cross section: back (left), player/free space (right).
+% The small ledge projects to the RIGHT of the body front face.
+% ================================================================
+\node[anchor=west,lab] at (139,149) {(b) A--A断面図};
+\node[anchor=west,note] at (139,141) {長手方向 $L$ に直交する断面};
+
+\def\back{166}
+\def\front{184}
+\pgfmathsetmacro{\tip}{\front+\depth}
+
+% Solid section envelope. Internal construction is deliberately omitted.
+\filldraw[edge,fill=Body] (\back,\bodyBottom) rectangle (\front,\bodyTop);
+\begin{scope}
+  \clip (\back,\bodyBottom) rectangle (\front,\bodyTop);
+  \foreach \k in {-80,-74,...,80}{
+    \draw[Line,line width=.25pt]
+      (160,{\bodyBottom+\k}) -- (192,{\bodyBottom+\k+32});
+  }
+\end{scope}
+\draw[edge] (\back,\bodyBottom) rectangle (\front,\bodyTop);
+% Ledge section; the tip upper edge carries a 5 mm fillet (R5) so that it does not dig into the fingers.
+\pgfmathsetmacro{\rfil}{0.5*\sc}
+\filldraw[draw=Ledge,line width=.75pt,fill=LedgeFill]
+  (\front,\gripBottom) -- (\tip,\gripBottom)
+  {[rounded corners=\rfil mm] -- (\tip,\gripTop) -- (\tip-2,\gripTop)} -- (\front,\gripTop) -- cycle;
+\draw[Ledge,line width=1.35pt] (\front,\gripTop) -- (\tip-\rfil,\gripTop);
+\node[txt,fill=Body,inner sep=1mm] at (175,112.6) {本体};
+
+% Support is diagrammatic, not a specified suspension mechanism.
+\draw[Ink,line width=.9pt] (175,130) -- (175,136);
+\draw[Ink,line width=.5pt] (173.5,134.7) -- (176.5,135.5);
+\node[anchor=west,note] at (184,134.8) {上部から支持};
+
+% Section height dimensions to the LEFT of the material; labels in free space.
+\foreach \Y in {\gripTop,\gripBottom,\bodyBottom}{
+  \draw[ext] (152,\Y) -- (164,\Y);
+}
+\draw[dim] (155,\gripBottom) -- (155,\gripTop);
+\node[anchor=east,txt] at (151,98.25) {$5\,\mathrm{cm}$};
+\draw[dim] (155,\bodyBottom) -- (155,\gripBottom);
+\node[anchor=east,txt] at (151,75.25) {$15\,\mathrm{cm}$};
+
+% 3 cm is measured from the FRONT FACE to the TIP only.
+\draw[ext] (\front,105.8) -- (\front,125.5);
+\draw[ext] (\tip,105.8) -- (\tip,125.5);
+\draw[dim] (\front,122) -- (\tip,122);
+\node[txt,fill=white,inner sep=.65mm] at (188,127) {$3\,\mathrm{cm}$};
+
+% Hand profile: schematic centreline, entirely OUTSIDE the body and ledge.
+% The finger pad lies over the ledge's upper surface. Neither hand nor wrist
+% is drawn through the material. It is not an anatomical/kinematic model.
+\draw[Hand,line width=1.6pt]
+  (185.8,104.55) -- (188.6,104.55)
+  .. controls (192.4,104.55) and (194.0,101.5) .. (194.0,98.5)
+  -- (194.0,94.8)
+  .. controls (194.0,91.0) and (188.2,90.5) .. (187.0,86.2)
+  -- (186.2,81.7);
+\filldraw[draw=Hand,line width=.8pt,fill=HandFill] (186.2,80.5) circle[radius=1.2mm];
+\draw[Hand,line width=1.6pt] (186.2,79.3) -- (192.5,45.5);
+
+% Contact surface. Small red segment is the actual front face, never the tip.
+\draw[Contact,line width=1.2pt] (\front,73.5) -- (\front,86);
+
+% Callouts occupy their own strip on the right; no paragraph over the figure.
+\fill[Ledge] (184.7,104) circle[radius=.55mm];
+\draw[leader] (184.7,104) -- (201,113) -- (212,113);
+\node[anchor=west,lab,text=Ledge] at (215,114.4) {指を掛ける上面};
+\node[anchor=west,note] at (215,108.3) {前面から $3\,\mathrm{cm}$ 張り出す。先端上縁は R$5\,\mathrm{mm}$};
+
+\fill[Contact] (\front,76) circle[radius=.55mm];
+\draw[leader] (\front,76) -- (207,85) -- (212,85);
+\node[anchor=west,lab,text=Contact] at (215,88.4) {手首に干渉する面};
+\node[anchor=north west,align=left,note] at (215,83.8)
+  {体を奥へ振る際の，\\手首の移動を制限する。};
+
+\draw[leader] (189.5,61.7) -- (207,65) -- (212,65);
+\node[anchor=west,note,text=Hand] at (215,65) {手・前腕（模式）};
+
+% Free space below the finite body. The arc is a direction indicator only.
+\draw[<->,>=Latex,Ink,line width=.8pt]
+  (165,42) .. controls (169,24) and (200,24) .. (205,42);
+\node[anchor=west,lab] at (215,40.5) {下側は空間};
+\node[anchor=north west,align=left,note] at (215,35.8)
+  {本体下端より下で\\体を前後に振れる。};
+\draw[leader] (195,28.7) -- (209,31);
+
+% ---- Unambiguous modelling convention, separated from the views ----
+\draw[Line,line width=.7pt] (0,18) -- (273,18);
+\node[anchor=west,note,text=Ink] at (0,11.3)
+  {寸法の解釈：$5\,\mathrm{cm}$ は突起の鉛直高さ，$15\,\mathrm{cm}$ は突起下面から本体下端まで。先端上縁の丸みは R$5\,\mathrm{mm}$（シミュレーションの \texttt{edge\_radius}）。};
+\node[anchor=west,note] at (0,4.8)
+  {形状参照：添付資料「クリフディメンションの背面飛び移りの物理学」1ページ。支持機構・本体奥行き・上部高さ・手の形は模式。};
+\end{tikzpicture}
+\end{document}

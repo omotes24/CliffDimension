@@ -332,8 +332,18 @@ def build_xml(p: ModelParams | None = None) -> str:
             rgba="0.75 0.78 0.80 1" contype="2" conaffinity="1"/>
     </default>
   </default>
+  <visual>
+    <headlight ambient="0.35 0.35 0.35" diffuse="0.6 0.6 0.6"/>
+    <rgba haze="0.9 0.92 0.95 1"/>
+    <global offwidth="1280" offheight="960"/>
+  </visual>
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.95 0.96 0.98" rgb2="0.75 0.8 0.88" width="64" height="64"/>
+  </asset>
   <worldbody>
-    <light pos="0 -3 4" dir="0 0.5 -1" diffuse="0.8 0.8 0.8"/>
+    <light pos="1 -4 4" dir="0 0.6 -0.7" diffuse="0.9 0.9 0.9" specular="0.2 0.2 0.2"/>
+    <light pos="1 4 3" dir="0 -0.7 -0.6" diffuse="0.5 0.5 0.5"/>
+    <light pos="1 0 5" dir="0 0 -1" diffuse="0.4 0.4 0.4" directional="true"/>
     <geom name="water" type="plane" pos="0 0 -4.0" size="6 3 0.1" rgba="0.3 0.5 0.8 0.3" contype="0" conaffinity="0"/>
     {cliff("cliffA", +1)}
     {cliff("cliffB", -1)}

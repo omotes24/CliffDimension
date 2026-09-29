@@ -1,12 +1,15 @@
-% 世界モデルによるクリフディメンション攻略 — MIRU2025 形式（第28回…の表記は空欄）
+% 世界モデルによるクリフディメンション攻略 — MIRU2025 形式（ヘッダの回次・シンポジウム名は空欄）
 \documentclass[MIRU,submit]{miru2025j}
 \usepackage[dvipdfmx]{graphicx}
-\usepackage{amsmath,amssymb}
+\usepackage{amsmath,amssymb,bm}
 \usepackage{booktabs}
 \usepackage{url}
+\usepackage{multirow}
 \makeatletter
-\renewcommand{\signame}{}          % ヘッダの「第28回画像の認識・理解シンポジウム」を空欄にする
+\renewcommand{\signame}{}          % 「第28回画像の認識・理解シンポジウム」を空欄にする
 \makeatother
+\newcommand{\Upk}{U_{\mathrm{peak}}}
+\newcommand{\Eeff}{E_{\mathrm{eff}}}
 
 \begin{document}
 \title{世界モデルによるクリフディメンション攻略}
@@ -15,12 +18,138 @@
 \maketitle
 
 \section*{概要}
-（執筆中）
+上下動するクリフAから左右動するクリフBへの背面飛び移り（SASUKE クリフディメンション）を，
+3\,cm 突起の把持を含む力学課題として定式化し，決定論的な軌道最適化で「どの装置位相で離手すれば，
+どれだけの把持容量が必要か」を求めた．
+手先を基底とする平面5リンク人体を Hermite--Simpson 直接コロケーションで多相最適化し，
+離散化誤差を利用した非物理解を排除する不変量制約と 1\,ms 再積分による監査を導入した．
+片道時間 $T\in\{8,9.5,10,12\}$\,s，体重 $m\in\{60,75\}$\,kg，離手位相16点の計128条件で，
+必要両手把持容量は体重比 \textbf{2.3--2.6 BW} の範囲にあり，往路後半の離手が最小となること，
+最短距離の離手は最小負荷の離手と一致しないこと，離手指令の許容幅が閉ループ補正なしでは
+$\pm5$\,ms 程度しかないことを示した．
+さらに 31 関節＋指開閉2チャネルの MuJoCo 3次元人体環境と有限容量把持モデルを構築し，
+計画書の受入試験（重心誤差 $\le1$\,mm/s，角運動量 $\le0.1\%$，力積残差 $\le1\%$）に合格させた．
+世界モデル型強化学習はこの環境上の比較実験として位置づけ，本稿ではその前提となる
+物理的到達可能性と負荷構造を明らかにする．
 
 \section{はじめに}
-（執筆中）
+クリフディメンションは，上下に動く突起（クリフA）に両手でぶら下がった状態から体を振って離手し，
+空中で向きを変え，左右に動く突起（クリフB）を両手で捕捉する課題である．
+突起の奥行きは 3\,cm であり，捕捉の成否は重心の放物線だけでなく，手先の相対速度・掛かり代・
+指の把持容量に依存する．
+先行の計画書~\cite{plan} は MuJoCo 上の人体モデルと物理制約付き世界モデル＋SAC~\cite{janner2019,haarnoja2018}
+による学習を主法として提案したが，3\,cm 突起の捕捉は報酬が極端に疎で，
+学習が始まらない（成功軌道が一度も観測されない）危険がある．
+本研究では，学習に先立って「物理的に何が要求されるか」を決定論的に確定させることを目的とし，
+(i) 縮約モデルの軌道最適化による離手位相--必要把持容量マップ，
+(ii) 離手タイミングの許容幅，
+(iii) 3次元人体環境と把持モデルの実装・検証，を報告する．
+乱数に依存しない結果を先に固定することで，学習法の比較を「同じ物理課題の異なる解法」として
+公平に行える．
+
+\section{問題設定}
+\subsection{装置と座標系}
+$+x$ を A から B，$+y$ を鉛直上向きとし，B の把持面高さを $y=0$ に置く．
+先端点を $\bm p_A(t)=(0,h(t))$，$\bm p_B(t)=(x(t),0)$ とし，
+$u=t \bmod 2T$，$\phi=u/T\in[0,2)$ に対して進行率 $\rho_\epsilon(\phi)$ を用いて
+$x=1.80+0.90\rho_\epsilon$，$h=0.90(1-\rho_\epsilon)$ [m] とする．
+$\rho_\epsilon$ は端点で速度が 0 になる平滑化三角波（折り返し時間 $\epsilon=0.20$\,s）であり，
+$\phi<1$ が往路（A 下降・B 遠ざかる），$\phi\ge1$ が復路である．
+同じ $(x,h)$ が往路と復路で 1 回ずつ現れ，装置速度の向きだけが反転する．
+\subsection{突起形状}
+突起は前面から 3\,cm 張り出し，鉛直高さ 5\,cm，その下 15\,cm が本体前面（手首の移動を制限する面），
+それより下は開放空間である（体を本体の下に振り込める）．
+先端上縁には手への食い込みを避ける R\,5\,mm の丸みを与えた（\texttt{edge\_radius}）．
+\subsection{成功条件と負荷指標}
+A を両手で把持し胸を A に向けた静止状態から開始し，$2T$ 以内に離手，B を両手で捕捉して 2.0\,s
+保持できれば成功とする．
+把持負荷は両手合計の突起反力 $\bm R$ に対し $U=\|\bm R\|/F_{\mathrm{cap}}$，
+$\Upk=\max_t U$ で表す（$F_{\mathrm{cap}}$ は両手の把持容量，基準値 1300\,N）．
+努力指標は計画書の式に従い
+$\Eeff=\frac{1}{t_{\mathrm{ref}}}\int\{\frac1{n_j}\sum_j(\tau_j/\tau_j^{\mathrm{cap}})^2+U^2\}\,dt$ とする．
+
+\section{縮約モデルと軌道最適化}
+\subsection{平面5リンク人体}
+前腕＋手，上腕，体幹＋頭部，大腿，下腿の 5 リンク（左右は合算）を，
+de~Leva~\cite{deleva1996} の質量比・重心位置・回転半径を体重 $m$ に合わせて構成した
+（身長 1.75\,m 固定）．
+両手の掛かり線（PIP）を基底座標 $\bm p_h$ とし，
+$\bm q=(\bm p_h,\theta_1,\dots,\theta_5)$ の運動方程式
+$\bm M(\bm q)\ddot{\bm q}+\bm h(\bm q,\dot{\bm q})=\bm B\bm\tau+\bm J^\top\bm R$
+を CasADi で記号導出した．
+把持中は $\bm p_h$ が装置に従属し，$\bm R$ は拘束力として第 1,2 行から得られる．
+肘・肩・股・膝のトルク上限（両側合計 120/160/300/240\,N\,m），関節可動域，
+関節角速度 10\,rad/s，指令トルク変化率 $10\tau^{\mathrm{cap}}$/s を課した．
+\subsection{相構成と捕捉モデル}
+待機（静止把持）→振り（A に拘束）→飛行（自由鎖，内部トルクのみ）→捕捉→保持（B に拘束 2.0\,s）
+の多相問題とした．
+捕捉は掛かり線が B 先端に一致し，手先が把持面へ向かう（$v_{\mathrm{rel},y}\le0$，壁から離れる
+速度 $\le0.5$\,m/s，$\|\bm v_{\mathrm{rel}}\|\le4$\,m/s）ときの完全非弾性衝突として扱い，
+衝撃力積 $\bm\Lambda$ を $\bm M(\dot{\bm q}^+-\dot{\bm q}^-)=\bm J^\top\bm\Lambda$ から求める．
+捕捉負荷は力積を $\Delta_c=50$\,ms に均した力と捕捉直後の持続張力の重ね合わせ
+$U_{\mathrm{catch}}=(\|\bm\Lambda\|/\Delta_c+\|\bm R_H(0)\|)/F_{\mathrm{cap}}$ とした．
+突起反力には片側支持 $R_y\ge0$ と摩擦・引っ掛かり錐（壁から離れる向き $\mu_{\mathrm{out}}=1.0$，
+壁へ向かう向き $\mu_{\mathrm{in}}=2.0$）を課し，壁・突起との干渉は各部位の平滑化 max 制約で除いた．
+\subsection{目的関数と数値法}
+「必要把持容量の最小化」を主目的とし，$J=w_U\Upk+w_E\Eeff$（$w_U=10,w_E=1$）を
+最小化した．
+$\Upk$ は上図的に導入した epigraph 変数で，$\Upk\times1300$\,N がその離手位相で
+成功するために必要な両手容量である．
+離散化は圧縮型 Hermite--Simpson（振り 150，飛行 30，保持 60 区間，暗黙力学），
+求解は IPOPT~\cite{wachter2006}（CasADi~\cite{andersson2019}）とした．
+初期実装で最適化器が離散化誤差を利用して重心を推進する非物理解を返したため，
+飛行中の重心放物線・角運動量保存を許容帯付き制約として追加し，全解を RK4 1\,ms で
+再積分して一致を監査した（振り 0.2\,mrad，飛行 0.3\,mm 以下）．
+
+\section{3次元人体環境}
+計画書 \S5 に従い，体幹 3・頸 2・肩 3・肘 1・前腕回旋 1・手首 2・股 3・膝 1・足首 2（左右計 31）
+のヒンジ関節と指開閉 2 チャネルをもつ人体を MuJoCo 上に構成した（質量特性は de~Leva）．
+関節は トルク飽和付き PD サーボ，制御周期 20\,ms，物理刻み 1\,ms である．
+把持は MuJoCo の軟らかい点拘束（有限剛性）で実装し，各物理ステップで拘束力を読み出して
+片側支持・摩擦錐・容量（掛かり代・疲労に依存）を判定，超過分は粘塑性滑りとして積分し，
+滑り量 2\,cm または掛かりの喪失で剥離させる．
+係合には掛かり線が上面上にあること，掌が壁を向くこと，上向き速度が小さいことを要求し，
+瞬間的な位置合わせ・無限容量拘束・裏面からの吸着を許さない．
+半陰的 Euler 積分は放物運動に $g\,\Delta t/2\approx4.9$\,mm/s の系統誤差をもつため，
+空中区間は RK4，拘束・接触中は暗黙 Euler に切り替えた．
+受入試験（表~\ref{tab:accept}）はすべて自動テストとして同梱した．
+
+\begin{table}[t]
+\centering\small
+\caption{3次元環境の受入試験（計画書 \S13.3）}
+\label{tab:accept}
+\begin{tabular}{lll}
+\toprule
+検査 & 目標 & 結果 \\
+\midrule
+位置・周期 & 端点・周期一致，根元間$=$先端間$+6$\,cm & 一致 \\
+自由飛行 & 重心誤差 $\le1$\,mm/s & 0.008\,mm/s \\
+角運動量 & 無接触時変化 $\le0.1\%$ & 0.007\% \\
+捕捉の力積 & 式(12)残差 $\le1\%$ & 合格 \\
+数値収束 & 1 vs 0.5\,ms，10\,ms平均力差 $\le5\%$ & 1.9\% \\
+幾何・拘束 & 下方・裏面からの把持 0 件 & 合格 \\
+静的把持 & 両手反力$=mg$ & 誤差 $<0.1\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{結果}
+（グリッド計算完了後に記入）
+
+\section{議論と限界}
+（記入予定）
+
+\section{まとめ}
+（記入予定）
 
 \begin{thebibliography}{9}
+\bibitem{plan} 表紘太朗, ``Katsumi: クリフディメンションにおける力学・強化学習・世界モデル（実験計画書）,'' d-hacks, 2026.
 \bibitem{janner2019} M. Janner, J. Fu, M. Zhang, and S. Levine, ``When to trust your model: Model-based policy optimization,'' Proc. NeurIPS, 2019.
+\bibitem{haarnoja2018} T. Haarnoja, A. Zhou, P. Abbeel, and S. Levine, ``Soft actor-critic,'' Proc. ICML, 2018.
+\bibitem{deleva1996} P. de Leva, ``Adjustments to Zatsiorsky-Seluyanov's segment inertia parameters,'' J. Biomech., vol.~29, no.~9, pp.~1223--1230, 1996.
+\bibitem{wachter2006} A. W\"achter and L. T. Biegler, ``On the implementation of an interior-point filter line-search algorithm for large-scale nonlinear programming,'' Math. Program., vol.~106, pp.~25--57, 2006.
+\bibitem{andersson2019} J. A. E. Andersson et al., ``CasADi: a software framework for nonlinear optimization and optimal control,'' Math. Program. Comput., vol.~11, pp.~1--36, 2019.
+\bibitem{todorov2012} E. Todorov, T. Erez, and Y. Tassa, ``MuJoCo: A physics engine for model-based control,'' Proc. IROS, 2012.
+\bibitem{hafner2025} D. Hafner, J. Pasukonis, J. Ba, and T. Lillicrap, ``Mastering diverse control tasks through world models,'' Nature, vol.~640, pp.~647--653, 2025.
 \end{thebibliography}
 \end{document}

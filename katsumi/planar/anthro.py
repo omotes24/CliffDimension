@@ -74,7 +74,8 @@ def _combine(parts):
     return M, c, I
 
 
-def make_body(m: float, cap_scale: float = 1.0, grip_scale: float = 1.0, grip_offset: float = 0.12) -> Body:
+def make_body(m: float, cap_scale: float = 1.0, grip_scale: float = 1.0, grip_offset: float = 0.12,
+              mu_out: float | None = None) -> Body:
     """Build the lumped planar body for total mass m [kg].
 
     cap_scale  : multiplies joint torque capacities (plan Sec. 13.1: {0.7, 1.0, 1.3})
@@ -137,6 +138,8 @@ def make_body(m: float, cap_scale: float = 1.0, grip_scale: float = 1.0, grip_of
     body = Body(m=m, links=links)
     body.tau_cap = body.tau_cap * cap_scale
     body.f_cap = body.f_cap * grip_scale
+    if mu_out is not None:
+        body.mu_out = mu_out
     assert abs(sum(l.mass for l in links) - m) < 1e-9
     return body
 
