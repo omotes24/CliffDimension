@@ -510,6 +510,2034 @@
  },
  {
   "T": 16.0,
+  "m": 63.0,
+  "phi_l": 0.75,
+  "U_star": 1.1141842001182718,
+  "file": "sol_ref_T16_m63_phi0.750.pkl",
+  "plan_catch_window_s": 0.010000000000000009,
+  "plan_catch_deltas": [
+   0.0
+  ],
+  "plan_W_1.0": 0.0,
+  "plan_W_1.1": 0.0,
+  "plan_W_1.25": 0.0,
+  "plan_W_1.5": 0.0,
+  "plan_W_2.0": 0.0,
+  "plan_U0_max": 1.4276686663908587,
+  "plan_U0_catch": 1.4276686663908587,
+  "plan_U0_hold": 1.3876702594940593,
+  "plan_reason0": "cone exceeded",
+  "plan_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.7554474577261959
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.770668034836456
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.7883811715785873
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8116141486140737
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8430903512387647
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.883306493967817
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9317439427587764
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9828816418669011
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0334986535603672
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0814481109560696
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1094214536880553
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1147896104471136
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1147896104471136
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1147896104471136
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1147896104471136
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.114837734064812
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1149520657796959
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1149520657796959
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1149520657796959
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1149520657796959
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.200, vrel=(+1.73,+1.16))",
+    "U_max": 1.1149520657796959
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.163, vrel=(+1.94,+1.53))",
+    "U_max": 1.1149520657796959
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.051, vrel=(+0.66,+0.87))",
+    "U_max": 1.1154501927080736
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "cone exceeded",
+    "U_max": 1.4276686663908587
+   },
+   "0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.137, vrel=(+0.89,-2.28))",
+    "U_max": 1.1169942528182417
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   }
+  },
+  "hang_catch_window_s": 0.010000000000000009,
+  "hang_catch_deltas": [
+   0.0
+  ],
+  "hang_W_1.0": 0.0,
+  "hang_W_1.1": 0.0,
+  "hang_W_1.25": 0.0,
+  "hang_W_1.5": 0.0,
+  "hang_W_2.0": 0.0,
+  "hang_U0_max": 2.7601844046480255,
+  "hang_U0_catch": 1.0174075716917688,
+  "hang_U0_hold": 2.7601844046480255,
+  "hang_reason0": "lost hook",
+  "hang_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.7554474577261959
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.770668034836456
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.7883811715785873
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8116141486140737
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8430903512387647
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.883306493967817
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9317439427587764
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9828816418669011
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0334986535603672
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0814481109560696
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1094214536880553
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1147896104471136
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1147896104471136
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1147896104471136
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1147896104471136
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.114837734064812
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1149520657796959
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1149520657796959
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1149520657796959
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1149520657796959
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.200, vrel=(+1.73,+1.16))",
+    "U_max": 1.1149520657796959
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.163, vrel=(+1.94,+1.53))",
+    "U_max": 1.1149520657796959
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.051, vrel=(+0.66,+0.87))",
+    "U_max": 1.1154501927080736
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "lost hook",
+    "U_max": 2.7601844046480255
+   },
+   "0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.137, vrel=(+0.89,-2.28))",
+    "U_max": 1.1169942528182417
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1169942528182417
+   }
+  }
+ },
+ {
+  "T": 16.0,
+  "m": 66.0,
+  "phi_l": 0.25,
+  "U_star": 1.1767496967768054,
+  "file": "sol_ref_T16_m66_phi0.250.pkl",
+  "plan_catch_window_s": 0.010000000000000009,
+  "plan_catch_deltas": [
+   0.0
+  ],
+  "plan_W_1.0": 0.0,
+  "plan_W_1.1": 0.0,
+  "plan_W_1.25": 0.0,
+  "plan_W_1.5": 0.0,
+  "plan_W_2.0": 0.0,
+  "plan_U0_max": 1.4821418690354509,
+  "plan_U0_catch": 1.4821418690354509,
+  "plan_U0_hold": 1.4534708414917856,
+  "plan_reason0": "cone exceeded",
+  "plan_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8666549562994076
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8682517374739055
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.872536460997518
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8788703570261208
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8876455737079618
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9187473647605445
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.993421047629394
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.099897764256515
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1764381391365806
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "hit wall (y=-0.199, vrel=(+1.26,+1.34))",
+    "U_max": 1.1976265922487936
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.199, vrel=(+2.01,+2.09))",
+    "U_max": 1.1976265922487936
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.128, vrel=(+1.44,+1.88))",
+    "U_max": 1.1976265922487936
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.034, vrel=(+1.03,-0.78))",
+    "U_max": 1.1976265922487936
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "cone exceeded",
+    "U_max": 1.4821418690354509
+   },
+   "0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.081, vrel=(+0.96,-2.26))",
+    "U_max": 1.2247236006863513
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2695936722796994
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   }
+  },
+  "hang_catch_window_s": 0.010000000000000009,
+  "hang_catch_deltas": [
+   0.0
+  ],
+  "hang_W_1.0": 0.0,
+  "hang_W_1.1": 0.0,
+  "hang_W_1.25": 0.0,
+  "hang_W_1.5": 0.0,
+  "hang_W_2.0": 0.0,
+  "hang_U0_max": 2.9152039130479754,
+  "hang_U0_catch": 0.9923746145623822,
+  "hang_U0_hold": 2.9152039130479754,
+  "hang_reason0": "lost hook",
+  "hang_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8666549562994076
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8682517374739055
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.872536460997518
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8788703570261208
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8876455737079618
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9187473647605445
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.993421047629394
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.099897764256515
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1764381391365806
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1976265922487936
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "hit wall (y=-0.199, vrel=(+1.26,+1.34))",
+    "U_max": 1.1976265922487936
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.199, vrel=(+2.01,+2.09))",
+    "U_max": 1.1976265922487936
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.128, vrel=(+1.44,+1.88))",
+    "U_max": 1.1976265922487936
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.034, vrel=(+1.03,-0.78))",
+    "U_max": 1.1976265922487936
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "lost hook",
+    "U_max": 2.9152039130479754
+   },
+   "0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.081, vrel=(+0.96,-2.26))",
+    "U_max": 1.2247236006863513
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2695936722796994
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2752116764711743
+   }
+  }
+ },
+ {
+  "T": 16.0,
+  "m": 69.0,
+  "phi_l": 0.25,
+  "U_star": 1.2451351663720729,
+  "file": "sol_ref_T16_m69_phi0.250.pkl",
+  "plan_catch_window_s": 0.010000000000000009,
+  "plan_catch_deltas": [
+   0.0
+  ],
+  "plan_W_1.0": 0.0,
+  "plan_W_1.1": 0.0,
+  "plan_W_1.25": 0.0,
+  "plan_W_1.5": 0.0,
+  "plan_W_2.0": 0.0,
+  "plan_U0_max": 1.5515649985571875,
+  "plan_U0_catch": 1.5515649985571875,
+  "plan_U0_hold": 1.5328802575536455,
+  "plan_reason0": "cone exceeded",
+  "plan_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8941029686245745
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8956640456422339
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8983591775782492
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9018941170322249
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.917429382970167
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9657122658200129
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.065878219822668
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1814608867882812
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2541797916543138
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "hit wall (y=-0.199, vrel=(+1.07,+0.93))",
+    "U_max": 1.2675090929847639
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.196, vrel=(+2.31,+1.00))",
+    "U_max": 1.2675090929847639
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.130, vrel=(+1.61,+1.31))",
+    "U_max": 1.2675090929847639
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.036, vrel=(+0.85,-0.40))",
+    "U_max": 1.2675090929847639
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "cone exceeded",
+    "U_max": 1.5515649985571875
+   },
+   "0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.085, vrel=(+0.67,-1.86))",
+    "U_max": 1.2983343555906839
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3454080936703066
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   }
+  },
+  "hang_catch_window_s": 0.010000000000000009,
+  "hang_catch_deltas": [
+   0.0
+  ],
+  "hang_W_1.0": 0.0,
+  "hang_W_1.1": 0.0,
+  "hang_W_1.25": 0.0,
+  "hang_W_1.5": 0.0,
+  "hang_W_2.0": 0.0,
+  "hang_U0_max": 3.040459611551301,
+  "hang_U0_catch": 1.0687958142873177,
+  "hang_U0_hold": 3.040459611551301,
+  "hang_reason0": "lost hook",
+  "hang_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8941029686245745
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8956640456422339
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8983591775782492
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9018941170322249
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.917429382970167
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9657122658200129
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.065878219822668
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1814608867882812
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2541797916543138
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2675090929847639
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "hit wall (y=-0.199, vrel=(+1.07,+0.93))",
+    "U_max": 1.2675090929847639
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.196, vrel=(+2.31,+1.00))",
+    "U_max": 1.2675090929847639
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.130, vrel=(+1.61,+1.31))",
+    "U_max": 1.2675090929847639
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.036, vrel=(+0.85,-0.40))",
+    "U_max": 1.2675090929847639
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "lost hook",
+    "U_max": 3.040459611551301
+   },
+   "0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.085, vrel=(+0.67,-1.86))",
+    "U_max": 1.2983343555906839
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3454080936703066
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3512979657336153
+   }
+  }
+ },
+ {
+  "T": 16.0,
+  "m": 72.0,
+  "phi_l": 0.6875,
+  "U_star": 1.3144390476111152,
+  "file": "sol_ref_T16_m72_phi0.688.pkl",
+  "plan_catch_window_s": 0.010000000000000009,
+  "plan_catch_deltas": [
+   0.0
+  ],
+  "plan_W_1.0": 0.0,
+  "plan_W_1.1": 0.0,
+  "plan_W_1.25": 0.0,
+  "plan_W_1.5": 0.0,
+  "plan_W_2.0": 0.0,
+  "plan_U0_max": 1.65175902811272,
+  "plan_U0_catch": 1.65175902811272,
+  "plan_U0_hold": 1.632109435593108,
+  "plan_reason0": "cone exceeded",
+  "plan_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0279366079030834
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0637150747141584
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.101970432902606
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.139657604703362
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1684156915732387
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.184673733606125
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2247468851927674
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2503108772318319
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2736302891212203
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3067102289347237
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "hit wall (y=-0.193, vrel=(+3.18,-1.48))",
+    "U_max": 1.3225538342861667
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.157, vrel=(+2.76,-0.90))",
+    "U_max": 1.3225538342861667
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.110, vrel=(+1.94,+0.08))",
+    "U_max": 1.3230284603338258
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.037, vrel=(+0.99,-0.41))",
+    "U_max": 1.3254713133739375
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "cone exceeded",
+    "U_max": 1.65175902811272
+   },
+   "0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.142, vrel=(+0.84,-2.38))",
+    "U_max": 1.3513350088183478
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4755761259798226
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.6713363369766416
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8234448362010296
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   }
+  },
+  "hang_catch_window_s": 0.010000000000000009,
+  "hang_catch_deltas": [
+   0.0
+  ],
+  "hang_W_1.0": 0.0,
+  "hang_W_1.1": 0.0,
+  "hang_W_1.25": 0.0,
+  "hang_W_1.5": 0.0,
+  "hang_W_2.0": 0.0,
+  "hang_U0_max": 3.0791763572943465,
+  "hang_U0_catch": 1.0300418580749238,
+  "hang_U0_hold": 3.0791763572943465,
+  "hang_reason0": "lost hook",
+  "hang_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0279366079030834
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0637150747141584
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.101970432902606
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.139657604703362
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1684156915732387
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.184673733606125
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2247468851927674
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2503108772318319
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2736302891212203
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3067102289347237
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3225538342861667
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "hit wall (y=-0.193, vrel=(+3.18,-1.48))",
+    "U_max": 1.3225538342861667
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.157, vrel=(+2.76,-0.90))",
+    "U_max": 1.3225538342861667
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.110, vrel=(+1.94,+0.08))",
+    "U_max": 1.3230284603338258
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.037, vrel=(+0.99,-0.41))",
+    "U_max": 1.3254713133739375
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "lost hook",
+    "U_max": 3.0791763572943465
+   },
+   "0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.142, vrel=(+0.84,-2.38))",
+    "U_max": 1.3513350088183478
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4755761259798226
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.6713363369766416
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8234448362010296
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.828956211489573
+   }
+  }
+ },
+ {
+  "T": 16.0,
   "m": 75.0,
   "phi_l": 0.1875,
   "U_star": 1.3640425381129002,
@@ -1016,2546 +3044,11 @@
   }
  },
  {
-  "T": 19.0,
+  "T": 17.0,
   "m": 60.0,
-  "phi_l": 0.6875,
-  "U_star": 1.066366687464225,
-  "file": "sol_ref_T19_m60_phi0.688.pkl",
-  "plan_catch_window_s": 0.010000000000000009,
-  "plan_catch_deltas": [
-   0.0
-  ],
-  "plan_W_1.0": 0.0,
-  "plan_W_1.1": 0.0,
-  "plan_W_1.25": 0.0,
-  "plan_W_1.5": 0.0,
-  "plan_W_2.0": 0.0,
-  "plan_U0_max": 1.3616636539211786,
-  "plan_U0_catch": 1.3616636539211786,
-  "plan_U0_hold": 1.3054629019122272,
-  "plan_reason0": "cone exceeded",
-  "plan_detail": {
-   "-0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8170673090685274
-   },
-   "-0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8377220341267172
-   },
-   "-0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8604812471586055
-   },
-   "-0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8855445616410244
-   },
-   "-0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.9137356397757322
-   },
-   "-0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.9460270309093469
-   },
-   "-0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.9818879794451326
-   },
-   "-0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.013920229269766
-   },
-   "-0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0375475841214237
-   },
-   "-0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0548960118507527
-   },
-   "-0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0646481744286598
-   },
-   "-0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0655143354557732
-   },
-   "-0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0655143354557732
-   },
-   "-0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0677106252527926
-   },
-   "-0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0677106252527926
-   },
-   "-0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0677106252527926
-   },
-   "-0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0677106252527926
-   },
-   "-0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0677106252527926
-   },
-   "-0.025": {
-    "caught": false,
-    "reason": "hit wall (y=-0.183, vrel=(+3.16,-1.54))",
-    "U_max": 1.0677106252527926
-   },
-   "-0.02": {
-    "caught": false,
-    "reason": "hit wall (y=-0.157, vrel=(+2.88,-1.17))",
-    "U_max": 1.0677106252527926
-   },
-   "-0.015": {
-    "caught": false,
-    "reason": "hit wall (y=-0.127, vrel=(+2.41,-0.62))",
-    "U_max": 1.0677106252527926
-   },
-   "-0.01": {
-    "caught": false,
-    "reason": "hit wall (y=-0.086, vrel=(+1.57,+0.20))",
-    "U_max": 1.0677106252527926
-   },
-   "-0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.033, vrel=(+1.18,-0.99))",
-    "U_max": 1.0677106252527926
-   },
-   "0.0": {
-    "caught": true,
-    "reason": "cone exceeded",
-    "U_max": 1.3616636539211786
-   },
-   "0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.097, vrel=(+1.24,-2.60))",
-    "U_max": 1.1407133589097864
-   },
-   "0.01": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.315246601660222
-   },
-   "0.015": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5472296434413277
-   },
-   "0.02": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   }
-  },
-  "hang_catch_window_s": 0.010000000000000009,
-  "hang_catch_deltas": [
-   0.0
-  ],
-  "hang_W_1.0": 0.0,
-  "hang_W_1.1": 0.0,
-  "hang_W_1.25": 0.0,
-  "hang_W_1.5": 0.0,
-  "hang_W_2.0": 0.0,
-  "hang_U0_max": 2.629528749238709,
-  "hang_U0_catch": 0.879291202262168,
-  "hang_U0_hold": 2.629528749238709,
-  "hang_reason0": "lost hook",
-  "hang_detail": {
-   "-0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8170673090685274
-   },
-   "-0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8377220341267172
-   },
-   "-0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8604812471586055
-   },
-   "-0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8855445616410244
-   },
-   "-0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.9137356397757322
-   },
-   "-0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.9460270309093469
-   },
-   "-0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.9818879794451326
-   },
-   "-0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.013920229269766
-   },
-   "-0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0375475841214237
-   },
-   "-0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0548960118507527
-   },
-   "-0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0646481744286598
-   },
-   "-0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0655143354557732
-   },
-   "-0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0655143354557732
-   },
-   "-0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0677106252527926
-   },
-   "-0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0677106252527926
-   },
-   "-0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0677106252527926
-   },
-   "-0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0677106252527926
-   },
-   "-0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0677106252527926
-   },
-   "-0.025": {
-    "caught": false,
-    "reason": "hit wall (y=-0.183, vrel=(+3.16,-1.54))",
-    "U_max": 1.0677106252527926
-   },
-   "-0.02": {
-    "caught": false,
-    "reason": "hit wall (y=-0.157, vrel=(+2.88,-1.17))",
-    "U_max": 1.0677106252527926
-   },
-   "-0.015": {
-    "caught": false,
-    "reason": "hit wall (y=-0.127, vrel=(+2.41,-0.62))",
-    "U_max": 1.0677106252527926
-   },
-   "-0.01": {
-    "caught": false,
-    "reason": "hit wall (y=-0.086, vrel=(+1.57,+0.20))",
-    "U_max": 1.0677106252527926
-   },
-   "-0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.033, vrel=(+1.18,-0.99))",
-    "U_max": 1.0677106252527926
-   },
-   "0.0": {
-    "caught": true,
-    "reason": "lost hook",
-    "U_max": 2.629528749238709
-   },
-   "0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.097, vrel=(+1.24,-2.60))",
-    "U_max": 1.1407133589097864
-   },
-   "0.01": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.315246601660222
-   },
-   "0.015": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5472296434413277
-   },
-   "0.02": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   },
-   "0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.6842520904290457
-   }
-  }
- },
- {
-  "T": 19.0,
-  "m": 75.0,
-  "phi_l": 0.625,
-  "U_star": 1.3854889979679743,
-  "file": "sol_ref_T19_m75_phi0.625.pkl",
-  "plan_catch_window_s": 0.010000000000000009,
-  "plan_catch_deltas": [
-   0.0
-  ],
-  "plan_W_1.0": 0.0,
-  "plan_W_1.1": 0.0,
-  "plan_W_1.25": 0.0,
-  "plan_W_1.5": 0.0,
-  "plan_W_2.0": 0.0,
-  "plan_U0_max": 1.738688631285713,
-  "plan_U0_catch": 1.738688631285713,
-  "plan_U0_hold": 1.7223089157354974,
-  "plan_reason0": "cone exceeded",
-  "plan_detail": {
-   "-0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.333400467375918
-   },
-   "-0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3607806593409386
-   },
-   "-0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.377705001977052
-   },
-   "-0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3879840569747828
-   },
-   "-0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3904133068724789
-   },
-   "-0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3904133068724789
-   },
-   "-0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3904133068724789
-   },
-   "-0.02": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3904133068724789
-   },
-   "-0.015": {
-    "caught": false,
-    "reason": "hit wall (y=-0.200, vrel=(+1.99,+1.71))",
-    "U_max": 1.3904133068724789
-   },
-   "-0.01": {
-    "caught": false,
-    "reason": "hit wall (y=-0.158, vrel=(+2.30,+1.75))",
-    "U_max": 1.3904133068724789
-   },
-   "-0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.038, vrel=(+0.64,+0.30))",
-    "U_max": 1.3904133068724789
-   },
-   "0.0": {
-    "caught": true,
-    "reason": "cone exceeded",
-    "U_max": 1.738688631285713
-   },
-   "0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.131, vrel=(+0.68,-2.21))",
-    "U_max": 1.3904133068724789
-   },
-   "0.01": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4065713011765029
-   },
-   "0.015": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.49784337425016
-   },
-   "0.02": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.571921845310144
-   },
-   "0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   }
-  },
-  "hang_catch_window_s": 0.010000000000000009,
-  "hang_catch_deltas": [
-   0.0
-  ],
-  "hang_W_1.0": 0.0,
-  "hang_W_1.1": 0.0,
-  "hang_W_1.25": 0.0,
-  "hang_W_1.5": 0.0,
-  "hang_W_2.0": 0.0,
-  "hang_U0_max": 3.216004026410221,
-  "hang_U0_catch": 1.0596252147466654,
-  "hang_U0_hold": 3.216004026410221,
-  "hang_reason0": "lost hook",
-  "hang_detail": {
-   "-0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.333400467375918
-   },
-   "-0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3607806593409386
-   },
-   "-0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.377705001977052
-   },
-   "-0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3879840569747828
-   },
-   "-0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3899122819494694
-   },
-   "-0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3904133068724789
-   },
-   "-0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3904133068724789
-   },
-   "-0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3904133068724789
-   },
-   "-0.02": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3904133068724789
-   },
-   "-0.015": {
-    "caught": false,
-    "reason": "hit wall (y=-0.200, vrel=(+1.99,+1.71))",
-    "U_max": 1.3904133068724789
-   },
-   "-0.01": {
-    "caught": false,
-    "reason": "hit wall (y=-0.158, vrel=(+2.30,+1.75))",
-    "U_max": 1.3904133068724789
-   },
-   "-0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.038, vrel=(+0.64,+0.30))",
-    "U_max": 1.3904133068724789
-   },
-   "0.0": {
-    "caught": true,
-    "reason": "lost hook",
-    "U_max": 3.216004026410221
-   },
-   "0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.131, vrel=(+0.68,-2.21))",
-    "U_max": 1.3904133068724789
-   },
-   "0.01": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4065713011765029
-   },
-   "0.015": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.49784337425016
-   },
-   "0.02": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.571921845310144
-   },
-   "0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   },
-   "0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.5749824252692715
-   }
-  }
- },
- {
-  "T": 20.0,
-  "m": 60.0,
-  "phi_l": 0.6875,
-  "U_star": 1.0509332036419754,
-  "file": "sol_ref_T20_m60_phi0.688.pkl",
-  "plan_catch_window_s": 0.010000000000000009,
-  "plan_catch_deltas": [
-   0.0
-  ],
-  "plan_W_1.0": 0.0,
-  "plan_W_1.1": 0.0,
-  "plan_W_1.25": 0.0,
-  "plan_W_1.5": 0.0,
-  "plan_W_2.0": 0.0,
-  "plan_U0_max": 1.3503438407529604,
-  "plan_U0_catch": 1.3503438407529604,
-  "plan_U0_hold": 1.2973392064741436,
-  "plan_reason0": "cone exceeded",
-  "plan_detail": {
-   "-0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8195732029095849
-   },
-   "-0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8244766366649653
-   },
-   "-0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8305703557821311
-   },
-   "-0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8408555841435672
-   },
-   "-0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8581767094665952
-   },
-   "-0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8858672941500991
-   },
-   "-0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.928770432157792
-   },
-   "-0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.9810254223532895
-   },
-   "-0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0215649292278364
-   },
-   "-0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0421593910812785
-   },
-   "-0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.050500764254907
-   },
-   "-0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0513098536199996
-   },
-   "-0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0513098536199996
-   },
-   "-0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.052208178792669
-   },
-   "-0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.052208178792669
-   },
-   "-0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.052208178792669
-   },
-   "-0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0522835670020978
-   },
-   "-0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0522835670020978
-   },
-   "-0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0522835670020978
-   },
-   "-0.02": {
-    "caught": false,
-    "reason": "hit wall (y=-0.199, vrel=(+1.51,+0.99))",
-    "U_max": 1.0522835670020978
-   },
-   "-0.015": {
-    "caught": false,
-    "reason": "hit wall (y=-0.184, vrel=(+2.40,+0.57))",
-    "U_max": 1.0522835670020978
-   },
-   "-0.01": {
-    "caught": false,
-    "reason": "hit wall (y=-0.126, vrel=(+1.72,+1.11))",
-    "U_max": 1.0522835670020978
-   },
-   "-0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.033, vrel=(+0.68,+0.08))",
-    "U_max": 1.0522835670020978
-   },
-   "0.0": {
-    "caught": true,
-    "reason": "cone exceeded",
-    "U_max": 1.3503438407529604
-   },
-   "0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.109, vrel=(+1.23,-2.64))",
-    "U_max": 1.1076949226695607
-   },
-   "0.01": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.2312422739429267
-   },
-   "0.015": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3292925076936903
-   },
-   "0.02": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   }
-  },
-  "hang_catch_window_s": 0.010000000000000009,
-  "hang_catch_deltas": [
-   0.0
-  ],
-  "hang_W_1.0": 0.0,
-  "hang_W_1.1": 0.0,
-  "hang_W_1.25": 0.0,
-  "hang_W_1.5": 0.0,
-  "hang_W_2.0": 0.0,
-  "hang_U0_max": 2.6784228522132922,
-  "hang_U0_catch": 0.8507587202186406,
-  "hang_U0_hold": 2.6784228522132922,
-  "hang_reason0": "lost hook",
-  "hang_detail": {
-   "-0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8195732029095849
-   },
-   "-0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8244766366649653
-   },
-   "-0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8305703557821311
-   },
-   "-0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8408555841435672
-   },
-   "-0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8581767094665952
-   },
-   "-0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8858672941500991
-   },
-   "-0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.928770432157792
-   },
-   "-0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.9810254223532895
-   },
-   "-0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0215649292278364
-   },
-   "-0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0421593910812785
-   },
-   "-0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.050500764254907
-   },
-   "-0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0513098536199996
-   },
-   "-0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0513098536199996
-   },
-   "-0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.052208178792669
-   },
-   "-0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.052208178792669
-   },
-   "-0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.052208178792669
-   },
-   "-0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0522835670020978
-   },
-   "-0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0522835670020978
-   },
-   "-0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0522835670020978
-   },
-   "-0.02": {
-    "caught": false,
-    "reason": "hit wall (y=-0.199, vrel=(+1.51,+0.99))",
-    "U_max": 1.0522835670020978
-   },
-   "-0.015": {
-    "caught": false,
-    "reason": "hit wall (y=-0.184, vrel=(+2.40,+0.57))",
-    "U_max": 1.0522835670020978
-   },
-   "-0.01": {
-    "caught": false,
-    "reason": "hit wall (y=-0.126, vrel=(+1.72,+1.11))",
-    "U_max": 1.0522835670020978
-   },
-   "-0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.033, vrel=(+0.68,+0.08))",
-    "U_max": 1.0522835670020978
-   },
-   "0.0": {
-    "caught": true,
-    "reason": "lost hook",
-    "U_max": 2.6784228522132922
-   },
-   "0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.109, vrel=(+1.23,-2.64))",
-    "U_max": 1.1076949226695607
-   },
-   "0.01": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.2312422739429267
-   },
-   "0.015": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3292925076936903
-   },
-   "0.02": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   },
-   "0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3375331640217827
-   }
-  }
- },
- {
-  "T": 20.0,
-  "m": 75.0,
-  "phi_l": 0.6875,
-  "U_star": 1.357133093804057,
-  "file": "sol_ref_T20_m75_phi0.688.pkl",
-  "plan_catch_window_s": 0.010000000000000009,
-  "plan_catch_deltas": [
-   0.0
-  ],
-  "plan_W_1.0": 0.0,
-  "plan_W_1.1": 0.0,
-  "plan_W_1.25": 0.0,
-  "plan_W_1.5": 0.0,
-  "plan_W_2.0": 0.0,
-  "plan_U0_max": 1.703917500089602,
-  "plan_U0_catch": 1.703917500089602,
-  "plan_U0_hold": 1.6945379906308122,
-  "plan_reason0": "cone exceeded",
-  "plan_detail": {
-   "-0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.9933421247907857
-   },
-   "-0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0077677849398252
-   },
-   "-0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0189283028024878
-   },
-   "-0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0314927258414772
-   },
-   "-0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.062489041091446
-   },
-   "-0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.1184050076026253
-   },
-   "-0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.1866041615647323
-   },
-   "-0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.2580142533199405
-   },
-   "-0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3196441449916825
-   },
-   "-0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3531321486288561
-   },
-   "-0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3611995606740408
-   },
-   "-0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3611995606740408
-   },
-   "-0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3670165855532967
-   },
-   "-0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3670165855532967
-   },
-   "-0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3670165855532967
-   },
-   "-0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3670165855532967
-   },
-   "-0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3670165855532967
-   },
-   "-0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3670165855532967
-   },
-   "-0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3670165855532967
-   },
-   "-0.02": {
-    "caught": false,
-    "reason": "hit wall (y=-0.199, vrel=(+1.00,+1.00))",
-    "U_max": 1.3670165855532967
-   },
-   "-0.015": {
-    "caught": false,
-    "reason": "hit wall (y=-0.199, vrel=(+1.84,+1.85))",
-    "U_max": 1.3670165855532967
-   },
-   "-0.01": {
-    "caught": false,
-    "reason": "hit wall (y=-0.148, vrel=(+1.68,+1.94))",
-    "U_max": 1.3670165855532967
-   },
-   "-0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.033, vrel=(+0.80,-0.20))",
-    "U_max": 1.3670165855532967
-   },
-   "0.0": {
-    "caught": true,
-    "reason": "cone exceeded",
-    "U_max": 1.703917500089602
-   },
-   "0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.089, vrel=(+0.64,-1.91))",
-    "U_max": 1.3766319092057255
-   },
-   "0.01": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3988433064492696
-   },
-   "0.015": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.02": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   }
-  },
-  "hang_catch_window_s": 0.010000000000000009,
-  "hang_catch_deltas": [
-   0.0
-  ],
-  "hang_W_1.0": 0.0,
-  "hang_W_1.1": 0.0,
-  "hang_W_1.25": 0.0,
-  "hang_W_1.5": 0.0,
-  "hang_W_2.0": 0.0,
-  "hang_U0_max": 3.223300826151921,
-  "hang_U0_catch": 1.1093284755729105,
-  "hang_U0_hold": 3.223300826151921,
-  "hang_reason0": "lost hook",
-  "hang_detail": {
-   "-0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.9933421247907857
-   },
-   "-0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0077677849398252
-   },
-   "-0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0189283028024878
-   },
-   "-0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0314927258414772
-   },
-   "-0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.062489041091446
-   },
-   "-0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.1184050076026253
-   },
-   "-0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.1866041615647323
-   },
-   "-0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.2580142533199405
-   },
-   "-0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3196441449916825
-   },
-   "-0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3531321486288561
-   },
-   "-0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3611995606740408
-   },
-   "-0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3611995606740408
-   },
-   "-0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3670165855532967
-   },
-   "-0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3670165855532967
-   },
-   "-0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3670165855532967
-   },
-   "-0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3670165855532967
-   },
-   "-0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3670165855532967
-   },
-   "-0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3670165855532967
-   },
-   "-0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3670165855532967
-   },
-   "-0.02": {
-    "caught": false,
-    "reason": "hit wall (y=-0.199, vrel=(+1.00,+1.00))",
-    "U_max": 1.3670165855532967
-   },
-   "-0.015": {
-    "caught": false,
-    "reason": "hit wall (y=-0.199, vrel=(+1.84,+1.85))",
-    "U_max": 1.3670165855532967
-   },
-   "-0.01": {
-    "caught": false,
-    "reason": "hit wall (y=-0.148, vrel=(+1.68,+1.94))",
-    "U_max": 1.3670165855532967
-   },
-   "-0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.033, vrel=(+0.80,-0.20))",
-    "U_max": 1.3670165855532967
-   },
-   "0.0": {
-    "caught": true,
-    "reason": "lost hook",
-    "U_max": 3.223300826151921
-   },
-   "0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.089, vrel=(+0.64,-1.91))",
-    "U_max": 1.3766319092057255
-   },
-   "0.01": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3988433064492696
-   },
-   "0.015": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.02": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   },
-   "0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4000331173018352
-   }
-  }
- },
- {
-  "T": 24.0,
-  "m": 60.0,
-  "phi_l": 0.3125,
-  "U_star": 1.0563573837325948,
-  "file": "sol_ref_T24_m60_phi0.312.pkl",
-  "plan_catch_window_s": 0.010000000000000009,
-  "plan_catch_deltas": [
-   0.0
-  ],
-  "plan_W_1.0": 0.0,
-  "plan_W_1.1": 0.0,
-  "plan_W_1.25": 0.0,
-  "plan_W_1.5": 0.0,
-  "plan_W_2.0": 0.0,
-  "plan_U0_max": 1.3528748553696197,
-  "plan_U0_catch": 1.3528748553696197,
-  "plan_U0_hold": 1.2995105085977434,
-  "plan_reason0": "cone exceeded",
-  "plan_detail": {
-   "-0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8508921635536222
-   },
-   "-0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8508921635536222
-   },
-   "-0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8517251388216452
-   },
-   "-0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8709352736842978
-   },
-   "-0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8932694858929265
-   },
-   "-0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.9254798448507112
-   },
-   "-0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.9690083322156581
-   },
-   "-0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0196558439740362
-   },
-   "-0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.051989333502536
-   },
-   "-0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.025": {
-    "caught": false,
-    "reason": "hit wall (y=-0.200, vrel=(+0.87,+0.67))",
-    "U_max": 1.0596887927828653
-   },
-   "-0.02": {
-    "caught": false,
-    "reason": "hit wall (y=-0.199, vrel=(+2.09,+0.75))",
-    "U_max": 1.0596887927828653
-   },
-   "-0.015": {
-    "caught": false,
-    "reason": "hit wall (y=-0.168, vrel=(+2.25,+0.64))",
-    "U_max": 1.0596887927828653
-   },
-   "-0.01": {
-    "caught": false,
-    "reason": "hit wall (y=-0.112, vrel=(+1.55,+1.17))",
-    "U_max": 1.0596887927828653
-   },
-   "-0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.030, vrel=(+0.92,-0.58))",
-    "U_max": 1.0596887927828653
-   },
-   "0.0": {
-    "caught": true,
-    "reason": "cone exceeded",
-    "U_max": 1.3528748553696197
-   },
-   "0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.105, vrel=(+1.13,-2.53))",
-    "U_max": 1.1547548340293539
-   },
-   "0.01": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3075742752159176
-   },
-   "0.015": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.419860516018669
-   },
-   "0.02": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   }
-  },
-  "hang_catch_window_s": 0.010000000000000009,
-  "hang_catch_deltas": [
-   0.0
-  ],
-  "hang_W_1.0": 0.0,
-  "hang_W_1.1": 0.0,
-  "hang_W_1.25": 0.0,
-  "hang_W_1.5": 0.0,
-  "hang_W_2.0": 0.0,
-  "hang_U0_max": 2.675098531805338,
-  "hang_U0_catch": 0.8700836040072658,
-  "hang_U0_hold": 2.675098531805338,
-  "hang_reason0": "lost hook",
-  "hang_detail": {
-   "-0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8508921635536222
-   },
-   "-0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8508921635536222
-   },
-   "-0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8517251388216452
-   },
-   "-0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8709352736842978
-   },
-   "-0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.8932694858929265
-   },
-   "-0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.9254798448507112
-   },
-   "-0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 0.9690083322156581
-   },
-   "-0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0196558439740362
-   },
-   "-0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.051989333502536
-   },
-   "-0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.0596887927828653
-   },
-   "-0.025": {
-    "caught": false,
-    "reason": "hit wall (y=-0.200, vrel=(+0.87,+0.67))",
-    "U_max": 1.0596887927828653
-   },
-   "-0.02": {
-    "caught": false,
-    "reason": "hit wall (y=-0.199, vrel=(+2.09,+0.75))",
-    "U_max": 1.0596887927828653
-   },
-   "-0.015": {
-    "caught": false,
-    "reason": "hit wall (y=-0.168, vrel=(+2.25,+0.64))",
-    "U_max": 1.0596887927828653
-   },
-   "-0.01": {
-    "caught": false,
-    "reason": "hit wall (y=-0.112, vrel=(+1.55,+1.17))",
-    "U_max": 1.0596887927828653
-   },
-   "-0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.030, vrel=(+0.92,-0.58))",
-    "U_max": 1.0596887927828653
-   },
-   "0.0": {
-    "caught": true,
-    "reason": "lost hook",
-    "U_max": 2.675098531805338
-   },
-   "0.005": {
-    "caught": false,
-    "reason": "hit wall (y=-0.105, vrel=(+1.13,-2.53))",
-    "U_max": 1.1547548340293539
-   },
-   "0.01": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3075742752159176
-   },
-   "0.015": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.419860516018669
-   },
-   "0.02": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.025": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.03": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.04": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.05": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.06": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.07": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.08": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.09": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.1": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.11": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.12": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.13": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.14": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.15": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.16": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.17": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.18": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.19": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   },
-   "0.2": {
-    "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.4354153196242627
-   }
-  }
- },
- {
-  "T": 24.0,
-  "m": 75.0,
   "phi_l": 0.25,
-  "U_star": 1.3549783720064659,
-  "file": "sol_ref_T24_m75_phi0.250.pkl",
+  "U_star": 1.0651500093656514,
+  "file": "sol_ref_T17_m60_phi0.250.pkl",
   "plan_catch_window_s": 0.010000000000000009,
   "plan_catch_deltas": [
    0.0
@@ -3565,245 +3058,245 @@
   "plan_W_1.25": 0.0,
   "plan_W_1.5": 0.0,
   "plan_W_2.0": 0.0,
-  "plan_U0_max": 1.6996147781754811,
-  "plan_U0_catch": 1.6996147781754811,
-  "plan_U0_hold": 1.6940188684398192,
+  "plan_U0_max": 1.3589603693434325,
+  "plan_U0_catch": 1.3589603693434325,
+  "plan_U0_hold": 1.3020500205522147,
   "plan_reason0": "cone exceeded",
   "plan_detail": {
    "-0.2": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.0136006715503343
+    "U_max": 0.7751112680592313
    },
    "-0.19": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.0271194389789697
+    "U_max": 0.7810739499164876
    },
    "-0.18": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.0403025158560733
+    "U_max": 0.7890977679617868
    },
    "-0.17": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.0552820985597977
+    "U_max": 0.7957880413137054
    },
    "-0.16": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.0809156997029303
+    "U_max": 0.8095482823419125
    },
    "-0.15": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.1222915153387654
+    "U_max": 0.8438052366829264
    },
    "-0.14": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.1776920096565164
+    "U_max": 0.9102254265652789
    },
    "-0.13": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.2442810221273721
+    "U_max": 0.9907910882479797
    },
    "-0.12": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.312845195147325
+    "U_max": 1.050758430513631
    },
    "-0.11": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3492792506109001
+    "U_max": 1.0718475160540315
    },
    "-0.1": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3575574782453272
+    "U_max": 1.0718475160540315
    },
    "-0.09": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3575574782453272
+    "U_max": 1.0718475160540315
    },
    "-0.08": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3575574782453272
+    "U_max": 1.0718475160540315
    },
    "-0.07": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3575574782453272
+    "U_max": 1.0718475160540315
    },
    "-0.06": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3575574782453272
+    "U_max": 1.0718475160540315
    },
    "-0.05": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3576129085291897
+    "U_max": 1.0718475160540315
    },
    "-0.04": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3576129085291897
+    "U_max": 1.0718475160540315
    },
    "-0.03": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3576129085291897
+    "U_max": 1.0718475160540315
    },
    "-0.025": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3576129085291897
+    "U_max": 1.0718475160540315
    },
    "-0.02": {
     "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3576129085291897
+    "reason": "hit wall (y=-0.200, vrel=(+1.70,+1.17))",
+    "U_max": 1.0718475160540315
    },
    "-0.015": {
     "caught": false,
-    "reason": "hit wall (y=-0.200, vrel=(+1.78,+1.64))",
-    "U_max": 1.3576129085291897
+    "reason": "hit wall (y=-0.178, vrel=(+2.06,+1.35))",
+    "U_max": 1.0718475160540315
    },
    "-0.01": {
     "caught": false,
-    "reason": "hit wall (y=-0.153, vrel=(+1.71,+1.77))",
-    "U_max": 1.3588025113798197
+    "reason": "hit wall (y=-0.112, vrel=(+1.46,+1.32))",
+    "U_max": 1.0718475160540315
    },
    "-0.005": {
     "caught": false,
-    "reason": "hit wall (y=-0.037, vrel=(+0.65,+0.06))",
-    "U_max": 1.3604827484743474
+    "reason": "hit wall (y=-0.035, vrel=(+1.07,-0.81))",
+    "U_max": 1.0718475160540315
    },
    "0.0": {
     "caught": true,
     "reason": "cone exceeded",
-    "U_max": 1.6996147781754811
+    "U_max": 1.3589603693434325
    },
    "0.005": {
     "caught": false,
-    "reason": "hit wall (y=-0.124, vrel=(+0.76,-2.40))",
-    "U_max": 1.441346165342123
+    "reason": "hit wall (y=-0.093, vrel=(+0.71,-2.03))",
+    "U_max": 1.1243049929853308
    },
    "0.01": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.6800442757755962
+    "U_max": 1.1856677414241539
    },
    "0.015": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.9665321130965752
+    "U_max": 1.2045796386946495
    },
    "0.02": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1392299652156552
+    "U_max": 1.2045796386946495
    },
    "0.025": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.03": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.04": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.05": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.06": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.07": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.08": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.09": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.1": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.11": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.12": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.13": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.14": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.15": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.16": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.17": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.18": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.19": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.2": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    }
   },
   "hang_catch_window_s": 0.010000000000000009,
@@ -3815,245 +3308,2275 @@
   "hang_W_1.25": 0.0,
   "hang_W_1.5": 0.0,
   "hang_W_2.0": 0.0,
-  "hang_U0_max": 3.263988893149896,
-  "hang_U0_catch": 1.0685540813570953,
-  "hang_U0_hold": 3.263988893149896,
+  "hang_U0_max": 2.6850973312435156,
+  "hang_U0_catch": 0.8808699944990583,
+  "hang_U0_hold": 2.6850973312435156,
   "hang_reason0": "lost hook",
   "hang_detail": {
    "-0.2": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.0136006715503343
+    "U_max": 0.7751112680592313
    },
    "-0.19": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.0271194389789697
+    "U_max": 0.7810739499164876
    },
    "-0.18": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.0403025158560733
+    "U_max": 0.7890977679617868
    },
    "-0.17": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.0552820985597977
+    "U_max": 0.7957880413137054
    },
    "-0.16": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.0809156997029303
+    "U_max": 0.8095482823419125
    },
    "-0.15": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.1222915153387654
+    "U_max": 0.8438052366829264
    },
    "-0.14": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.1776920096565164
+    "U_max": 0.9102254265652789
    },
    "-0.13": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.2442810221273721
+    "U_max": 0.9907910882479797
    },
    "-0.12": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.312845195147325
+    "U_max": 1.050758430513631
    },
    "-0.11": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3492792506109001
+    "U_max": 1.0718475160540315
    },
    "-0.1": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3575574782453272
+    "U_max": 1.0718475160540315
    },
    "-0.09": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3575574782453272
+    "U_max": 1.0718475160540315
    },
    "-0.08": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3575574782453272
+    "U_max": 1.0718475160540315
    },
    "-0.07": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3575574782453272
+    "U_max": 1.0718475160540315
    },
    "-0.06": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3575574782453272
+    "U_max": 1.0718475160540315
    },
    "-0.05": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3576129085291897
+    "U_max": 1.0718475160540315
    },
    "-0.04": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3576129085291897
+    "U_max": 1.0718475160540315
    },
    "-0.03": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3576129085291897
+    "U_max": 1.0718475160540315
    },
    "-0.025": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.3576129085291897
+    "U_max": 1.0718475160540315
    },
    "-0.02": {
     "caught": false,
-    "reason": "missed (fell)",
-    "U_max": 1.3576129085291897
+    "reason": "hit wall (y=-0.200, vrel=(+1.70,+1.17))",
+    "U_max": 1.0718475160540315
    },
    "-0.015": {
     "caught": false,
-    "reason": "hit wall (y=-0.200, vrel=(+1.78,+1.64))",
-    "U_max": 1.3576129085291897
+    "reason": "hit wall (y=-0.178, vrel=(+2.06,+1.35))",
+    "U_max": 1.0718475160540315
    },
    "-0.01": {
     "caught": false,
-    "reason": "hit wall (y=-0.153, vrel=(+1.71,+1.77))",
-    "U_max": 1.3588025113798197
+    "reason": "hit wall (y=-0.112, vrel=(+1.46,+1.32))",
+    "U_max": 1.0718475160540315
    },
    "-0.005": {
     "caught": false,
-    "reason": "hit wall (y=-0.037, vrel=(+0.65,+0.06))",
-    "U_max": 1.3604827484743474
+    "reason": "hit wall (y=-0.035, vrel=(+1.07,-0.81))",
+    "U_max": 1.0718475160540315
    },
    "0.0": {
     "caught": true,
     "reason": "lost hook",
-    "U_max": 3.263988893149896
+    "U_max": 2.6850973312435156
    },
    "0.005": {
     "caught": false,
-    "reason": "hit wall (y=-0.124, vrel=(+0.76,-2.40))",
-    "U_max": 1.441346165342123
+    "reason": "hit wall (y=-0.093, vrel=(+0.71,-2.03))",
+    "U_max": 1.1243049929853308
    },
    "0.01": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.6800442757755962
+    "U_max": 1.1856677414241539
    },
    "0.015": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 1.9665321130965752
+    "U_max": 1.2045796386946495
    },
    "0.02": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1392299652156552
+    "U_max": 1.2045796386946495
    },
    "0.025": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.03": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.04": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.05": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.06": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.07": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.08": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.09": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.1": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.11": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.12": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.13": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.14": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.15": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.16": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.17": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.18": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.19": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
    },
    "0.2": {
     "caught": false,
     "reason": "missed (fell)",
-    "U_max": 2.1469549671222965
+    "U_max": 1.2045796386946495
+   }
+  }
+ },
+ {
+  "T": 17.0,
+  "m": 63.0,
+  "phi_l": 0.2500000000000002,
+  "U_star": 1.1146584063477265,
+  "file": "sol_ref_T17_m63_phi0.250.pkl",
+  "plan_catch_window_s": 0.010000000000000009,
+  "plan_catch_deltas": [
+   0.0
+  ],
+  "plan_W_1.0": 0.0,
+  "plan_W_1.1": 0.0,
+  "plan_W_1.25": 0.0,
+  "plan_W_1.5": 0.0,
+  "plan_W_2.0": 0.0,
+  "plan_U0_max": 1.4272562608569808,
+  "plan_U0_catch": 1.4272562608569808,
+  "plan_U0_hold": 1.3860915861881677,
+  "plan_reason0": "cone exceeded",
+  "plan_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8258296478293861
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8328130171233997
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8376035824587323
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8453219732450293
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8507243321351113
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8746757107086189
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9272947752895058
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.014172978838736
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0888773953875592
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1231137885112445
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "hit wall (y=-0.199, vrel=(+1.52,+1.48))",
+    "U_max": 1.1244395587031937
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.183, vrel=(+1.97,+1.68))",
+    "U_max": 1.1244395587031937
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.112, vrel=(+1.28,+1.59))",
+    "U_max": 1.1244395587031937
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.034, vrel=(+1.23,-1.18))",
+    "U_max": 1.1244395587031937
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "cone exceeded",
+    "U_max": 1.4272562608569808
+   },
+   "0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.074, vrel=(+1.23,-2.54))",
+    "U_max": 1.1744354179928853
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.194, vrel=(+1.26,-2.92))",
+    "U_max": 1.247911982245374
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   }
+  },
+  "hang_catch_window_s": 0.010000000000000009,
+  "hang_catch_deltas": [
+   0.0
+  ],
+  "hang_W_1.0": 0.0,
+  "hang_W_1.1": 0.0,
+  "hang_W_1.25": 0.0,
+  "hang_W_1.5": 0.0,
+  "hang_W_2.0": 0.0,
+  "hang_U0_max": 2.798440028566651,
+  "hang_U0_catch": 0.9337744547469751,
+  "hang_U0_hold": 2.798440028566651,
+  "hang_reason0": "lost hook",
+  "hang_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8258296478293861
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8328130171233997
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8376035824587323
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8453219732450293
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8507243321351113
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8746757107086189
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9272947752895058
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.014172978838736
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0888773953875592
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1231137885112445
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1244395587031937
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "hit wall (y=-0.199, vrel=(+1.52,+1.48))",
+    "U_max": 1.1244395587031937
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.183, vrel=(+1.97,+1.68))",
+    "U_max": 1.1244395587031937
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.112, vrel=(+1.28,+1.59))",
+    "U_max": 1.1244395587031937
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.034, vrel=(+1.23,-1.18))",
+    "U_max": 1.1244395587031937
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "lost hook",
+    "U_max": 2.798440028566651
+   },
+   "0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.074, vrel=(+1.23,-2.54))",
+    "U_max": 1.1744354179928853
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.194, vrel=(+1.26,-2.92))",
+    "U_max": 1.247911982245374
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2750532980547633
+   }
+  }
+ },
+ {
+  "T": 17.0,
+  "m": 66.0,
+  "phi_l": 0.25,
+  "U_star": 1.1726075684481825,
+  "file": "sol_ref_T17_m66_phi0.250.pkl",
+  "plan_catch_window_s": 0.01500000000000001,
+  "plan_catch_deltas": [
+   0.0,
+   0.005
+  ],
+  "plan_W_1.0": 0.0,
+  "plan_W_1.1": 0.0,
+  "plan_W_1.25": 0.0,
+  "plan_W_1.5": 0.0,
+  "plan_W_2.0": 0.0,
+  "plan_U0_max": 1.480840319225901,
+  "plan_U0_catch": 1.480840319225901,
+  "plan_U0_hold": 1.4541688299292845,
+  "plan_reason0": "cone exceeded",
+  "plan_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8590216704968624
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8763602264592245
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.899237454129971
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9239414918735314
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9608351914513101
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0096910359848263
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.067056656439541
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1176580307490829
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1507302416692742
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.168522473685821
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1727123691112278
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1742972675848482
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1742972675848482
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1742972675848482
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1742972675848482
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1742972675848482
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1742972675848482
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1742972675848482
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "hit wall (y=-0.199, vrel=(+0.71,+1.33))",
+    "U_max": 1.1742972675848482
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "hit wall (y=-0.198, vrel=(+1.55,+1.96))",
+    "U_max": 1.1742972675848482
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.171, vrel=(+1.73,+2.17))",
+    "U_max": 1.1742972675848482
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.093, vrel=(+0.89,+1.76))",
+    "U_max": 1.1742972675848482
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.037, vrel=(+1.88,-2.26))",
+    "U_max": 1.1742972675848482
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "cone exceeded",
+    "U_max": 1.480840319225901
+   },
+   "0.005": {
+    "caught": true,
+    "reason": "cone exceeded",
+    "U_max": 1.6776292340571715
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.157, vrel=(+1.52,-2.83))",
+    "U_max": 1.3300996695165732
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4313512861997217
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   }
+  },
+  "hang_catch_window_s": 0.01500000000000001,
+  "hang_catch_deltas": [
+   0.0,
+   0.005
+  ],
+  "hang_W_1.0": 0.0,
+  "hang_W_1.1": 0.0,
+  "hang_W_1.25": 0.0,
+  "hang_W_1.5": 0.0,
+  "hang_W_2.0": 0.0,
+  "hang_U0_max": 2.922875579908221,
+  "hang_U0_catch": 0.9012565867182268,
+  "hang_U0_hold": 2.922875579908221,
+  "hang_reason0": "lost hook",
+  "hang_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8590216704968624
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.8763602264592245
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.899237454129971
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9239414918735314
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9608351914513101
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0096910359848263
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.067056656439541
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1176580307490829
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1507302416692742
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.168522473685821
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1727123691112278
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1742972675848482
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1742972675848482
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1742972675848482
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1742972675848482
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1742972675848482
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1742972675848482
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1742972675848482
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "hit wall (y=-0.199, vrel=(+0.71,+1.33))",
+    "U_max": 1.1742972675848482
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "hit wall (y=-0.198, vrel=(+1.55,+1.96))",
+    "U_max": 1.1742972675848482
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.171, vrel=(+1.73,+2.17))",
+    "U_max": 1.1742972675848482
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.093, vrel=(+0.89,+1.76))",
+    "U_max": 1.1742972675848482
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.037, vrel=(+1.88,-2.26))",
+    "U_max": 1.1742972675848482
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "lost hook",
+    "U_max": 2.922875579908221
+   },
+   "0.005": {
+    "caught": true,
+    "reason": "lost hook",
+    "U_max": 1.2370329698884854
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.157, vrel=(+1.52,-2.83))",
+    "U_max": 1.3300996695165732
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4313512861997217
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4764517412205644
+   }
+  }
+ },
+ {
+  "T": 17.0,
+  "m": 69.0,
+  "phi_l": 0.25,
+  "U_star": 1.2394737217250487,
+  "file": "sol_ref_T17_m69_phi0.250.pkl",
+  "plan_catch_window_s": 0.010000000000000009,
+  "plan_catch_deltas": [
+   0.0
+  ],
+  "plan_W_1.0": 0.0,
+  "plan_W_1.1": 0.0,
+  "plan_W_1.25": 0.0,
+  "plan_W_1.5": 0.0,
+  "plan_W_2.0": 0.0,
+  "plan_U0_max": 1.562011084073361,
+  "plan_U0_catch": 1.562011084073361,
+  "plan_U0_hold": 1.5418844166861911,
+  "plan_reason0": "cone exceeded",
+  "plan_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9292411149174125
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.93879206032416
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.955161999257096
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9834674079779163
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0240314391581373
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.077522024336748
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1419532851209397
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1996636989535272
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2332852337707425
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2430698879942503
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2430698879942503
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "hit wall (y=-0.199, vrel=(+1.38,+1.07))",
+    "U_max": 1.2433414106021428
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.173, vrel=(+2.08,+0.20))",
+    "U_max": 1.2433414106021428
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.118, vrel=(+1.34,+1.20))",
+    "U_max": 1.2433414106021428
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.037, vrel=(+1.24,-1.21))",
+    "U_max": 1.2433414106021428
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "cone exceeded",
+    "U_max": 1.562011084073361
+   },
+   "0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.076, vrel=(+1.12,-2.48))",
+    "U_max": 1.305290101496867
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4618714251676759
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.6691363162184436
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8045226672747996
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   }
+  },
+  "hang_catch_window_s": 0.010000000000000009,
+  "hang_catch_deltas": [
+   0.0
+  ],
+  "hang_W_1.0": 0.0,
+  "hang_W_1.1": 0.0,
+  "hang_W_1.25": 0.0,
+  "hang_W_1.5": 0.0,
+  "hang_W_2.0": 0.0,
+  "hang_U0_max": 3.073708050547089,
+  "hang_U0_catch": 0.970741225289439,
+  "hang_U0_hold": 3.073708050547089,
+  "hang_reason0": "lost hook",
+  "hang_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9292411149174125
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.93879206032416
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.955161999257096
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 0.9834674079779163
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0240314391581373
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.077522024336748
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1419532851209397
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1996636989535272
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2332852337707425
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2430698879942503
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2430698879942503
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2433414106021428
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "hit wall (y=-0.199, vrel=(+1.38,+1.07))",
+    "U_max": 1.2433414106021428
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.173, vrel=(+2.08,+0.20))",
+    "U_max": 1.2433414106021428
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.118, vrel=(+1.34,+1.20))",
+    "U_max": 1.2433414106021428
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.037, vrel=(+1.24,-1.21))",
+    "U_max": 1.2433414106021428
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "lost hook",
+    "U_max": 3.073708050547089
+   },
+   "0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.076, vrel=(+1.12,-2.48))",
+    "U_max": 1.305290101496867
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.4618714251676759
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.6691363162184436
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8045226672747996
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8103124776217747
+   }
+  }
+ },
+ {
+  "T": 17.0,
+  "m": 72.0,
+  "phi_l": 0.6875,
+  "U_star": 1.3072449924589584,
+  "file": "sol_ref_T17_m72_phi0.688.pkl",
+  "plan_catch_window_s": 0.010000000000000009,
+  "plan_catch_deltas": [
+   0.0
+  ],
+  "plan_W_1.0": 0.0,
+  "plan_W_1.1": 0.0,
+  "plan_W_1.25": 0.0,
+  "plan_W_1.5": 0.0,
+  "plan_W_2.0": 0.0,
+  "plan_U0_max": 1.6426760830748517,
+  "plan_U0_catch": 1.6426760830748517,
+  "plan_U0_hold": 1.6239518574619953,
+  "plan_reason0": "cone exceeded",
+  "plan_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0025676980019658
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0396846189850055
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0840549644258881
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1255519284857938
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1642093246585066
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2006920367377
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.244872066584273
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2716048960272104
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2848586738212915
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3010024594600003
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3110862945140502
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.31137885048487
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.31137885048487
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.31137885048487
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.31137885048487
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3117520020925755
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.312341004307693
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.312341004307693
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.312341004307693
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.312341004307693
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.176, vrel=(+2.66,-0.44))",
+    "U_max": 1.312341004307693
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.124, vrel=(+1.90,+0.44))",
+    "U_max": 1.312341004307693
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.038, vrel=(+0.84,-0.16))",
+    "U_max": 1.312492651988437
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "cone exceeded",
+    "U_max": 1.6426760830748517
+   },
+   "0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.128, vrel=(+0.60,-2.12))",
+    "U_max": 1.3531771126588847
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.497414684680493
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.7088518456724204
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8589986474458224
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   }
+  },
+  "hang_catch_window_s": 0.010000000000000009,
+  "hang_catch_deltas": [
+   0.0
+  ],
+  "hang_W_1.0": 0.0,
+  "hang_W_1.1": 0.0,
+  "hang_W_1.25": 0.0,
+  "hang_W_1.5": 0.0,
+  "hang_W_2.0": 0.0,
+  "hang_U0_max": 3.076849602225831,
+  "hang_U0_catch": 1.0528151275458857,
+  "hang_U0_hold": 3.076849602225831,
+  "hang_reason0": "lost hook",
+  "hang_detail": {
+   "-0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0025676980019658
+   },
+   "-0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0396846189850055
+   },
+   "-0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.0840549644258881
+   },
+   "-0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1255519284857938
+   },
+   "-0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.1642093246585066
+   },
+   "-0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2006920367377
+   },
+   "-0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.244872066584273
+   },
+   "-0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2716048960272104
+   },
+   "-0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.2848586738212915
+   },
+   "-0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3010024594600003
+   },
+   "-0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3110862945140502
+   },
+   "-0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.31137885048487
+   },
+   "-0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.31137885048487
+   },
+   "-0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.31137885048487
+   },
+   "-0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.31137885048487
+   },
+   "-0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.3117520020925755
+   },
+   "-0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.312341004307693
+   },
+   "-0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.312341004307693
+   },
+   "-0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.312341004307693
+   },
+   "-0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.312341004307693
+   },
+   "-0.015": {
+    "caught": false,
+    "reason": "hit wall (y=-0.176, vrel=(+2.66,-0.44))",
+    "U_max": 1.312341004307693
+   },
+   "-0.01": {
+    "caught": false,
+    "reason": "hit wall (y=-0.124, vrel=(+1.90,+0.44))",
+    "U_max": 1.312341004307693
+   },
+   "-0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.038, vrel=(+0.84,-0.16))",
+    "U_max": 1.312492651988437
+   },
+   "0.0": {
+    "caught": true,
+    "reason": "lost hook",
+    "U_max": 3.076849602225831
+   },
+   "0.005": {
+    "caught": false,
+    "reason": "hit wall (y=-0.128, vrel=(+0.60,-2.12))",
+    "U_max": 1.3531771126588847
+   },
+   "0.01": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.497414684680493
+   },
+   "0.015": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.7088518456724204
+   },
+   "0.02": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.8589986474458224
+   },
+   "0.025": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.03": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.04": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.05": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.06": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.07": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.08": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.09": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.1": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.11": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.12": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.13": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.14": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.15": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.16": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.17": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.18": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.19": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
+   },
+   "0.2": {
+    "caught": false,
+    "reason": "missed (fell)",
+    "U_max": 1.863716491603991
    }
   }
  }

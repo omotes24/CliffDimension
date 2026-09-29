@@ -43,10 +43,10 @@ def load(grid, tag):
     return df
 
 
-def fig_reqcap_vs_phase(df, out):
-    Ts = sorted(df["T"].unique())
-    ms = sorted(df["m"].unique())
-    fig, axes = plt.subplots(1, len(Ts), figsize=(3.4 * len(Ts), 3.2), sharey=True)
+def fig_reqcap_vs_phase(df, out, T_show=(16, 19, 20, 24), m_show=(60, 66, 75)):
+    Ts = [T for T in sorted(df["T"].unique()) if T in T_show] or sorted(df["T"].unique())[:4]
+    ms = [m for m in sorted(df["m"].unique()) if m in m_show] or sorted(df["m"].unique())[:3]
+    fig, axes = plt.subplots(1, len(Ts), figsize=(3.4 * len(Ts), 2.7), sharey=True)
     axes = np.atleast_1d(axes)
     for ax, T in zip(axes, Ts):
         for j, m in enumerate(ms):
@@ -121,7 +121,7 @@ def fig_tm_maps(df, out):
     Ts = sorted(s["T"].unique()); ms = sorted(s["m"].unique())
     quantities = [("cap", "min required capacity [BW]", SEQ), ("phi", "best release phase φ_ℓ", SEQ),
                   ("tau", "flight time τ at best phase [s]", SEQ), ("E", "E_eff at best phase [-]", SEQ)]
-    fig, axes = plt.subplots(1, 4, figsize=(15, 3.4))
+    fig, axes = plt.subplots(1, 4, figsize=(15, 2.9))
     for ax, (q, lab, cmap) in zip(axes, quantities):
         M = np.full((len(ms), len(Ts)), np.nan)
         for r in s.itertuples():

@@ -107,3 +107,36 @@ def plot_solution(res, body: Body, path: str, title: str = ""):
     fig.tight_layout()
     fig.savefig(path, dpi=130)
     plt.close(fig)
+
+
+def plot_solution_compact(res, body: Body, path: str, title: str = ""):
+    """Two-panel version for the manuscript: stick figures + grasp utilisation."""
+    chain = PlanarChain(body)
+    T, eps = res["T"], res["params"]["eps"]
+    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(7.2, 4.1), gridspec_kw=dict(height_ratios=[2.3, 1]))
+    frames = _phase_frames(res, body, n_per_phase=(8, 7, 7))
+    colors = {"S": "#245B76", "F": "#9E4D3F", "H": "#3B7A57"}
+    for j, (t, q, ph) in enumerate(frames):
+        P = chain.points(q)
+        ax.plot(P[0], P[1], "-o", color=colors[ph], ms=2.2, lw=1.3, alpha=0.35 + 0.65 * (j / len(frames)))
+    draw_device(ax, res["t_l"], T, eps, alpha=0.5)
+    draw_device(ax, res["t_c"], T, eps, alpha=1.0)
+    ax.set_aspect("equal"); ax.set_xlim(-0.6, 3.4); ax.set_ylim(-2.3, 1.2)
+    ax.set_xlabel("x [m]"); ax.set_ylabel("y [m]")
+    if title:
+        ax.set_title(title, fontsize=9)
+    for ph, lab in (("S", "swing on A"), ("F", "flight"), ("H", "hold on B")):
+        ax.plot([], [], color=colors[ph], label=lab)
+    ax.legend(loc="lower right", fontsize=7.5)
+    for ph, dur, t0 in (("S", res["d_s"], res["t_s0"]), ("H", res["params"]["T_hold"], res["t_h0"])):
+        R = res[ph + "_R"]; N = R.shape[1] - 1
+        t = t0 + dur * np.arange(N + 1) / N - res["t_s0"]
+        ax2.plot(t, np.sqrt((R ** 2).sum(0)), color=colors[ph], lw=1.5)
+    ax2.axhline(res["U_peak"], color="k", lw=0.8, ls="--")
+    ax2.axvspan(res["t_l"] - res["t_s0"], res["t_c"] - res["t_s0"], color=colors["F"], alpha=0.15)
+    ax2.plot([res["t_c"] - res["t_s0"]], [res["U_catch"]], "v", color="#A76A3E", ms=7)
+    ax2.set_ylabel("U = |R| / F_cap"); ax2.set_xlabel("time since swing start [s]"); ax2.set_ylim(0, 1.25 * res["U_peak"])
+    ax2.grid(alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(path, dpi=200)
+    plt.close(fig)

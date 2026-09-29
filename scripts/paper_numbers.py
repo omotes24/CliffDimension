@@ -83,6 +83,9 @@ def main():
         macros["loadratiomax"] = fmt((w["plan_U0_max"] / w["U_star"]).max(), 2)
         macros["nwin"] = str(len(w))
         wt = w[["T", "m", "phi_l", "U_star", "plan_catch_window_s", "plan_U0_catch", "plan_U0_hold", "plan_U0_max", "plan_reason0", "hang_U0_max", "hang_reason0"]].copy()
+        if len(wt) > 12:
+            wt = wt[wt["T"].isin([16, 19, 20, 24]) & wt["m"].isin([60, 75])]
+        wt = wt.sort_values(["T", "m"])
         with open(os.path.join(a.out, "tab_windows.tex"), "w") as f:
             f.write("\\begin{tabular}{rrrrrrr}\n\\toprule\n$T$ & $m$ & $\\phi_\\ell$ & $U^*$ & 捕捉窓 [ms] & $U_{\\rm catch}$ & $U_{\\rm hold}$ \\\\\n\\midrule\n")
             for r in wt.itertuples():
@@ -121,13 +124,20 @@ def main():
             H = f"{int(mt.group(1))/100:.2f}" if mt else "1.75"
             A = f"{int(ma.group(1))/100:.2f}" if ma else "1.00"
             brow.append((H, A, bb["req_cap_BW"], d["req_cap_BW"].mean(), bb["phi_l"], bb["d_f"], len(d)))
+        for H, A, cmin, cmean, ph, tau, n in brow:
+            words = {"160": "onesixty", "165": "onesixtyfive", "170": "oneseventy", "175": "oneseventyfive",
+                     "180": "oneeighty", "185": "oneeightyfive", "095": "ninetyfive", "105": "onezerofive", "100": "onehundred"}
+            code = (H if A == "1.00" else A).replace(".", "")
+            key = f"cap{'H' if A == '1.00' else 'A'}{words.get(code, code)}"
+            macros[key] = fmt(cmin)
         if brow:
             brow.sort(key=lambda r: (r[1], r[0]))
             with open(os.path.join(a.out, "tab_build.tex"), "w") as f:
-                f.write("\\begin{tabular}{rrrrrrr}\n\\toprule\n身長 [m] & 腕長比 & 最小容量 [BW] & 平均容量 [BW] & 最良 $\\phi_\\ell$ & $\\tau$ [s] & 収束数 \\\\\n\\midrule\n")
+                f.write("\\begin{tabular}{rrrrrr}\n\\toprule\n身長 [m] & 腕長比 & 最小 [BW] & 平均 [BW] & 最良 $\\phi_\\ell$ & $\\tau$ [s] \\\\\n\\midrule\n")
                 for H, A, cmin, cmean, ph, tau, n in brow:
-                    f.write(f"{H} & {A} & {cmin:.2f} & {cmean:.2f} & {ph:.3f} & {tau:.2f} & {n} \\\\\n")
+                    f.write(f"{H} & {A} & {cmin:.2f} & {cmean:.2f} & {ph:.3f} & {tau:.2f} \\\\\n")
                 f.write("\\bottomrule\n\\end{tabular}\n")
+            macros["nbuildok"] = str(min(n for *_, n in brow)); macros["nbuildrows"] = str(len(brow))
     # main table: best per (T, m)
     s_tab = s[s["T"].isin([16, 19, 20, 24]) & s["m"].isin([60, 75])] if len(s) > 12 else s
     with open(os.path.join(a.out, "tab_best.tex"), "w") as f:
@@ -136,7 +146,9 @@ def main():
             f.write(f"{r.T:g} & {r.m:g} & {r.out_cap:.2f} ({r.out_phi:.2f}) & "
                     f"{r.ret_cap:.2f} ({r.ret_phi:.2f}) & {r.near_cap:.2f} & {r.tau:.2f} \\\\\n")
         f.write("\\bottomrule\n\\end{tabular}\n")
-    for k in ["resSmax", "verSpos", "verFhand", "solvemed", "catchwinmax", "catchwinmed", "loadratio", "loadratiomax", "nwin"]:
+    for k in ["resSmax", "verSpos", "verFhand", "solvemed", "catchwinmax", "catchwinmed", "loadratio", "loadratiomax", "nwin",
+              "capHonesixty", "capHonesixtyfive", "capHoneseventy", "capHoneseventyfive", "capHoneeighty",
+              "capHoneeightyfive", "capAninetyfive", "capAonezerofive"]:
         macros.setdefault(k, "--")
     with open(os.path.join(a.out, "numbers.tex"), "w") as f:
         for k, v in macros.items():

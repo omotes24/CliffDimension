@@ -98,8 +98,7 @@ MuJoCo~\cite{todorov2012} 上に構成した（質量特性は de~Leva，図~\re
 関節はトルク飽和付き PD サーボ，制御周期 20\,ms，物理刻み 1\,ms である．
 把持は MuJoCo の軟らかい点拘束（有限剛性）で実装し，各物理ステップで拘束力を読み出して
 片側支持・摩擦錐・容量（掛かり代・疲労に依存）を判定，超過分は粘塑性滑りとして積分し，滑り量 2\,cm または掛かりの喪失で剥離させる．
-係合には掛かり線が上面上にあること，掌が壁を向くこと，上向き速度が小さいことを要求し，
-瞬間的な位置合わせ・無限容量拘束・裏面からの吸着を許さない．
+係合には掛かり線が上面上にあること，掌が壁を向くことを要求し，瞬間的な位置合わせ・無限容量拘束・裏面からの吸着を許さない．
 半陰的 Euler 積分は放物運動に $g\,\Delta t/2\approx4.9$\,mm/s の系統誤差をもつため，空中区間は RK4，拘束・接触中は暗黙 Euler に切り替えた．
 受入試験（表~\ref{tab:accept}）はすべて自動テストとして同梱した．
 \begin{table}[t]
@@ -133,6 +132,7 @@ MuJoCo~\cite{todorov2012} 上に構成した（質量特性は de~Leva，図~\re
 最短距離は最小負担ではない．
 往路谷と復路谷の差は最大 \hOnediffmax\,\% にとどまり（\ncond 条件中 \nret 条件で復路が最小），
 どちらの谷を使うかは装置位相と準備時間で決めてよい程度の差である（表~\ref{tab:best}）．
+このため図~\ref{fig:tm} の最良位相は往路谷（$\approx0.25$）と復路谷（$\approx0.7$）の間で条件ごとに入れ替わる．
 最適解では振り終盤・捕捉衝撃・捕捉後の振れの 3 箇所で $U$ が同時に $\Upk$ に達しており（図~\ref{fig:traj}），
 把持容量が全区間で支配的な制約である．
 
@@ -164,6 +164,9 @@ $\times$ は収束解が得られなかった条件（装置折り返し点 $\ph
 これは関節トルク上限を絶対値で固定したためで，体重の効果を能力の比例則で打ち消さない設計の帰結である．
 $T$ の効きは小さい．滞空 \taumin--\taumax\,s の間に装置が動く距離は数 cm にすぎないからである．
 身長 $H\in[1.60,1.85]$\,m と腕長比を変えた体格掃引（$T=20$\,s，$m=66$\,kg，能力は絶対値固定）を図~\ref{fig:build}・表~\ref{tab:build} に示す．
+身長の効果は体重と同程度に大きく，最小必要容量は $H=1.60$\,m の \capHonesixty\,BW から $H=1.85$\,m の \capHoneeightyfive\,BW へ単調に減る．
+腕長比 $\pm5\%$ でも \capAninetyfive\ から \capAonezerofive\,BW と変わる．
+長いリーチは先端間の実効距離を縮め，捕捉後の振り子長を延ばして張力を下げるためである．
 \IfFileExists{../results/figs/build.pdf}{%
 \begin{figure}[t]
 \centering
@@ -180,12 +183,18 @@ $T$ の効きは小さい．滞空 \taumin--\taumax\,s の間に装置が動く�
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{../results/figs/traj_best.png}
+\includegraphics[width=.95\linewidth]{../results/figs/traj_best.png}
 \caption{代表解（$T=20$\,s，$m=60$\,kg，最良位相）のスティック図と把持利用率 $U(t)$．
-青：A での振り，赤：飛行，緑：B での保持．$\blacktriangledown$ は捕捉負荷．}
+青：A での振り，赤：飛行，緑：B での保持．$\blacktriangledown$ は捕捉負荷，破線は $\Upk$．}
 \label{fig:traj}
 \end{figure}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../results/figs/windows.pdf}
+\caption{離手指令のずれ $\delta$ に対する再積分結果（代表 4 条件）．丸は掌が掛かった試行，$\times$ は捕捉失敗．破線は計画値 $U^*$．}
+\label{fig:win}
+\end{figure}
 \subsection{離手タイミングの許容幅}
 代表条件の最良解に対し離手指令を $\delta\in[-0.2,0.2]$\,s ずらし，関節は計画軌道への PD 追従
 （フィードバック分に 40\,ms の活性化フィルタ，トルク飽和），捕捉は有限剛性（40\,kN/m）の順応把持として 1\,ms RK4 で再積分した
@@ -195,12 +204,6 @@ $T$ の効きは小さい．滞空 \taumin--\taumax\,s の間に装置が動く�
 さらに $\delta=0$ でも順応把持で再積分した負荷は計画値 $U^*$ の \loadratio 倍（中央値，最大 \loadratiomax 倍）となり，
 摩擦錐の外へ出る瞬間が生じる．剛体衝突を仮定した最適解は制約境界上にあり，実行誤差に対する余裕をもたない．
 飛行中の手先補正を持たない開ループ計画では，離手精度 $\pm5$\,ms が要求されることになる．
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\linewidth]{../results/figs/windows.pdf}
-\caption{離手指令のずれ $\delta$ に対する再積分結果（代表 8 条件）．丸は掌が掛かった試行，$\times$ は捕捉失敗．破線は計画値 $U^*$．}
-\label{fig:win}
-\end{figure*}
 \begin{table}[t]
 \centering\scriptsize
 \caption{離手窓の再積分（計画追従モード）．$U$ は $\delta=0$ の再積分値．}
@@ -215,7 +218,7 @@ $T$ の効きは小さい．滞空 \taumin--\taumax\,s の間に装置が動く�
 本課題は把持の引っ掛かりと上肢・体幹の能力に律速され，装置側の細部には鈍感である．
 \begin{figure}[t]
 \centering
-\includegraphics[width=.9\linewidth]{../results/figs/sensitivity.pdf}
+\includegraphics[width=.8\linewidth]{../results/figs/sensitivity.pdf}
 \caption{一因子感度：位相について最小化した必要容量の基準値からの変化．}
 \label{fig:sens}
 \end{figure}
@@ -227,15 +230,15 @@ $T$ の効きは小さい．滞空 \taumin--\taumax\,s の間に装置が動く�
 把持容量を緩和した条件から段階的に戻すカリキュラムと，より長い探索を継続している．
 \begin{figure}[t]
 \centering
-\includegraphics[width=.46\linewidth]{../results/figs/hang3d.png}\hfill
-\includegraphics[width=.52\linewidth]{../results/figs/search3d.pdf}
+\includegraphics[width=.37\linewidth]{../results/figs/hang3d.png}\hfill
+\includegraphics[width=.55\linewidth]{../results/figs/search3d.pdf}
 \caption{左：MuJoCo 3 次元環境（A に両手把持した初期状態，右奥が B）．右：CMA-ES 探索のコスト履歴．}
 \label{fig:3d}
 \end{figure}
 
 \section{議論と限界}
 縮約モデルは矢状面のみを扱い，空中での 180 度の向き変え，左右の手の時間差，横ずれを含まない．
-把持は両手合算で，容量は体重・体格によらない絶対値である（体格に比例させる設定はコード上の選択肢として用意した）．
+把持は両手合算で，容量は体重・体格によらない絶対値である．
 捕捉を完全非弾性衝突とし力積を $\Delta_c=50$\,ms に均す近似は，順応把持による再積分で 1.3 倍程度の差を生じた．
 これらは「最適解の脆さ」であると同時に，学習段階で閉ループ補正と余裕を含む方策を求めるべき理由である．
 必要容量 2.3--2.9\,BW は 3\,cm 縁での両手ぶら下がり能力の上位値に相当し，本課題が把持能力に律速されることを示す．

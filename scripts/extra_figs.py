@@ -49,10 +49,13 @@ def fig_windows(out, path="results/windows/windows_ref.json"):
     if not os.path.exists(path):
         return
     W = json.load(open(path))
+    want = [(16.0, 60.0), (20.0, 60.0), (20.0, 75.0), (24.0, 75.0)]
+    Wsel = [w for w in W if (w["T"], w["m"]) in want]
+    W = Wsel if len(Wsel) >= 2 else W[:4]
     n = len(W)
-    cols = 4
+    cols = 2 if n > 1 else 1
     rows = int(np.ceil(n / cols))
-    fig, axes = plt.subplots(rows, cols, figsize=(3.0 * cols, 2.3 * rows), sharex=True, sharey=True)
+    fig, axes = plt.subplots(rows, cols, figsize=(3.5, 1.45 * rows + 0.35), sharex=True, sharey=True)
     axes = np.atleast_1d(axes).ravel()
     colors = {"held": CAT[2], "cone exceeded": CAT[3], "lost hook": CAT[1], "hit wall": INK2, "missed": "#c9c9c4"}
     for ax, w in zip(axes, W):
@@ -63,19 +66,22 @@ def fig_windows(out, path="results/windows/windows_ref.json"):
             r = v["reason"]
             key = "held" if r == "held" else ("cone exceeded" if r.startswith("cone") else ("lost hook" if r.startswith("lost")
                   else ("hit wall" if r.startswith("hit") else "missed")))
-            ax.plot([1e3 * d], [v["U_max"]], "o" if v["caught"] else "x", color=colors[key], ms=4 if v["caught"] else 3.5)
-        ax.axhline(w["U_star"], color=CAT[0], lw=1.0, ls="--")
-        ax.set_title(f"T={w['T']:g} s, m={w['m']:g} kg, φ_ℓ={w['phi_l']:.3f}", fontsize=8)
+            ax.plot([1e3 * d], [v["U_max"]], "o" if v["caught"] else "x", color=colors[key], ms=3.2 if v["caught"] else 2.8,
+                    mew=0.9)
+        ax.axhline(w["U_star"], color=CAT[0], lw=0.9, ls="--")
+        ax.set_title(f"T={w['T']:g} s, m={w['m']:g} kg, φ_ℓ={w['phi_l']:.3f}", fontsize=6.2, pad=2)
         ax.set_xlim(-45, 45)
+        ax.tick_params(labelsize=6.5)
     for ax in axes[(n - 1) // cols * cols:]:
-        ax.set_xlabel("release shift δ [ms]")
+        ax.set_xlabel("release shift δ [ms]", fontsize=7)
     for ax in axes[::cols]:
-        ax.set_ylabel("re-integrated U_max")
+        ax.set_ylabel("re-integrated U_max", fontsize=7)
     handles = [plt.Line2D([], [], marker="o", ls="", color=colors[k], label=k) for k in ("held", "cone exceeded", "lost hook")] + \
               [plt.Line2D([], [], marker="x", ls="", color=colors[k], label=k) for k in ("hit wall", "missed")] + \
               [plt.Line2D([], [], color=CAT[0], ls="--", label="planned U*")]
-    fig.legend(handles=handles, loc="upper center", ncol=6, fontsize=7.5, bbox_to_anchor=(0.5, 1.02))
-    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    fig.legend(handles=handles, loc="upper center", ncol=3, fontsize=6, bbox_to_anchor=(0.5, 1.0), handletextpad=0.3,
+               columnspacing=0.8)
+    fig.tight_layout(rect=(0, 0, 1, 0.9), h_pad=0.4, w_pad=0.5)
     fig.savefig(os.path.join(out, "windows.pdf")); fig.savefig(os.path.join(out, "windows.png"), dpi=200)
     plt.close(fig)
 
@@ -92,7 +98,7 @@ def fig_sensitivity(out, path="results/figs/sensitivity.csv"):
              "mu060": "μ_out = 0.6", "mu150": "μ_out = 1.5"}
     s["label"] = s["tag"].map(short)
     s = s.sort_values("rel")
-    fig, ax = plt.subplots(figsize=(4.0, 2.8))
+    fig, ax = plt.subplots(figsize=(4.0, 2.3))
     ax.barh(s["label"], s["rel"], color=[CAT[1] if v > 0 else CAT[0] for v in s["rel"]], height=0.6)
     ax.axvline(0, color=INK2, lw=0.8)
     ax.set_xlabel(f"change of min. required capacity [%]\n(reference {ref:.2f} BW)", fontsize=8)
