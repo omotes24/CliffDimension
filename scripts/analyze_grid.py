@@ -31,6 +31,8 @@ def load(grid, tag):
     if not files:
         raise SystemExit("no rows files")
     df = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
+    df["phi_l"] = df["phi_l"].round(4)
+    df = df.sort_values("ok", ascending=False).drop_duplicates(["T", "m", "phi_l"], keep="first")
     for c in ["T", "m", "phi_l", "U_peak", "req_cap_N", "req_cap_BW", "effort", "d_s", "d_f", "phi_c", "x_catch",
               "h_release", "v0x", "v0y", "vrel_norm", "impulse_norm", "U_catch", "U_swing", "U_hold",
               "res_S_max", "res_F_max", "res_H_max", "ver_S_pos", "ver_F_hand", "ver_H_pos"]:

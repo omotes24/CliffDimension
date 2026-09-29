@@ -102,7 +102,8 @@ def worker(args):
             row = {k: "" for k in FIELDS}
             row.update(T=T, m=m, phi_l=phi_l, ok=0, status="exception", param_tag=tag)
         rows.append(row)
-        with open(os.path.join(outdir, f"rows_{tag}_T{T:g}_m{m:g}.csv"), "w", newline="") as f:
+        rows_name = f"rows_{tag}_T{T:g}_m{m:g}.csv" if len(phis) > 1 else f"rows_{tag}_T{T:g}_m{m:g}_phi{phi_l:.3f}.csv"
+        with open(os.path.join(outdir, rows_name), "w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=FIELDS)
             w.writeheader()
             w.writerows(rows)
@@ -121,11 +122,16 @@ def main():
     ap.add_argument("--workers", type=int, default=2)
     ap.add_argument("--tag", default="ref")
     ap.add_argument("--params", default="{}", help="JSON of ReducedParams overrides (+ body_kw)")
+    ap.add_argument("--split-phases", action="store_true",
+                    help="one job per (T, m, phi): no warm start along phi, but embarrassingly parallel (many cores)")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     params_kw = json.loads(a.params)
     phis = a.phis if a.phis else list(np.arange(a.nphi) / a.nphi)
-    jobs = [(T, m, phis, params_kw, a.tag, a.out) for T in a.T for m in a.m]
+    if a.split_phases:
+        jobs = [(T, m, [ph], params_kw, a.tag, a.out) for T in a.T for m in a.m for ph in phis]
+    else:
+        jobs = [(T, m, phis, params_kw, a.tag, a.out) for T in a.T for m in a.m]
     if a.workers > 1:
         with mp.Pool(a.workers) as pool:
             all_rows = pool.map(worker, jobs, chunksize=1)

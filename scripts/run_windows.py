@@ -50,6 +50,8 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     files = sorted(glob.glob(os.path.join(a.grid, f"rows_{a.tag}_T*_m*.csv")))
     df = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
+    df["phi_l"] = df["phi_l"].round(4)
+    df = df.sort_values("ok", ascending=False).drop_duplicates(["T", "m", "phi_l"], keep="first")
     df = df[df["ok"] == 1]
     if a.best_only:
         idx = df.groupby(["T", "m"])["U_peak"].idxmin()
