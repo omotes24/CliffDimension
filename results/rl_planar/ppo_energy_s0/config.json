@@ -1,0 +1,26 @@
+{
+ "algo": "ppo",
+ "shaping": "energy",
+ "steps": 3000000,
+ "n_envs": 8,
+ "T": 18.0,
+ "m": 66.0,
+ "phi0": 0.9302476401419209,
+ "refs": "results/grid/sol_ref_T18_m66_phi0.250.pkl",
+ "duals": null,
+ "prices_rows": "results/dual_field/rows.csv",
+ "price_scale": 3.0,
+ "out": "results/rl_planar/ppo_energy_s0",
+ "seed": 0,
+ "device": "cpu",
+ "control_dt": 0.02,
+ "log_std_init": -1.0,
+ "prices": {
+  "cap": 1.0,
+  "cone": 0.4800759795786516,
+  "joint_speed": 0.0414312130899556,
+  "joint_range": 2.6740724119322463,
+  "wall": 33.35813944462208,
+  "catch": 3.303919902719332
+ }
+}
