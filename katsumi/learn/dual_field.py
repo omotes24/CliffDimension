@@ -343,9 +343,11 @@ class BCController:
 # ---------------------------------------------------------------------------------------------------------------
 # evaluation
 # ---------------------------------------------------------------------------------------------------------------
-def run_episode(env, controller, start, max_steps=2000):
+def run_episode(env, controller, start, max_steps=None):
     """start: dict for env.reset(options=...). Returns env.result plus the controller's last field values."""
     obs, info = env.reset(options=start)
+    if max_steps is None:
+        max_steps = int(round(40.0 / env.control_dt))
     controller.reset()
     done = False; k = 0; U_swing = 0.0
     while not done and k < max_steps:

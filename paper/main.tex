@@ -22,7 +22,10 @@
 \providecommand{\winlo}{0.25}\providecommand{\winhi}{0.31}
 \providecommand{\vthreecapmin}{---}\providecommand{\vthreecapmax}{---}
 \providecommand{\closedloopSummary}{（閉ループ評価は計算中）}
+\providecommand{\fitRhohold}{---}\providecommand{\fitSignhold}{---}\providecommand{\fitRhoval}{---}\providecommand{\fitSignval}{---}\providecommand{\fitRhoholdNoSob}{---}\providecommand{\fitSignholdNoSob}{---}\providecommand{\fitRhovalNoSob}{---}\providecommand{\fitSignvalNoSob}{---}\providecommand{\fitVval}{---}\providecommand{\fitTauval}{---}\providecommand{\fitUval}{---}\providecommand{\fitNtrain}{---}\providecommand{\fitNval}{---}\providecommand{\fitNhold}{---}
 \providecommand{\gridNsolved}{---}\providecommand{\gridNcases}{---}\providecommand{\winNfeasible}{---}
+\providecommand{\execRelZohTwenty}{---}\providecommand{\execRelHalfTwenty}{---}\providecommand{\execRelFour}{---}\providecommand{\execCatchFour}{---}\providecommand{\execHoldFour}{---}
+\providecommand{\execRelFourComp}{---}\providecommand{\execCatchFourComp}{---}\providecommand{\execHoldFourComp}{---}\providecommand{\execErrFour}{---}\providecommand{\execErrTwenty}{---}
 
 \begin{document}
 \title{世界モデルによるクリフディメンション攻略}
@@ -144,18 +147,22 @@ MuJoCo~\cite{todorov2012} 上の 31 関節＋指開閉の人体環境と有限�
 \section{結果 I：物理}
 \label{sec:results}
 \subsection{離手位相の実行可能窓}
-修正モデルでは，離手位相 $\phi_\ell$ の実行可能範囲が明確な窓をもつ（図~\ref{fig:reqcap}，表~\ref{tab:window}）．
+修正モデルの再計算は $T\in\{16,\dots,24\}$\,s $\times$ $m\in\{60,\dots,75\}$\,kg $\times$ 16 位相の 864 条件について進行中で，
+本稿執筆時点で \gridNcases 条件（$T=16$--$19$\,s）が終わっている．
+その範囲で，離手位相 $\phi_\ell$ の実行可能範囲は明確な窓をもつ（図~\ref{fig:reqcap}，表~\ref{tab:window}）．
 往路の $\phi_\ell\in[\winlo,\winhi]$ では全身体で $\Upk=$\vthreecapmin--\vthreecapmax
 （両手 1300\,N 基準；体重比では 2.3--2.7\,BW）で解が得られる．
 $\phi_\ell=0.375$ では必要容量が 2.4--3.7（5--7\,BW，超人的）へ跳ね上がり，$\phi_\ell\ge0.44$ では
 片側からの振りでは先端間距離 2.5--2.7\,m の水平射出速度が得られず（到達不足 3--15\,cm），実行不能である．
-復路の谷は軽い身体（$m=60$\,kg）でのみ現れ，$\phi_\ell\approx0.69$--$0.81$ で往路と同等の容量になる．
+復路の谷は，これまでに計算できた $m=60$\,kg（$T=17,18$\,s）で $\phi_\ell\approx0.69$--$0.81$ に往路と同等の容量で現れる
+（他の体重の復路は計算中）．
 旧モデル（前腕干渉なし）の「全位相で 2.3--2.9\,BW の二谷構造」は，前腕を板に食い込ませた振りに依存した
 見かけの結果であり，修正モデルでは成立しない．
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{../results/figs/reqcap_vs_phase.pdf}
-\caption{離手位相 $\phi_\ell$ と必要両手把持容量（修正モデル）．$\times$ は実行不能（到達不足）．}
+\caption{離手位相 $\phi_\ell$ と必要両手把持容量（修正モデル，\gridNcases 条件計算済み；グリッドは計算継続中）．
+$\triangle$ は 2（両手 2600\,N，超人的）を超える解，$\times$ は実行不能（到達不足），灰色は復路．}
 \label{fig:reqcap}
 \end{figure*}
 \begin{table}[t]

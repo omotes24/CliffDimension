@@ -46,13 +46,15 @@ $\partial J^*/\partial\dot\theta_1$ & --- & $-0.0198$ & $-0.0198$ & $<0.1$\,\% \
 \end{table}
 
 \subsection{双対場の適合と身体間の汎化}
-双対場ネットワーク（SiLU，\dflWidth$\times$\dflDepth）を，学習用参照軌道（$m\ne69$\,kg）の 85\,\%で学習し，
-残る参照軌道（同じ身体群の未知軌道）と $m=69$\,kg（未知の身体）で評価した（表~\ref{tab:dflfit}）．
-価値 $V$ と残り時間 $\tau$ は未知の身体へ $R^2=$\fitVhold，\fitTauhold で汎化し，
-costate は Sobolev 項があると $R^2=$\fitPhold，無いと \fitPholdNoSob である．
+双対場ネットワーク（SiLU，\dflWidth$\times$\dflDepth）を，学習用参照軌道（$m\ne69$\,kg）の 85\,\%（\fitNtrain 状態）で学習し，
+残る参照軌道（同じ身体群の未知軌道，\fitNval 状態）と $m=69$\,kg（未知の身体，\fitNhold 状態）で評価した（表~\ref{tab:dflfit}）．
+価値 $V$ と残り時間 $\tau$ は未知の身体へ $R^2=$\fitVhold，\fitTauhold で汎化する．
+costate は活性制約の近傍で桁が跳ぶ重い裾をもつので決定係数は外れ値に支配される；順位相関 $\rho_S$ と符号一致率で見ると，
+Sobolev 項があれば未知の身体で $\rho_S=$\fitRhohold，符号一致 \fitSignhold，未知軌道で \fitRhoval／\fitSignval であるのに対し，
+値だけを合わせた場の勾配は $\rho_S=$\fitRhoholdNoSob，符号一致 \fitSignholdNoSob（未知軌道 \fitRhovalNoSob／\fitSignvalNoSob）にとどまる．
 価値そのものはどちらの学習でも同程度に合うが，その勾配は明示的な双対ラベル無しには学べない．
-これは「双対を教師にする」ことの直接の根拠である．
-行動模倣（トルク回帰）の未知身体への $R^2$ は \fitUhold であった．
+これが「双対を教師にする」ことの直接の根拠である．
+行動模倣（トルク回帰）の未知身体への $R^2$ は \fitUhold，未知軌道では \fitUval であった．
 \begin{table}[t]
 \centering\scriptsize
 \caption{双対場の適合（決定係数）．val：学習身体群の未知参照軌道，holdout：未知の身体（$m=69$\,kg）．}
@@ -60,29 +62,57 @@ costate は Sobolev 項があると $R^2=$\fitPhold，無いと \fitPholdNoSob �
 \IfFileExists{tab_dfl_fit.tex}{\input{tab_dfl_fit}}{（計算中）}
 \end{table}
 
-\subsection{閉ループ：双対場からの制御}
+\subsection{閉ループ I：執行系の分解}
+\label{sec:executor}
+学習器を比較する前に，オラクル軌道そのものが環境で実行できるかを，前饋トルク＋弱い PD（1/rad，0.1\,s/rad）
+と共通の着地反射で再生して確かめた（表~\ref{tab:exec}）．
+結果は執行系（トルクの標本化保持と制御周期）が支配的であることを示す．
+制御周期 20\,ms で区間始点のトルクを保持する標準的な離散化では，オラクル自身の軌道でさえ
+\execRelZohTwenty 本しか離手に至らない：保持による半周期（10\,ms）の位相遅れが，
+軽い遠位リンク（前腕・下腿）の速い固有運動を励起して手先力が周期 40--80\,ms で振動し，
+振り開始 0.2\,s 以内に錐を出る（A で滑る）．
+区間中点でトルクを標本化すると（区分線形トルクに対する零次保持の等価値）\execRelHalfTwenty 本が離手するが，
+追従誤差は \execErrTwenty\,rad に達し捕捉には至らない．
+制御周期を 4\,ms にすると \execRelFour 本が誤差 \execErrFour\,rad で離手し，\execCatchFour 本が B を 2--3\,cm 以内で捕捉する．
+ここで初めて残る失敗が捕捉後の保持である：剛体衝突モデルの参照解は掛かり線を先端の 2\,cm 手前（指先掛かり）に置くが，
+順応捕捉（40\,kN/m，1.5\,kN\,s/m）が 1.4\,$F_{\rm cap}$ の制動力を作るには手先が 3\,cm 動く必要があり，
+指の掛かり代（2.5\,cm）を使い切って 50\,ms 以内にフックを失う（\execHoldFour 本が保持）．
+すなわち「最適解の刃」は振りにではなく捕捉幾何にあり，これはどの制御器にも共通の反射側の問題である．
+順応捕捉を最適化の内部に置いた参照解（同じばね・減衰で腕の吸収を計画）を着地反射に用いると，
+\execRelFourComp 本が離手，\execCatchFourComp 本が捕捉，\execHoldFourComp 本が 2\,s の保持に成功した．
+以降の閉ループ比較は，制御周期 4\,ms・区間中点標本化・順応捕捉参照の着地反射という執行系に統一する．
+\begin{table}[t]
+\centering\scriptsize
+\caption{執行系の分解：オラクル軌道の環境再生（$T=18$\,s，$m\in\{60,\dots,75\}$\,kg，$\phi_\ell=0.25$）．
+離手・捕捉・保持に至った本数と振り中の関節角追従誤差の中央値．}
+\label{tab:exec}
+\IfFileExists{tab_exec.tex}{\input{tab_exec}}{（計算中）}
+\end{table}
+
+\subsection{閉ループ II：双対場からの制御}
 \label{sec:closedloop}
 点ごとの Hamiltonian 最小化（Pontryagin 制御器）は，1 制御周期でトルクが価値に与える影響が小さいため
 $H$ が $\bm u$ についてほぼ平坦で，costate の 10\,\%程度の誤差で最小点が飽和値へ飛ぶ（条件が悪い）ことが分かった．
 オラクル自身の costate を用いても復元トルクの中央値誤差は 0.07，最大 0.6 であり，
 最適解のトルクは点ごとの最小化では決まらない（変化率制限と離散化のため）．
-そこで，既知の剛体力学を 0.3--0.5\,s 先まで陽に積分し，その終端で双対場を評価する短地平線 MPC
-（暗黙 Hermite--Simpson，IPOPT，価値ネットワークを CasADi に埋め込み厳密微分）を双対場の制御器とした．
+そこで，既知の剛体力学を 0.3\,s 先まで陽に積分し，その終端で双対場を評価する短地平線 MPC
+（計画周期 20\,ms，暗黙 Hermite--Simpson，IPOPT，価値ネットワークを CasADi に埋め込み厳密微分，
+計画は執行周期 4\,ms で補間）を双対場の制御器とした．
 学習した価値場をそのまま終端コストにすると，MPC はデータの外で価値が低く外挿された状態を「発見」して
 そこへ向かう（0.3\,s 先で $V_\vartheta$ が 2--3 低い状態；学習器と最適化器の敵対）．
 4 個の場のアンサンブル（平均$+2\sigma$）だけでは外挿の一致のため防げず，
 学習データの混合ガウス密度による分布外ペナルティを終端に加えることで初めて価値の搾取が止まった．
 執行側では，オラクル解が引っ掛かり錐と可動域の境界上にあるため，計画の錐を 25\,\%＋絶対値 0.03\,$F_{\rm cap}$ だけ
 内側に締め（制約タイトニング），最初の指令を現在の指令に変化率制限で結ぶ必要があった．
-比較のため，同じ執行系で (i)~行動模倣（BC），(ii)~双対場 MPC，(iii)~オラクルを 0.4--0.5\,s ごとに解き直す
-オラクル・イン・ザ・ループ MPC（計算量の上限；1 エピソード 10--40 分）を評価した（表~\ref{tab:dflcl}）．
-\begin{table}[t]
+比較のため，同じ執行系で (i)~行動模倣（BC），(ii)~双対場 MPC，(iii)~オラクルを 0.5\,s ごとに解き直す
+オラクル・イン・ザ・ループ MPC（計算量の上限；1 エピソード 10--60 分）を評価した（表~\ref{tab:dflcl}）．
+\begin{table*}[t]
 \centering\scriptsize
-\caption{閉ループ評価（$T=18$\,s，$m\in\{60,\dots,75\}$\,kg の参照解，静止開始＋摂動開始）．
-生存時間は失敗までの時間，離手率は離手に至ったエピソードの割合．}
+\caption{閉ループ評価（$T=18$\,s，$m\in\{60,\dots,72\}$\,kg の参照解，静止開始＋摂動開始；$m=69$\,kg は学習に用いない身体）．
+離手・捕捉・保持（2\,s，成功）に至った割合，離手した試行の手先と B 先端の最接近距離，失敗までの生存時間．}
 \label{tab:dflcl}
 \IfFileExists{tab_dfl_closedloop.tex}{\input{tab_dfl_closedloop}}{（計算中）}
-\end{table}
+\end{table*}
 \closedloopSummary
 
 \subsection{強化学習との比較}
@@ -91,13 +121,16 @@ $H$ が $\bm u$ についてほぼ平坦で，costate の 10\,\%程度の誤差�
 初期の報酬設計では「早く死ぬ」「即離手」「期限まで静止」の三つの局所解が順に現れ，
 早期失敗ペナルティ・指令変化率制限・離手閾値の導入後は全条件が「期限まで静止」（報酬 $-109$〜$-121$）に収束し，
 300 万ステップで成功は一度も観測されなかった（\rlSuccessAll 回/\rlEpisodesAll エピソード）．
-参照状態初期化（DeepMimic 型）を加えると離手は生じるが捕捉には至らない．
+参照状態初期化（DeepMimic 型，オラクル軌道上の状態から 70\,\%のエピソードを開始）を加えると離手は生じる（エネルギー整形で 5 割）が，
+最接近距離は 1.3\,m 以上で捕捉には至らない．
+（強化学習の実行は閉ループ評価より前の環境版で行い，A 側の滑り判定に指のフック容量項を含まない；この項は滑りを緩める方向にしか働かない．）
 本課題では疎な成功信号に基づく方策探索は，密な双対情報（価値・costate・価格）を持つオラクル駆動の学習より
 はるかに非効率であることが，同一環境で確認された．
 \IfFileExists{../results/figs/rl_curves.pdf}{%
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{../results/figs/rl_curves.pdf}
-\caption{PPO の学習曲線（移動平均）：成功率，エピソード長，離手率．}
+\caption{PPO の学習曲線（移動平均，破線は参照状態初期化）：離手したエピソードの手先と B 先端の最接近距離，エピソード長，離手率．
+最接近距離はどの条件でも 1.3\,m を下回らず（オラクル解では 2\,cm 以内），学習は「期限まで静止」へ収束する．}
 \label{fig:rl}
 \end{figure*}}{}

@@ -26,8 +26,11 @@ def _rel(th):
 class OracleTracker:
     """Feed-forward torques + PD tracking of an oracle solution (usable as a policy in the environment)."""
 
-    def __init__(self, r, kp=1.0, kd=0.1, reach_gain=1.0):
-        self.r, self.kp, self.kd, self.reach_gain = r, kp, kd, reach_gain
+    def __init__(self, r, kp=1.0, kd=0.1, reach_gain=1.0, lead=0.0):
+        """lead: the feed-forward torque is sampled at t + lead (= control_dt / 2 for a zero-order hold of a
+        piecewise-linear torque profile; sampling at the interval start lags by half a period and excites the
+        fast distal-segment dynamics at 20 ms)."""
+        self.r, self.kp, self.kd, self.reach_gain, self.lead = r, kp, kd, reach_gain, lead
         self.t_l, self.d_f, self.t_h0, self.t_c = r["t_l"], r["d_f"], r["t_h0"], r["t_c"]
         N_S = r["S_U"].shape[1] - 1
         self.tS = r["t_s0"] + np.linspace(0, r["d_s"], N_S + 1)
@@ -85,6 +88,8 @@ class OracleTracker:
     def __call__(self, env):
         t = env.t
         u, th_ref, thd_ref = self.ref(t)
+        if self.lead > 0:
+            u = self.ref(t + self.lead)[0]
         th, thd = env.q[2:], env.qd[2:]
         if env.mode == "F" and self.reach_gain > 0:
             dth, dthd = self.reach_correction(env, t, th_ref)
@@ -96,11 +101,11 @@ class OracleTracker:
         return a
 
 
-def replay(r, control_dt=0.002, sub_dt=0.002, kp=1.0, kd=0.1, reach_gain=1.0, verbose=True, **env_kw):
+def replay(r, control_dt=0.002, sub_dt=0.002, kp=1.0, kd=0.1, reach_gain=1.0, verbose=True, lead=None, **env_kw):
     T, m = r["T"], r["m"]
     body_kw = r.get("body_kw", {}) or {}
     env = PlanarCliffEnv(T=T, m=m, body_kw=body_kw, control_dt=control_dt, sub_dt=sub_dt, **env_kw)
-    pol = OracleTracker(r, kp, kd, reach_gain)
+    pol = OracleTracker(r, kp, kd, reach_gain, lead=control_dt / 2 if lead is None else lead)
     t_s0 = r["t_s0"]
     obs, info = env.reset(options=dict(t0=t_s0, state=(r["S_X"][:NTH, 0], r["S_X"][NTH:, 0])))
     errs = []; U_env = []
@@ -137,11 +142,12 @@ def main():
     ap.add_argument("--kp", type=float, default=1.0)
     ap.add_argument("--kd", type=float, default=0.1)
     ap.add_argument("--reach", type=float, default=1.0, help="flight reach-correction gain (0 = pure joint tracking)")
+    ap.add_argument("--lead", type=float, default=None, help="feed-forward sampling lead [s] (default control_dt / 2)")
     a = ap.parse_args()
     for f in a.pkl:
         r = pickle.load(open(f, "rb"))
         print(f, "ok" if r.get("ok") else "NOT CONVERGED")
-        replay(r, control_dt=a.control_dt, sub_dt=a.sub_dt, kp=a.kp, kd=a.kd, reach_gain=a.reach)
+        replay(r, control_dt=a.control_dt, sub_dt=a.sub_dt, kp=a.kp, kd=a.kd, reach_gain=a.reach, lead=a.lead)
 
 
 if __name__ == "__main__":

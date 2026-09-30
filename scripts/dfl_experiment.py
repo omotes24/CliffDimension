@@ -81,14 +81,18 @@ def _load_models(path):
 
 def eval_task(args):
     """One (reference, start, controller) episode; models are loaded from disk in the worker."""
-    f, st, kind, name, models_path, refs, control_dt, controller, H_mpc, beta, holdout_m, beta_d, replan = args
+    f, st, kind, name, models_path, refs, control_dt, controller, H_mpc, beta, holdout_m, beta_d, replan, exec_kw = args
+    exec_kw = dict(exec_kw or {})
+    mpc_dt = exec_kw.pop("mpc_dt", 0.02); exec_refs = exec_kw.pop("exec_refs", None); reach = exec_kw.pop("reach", 0.25)
+    kp_hold = exec_kw.pop("kp_hold", 3.0); kd_hold = exec_kw.pop("kd_hold", 0.3)
     torch.set_num_threads(1)
     ens, net0, bc, density = _load_models(models_path) if (models_path and os.path.exists(models_path)) else ([None], None, None, None)
     r = pickle.load(open(f, "rb"))
     T, m = r["T"], r["m"]
     body_kw = r.get("body_kw", {}) or {}
-    reflex = LandingReflex([pickle.load(open(g, "rb")) for g in refs])
-    env = ReflexEnv(PlanarCliffEnv(T=T, m=m, body_kw=body_kw, control_dt=control_dt), reflex)
+    reflex_refs = sorted(glob.glob(exec_refs)) if exec_refs else refs
+    reflex = LandingReflex([pickle.load(open(g, "rb")) for g in reflex_refs], reach_gain=reach, kp_hold=kp_hold, kd_hold=kd_hold)
+    env = ReflexEnv(PlanarCliffEnv(T=T, m=m, body_kw=body_kw, control_dt=control_dt, **exec_kw), reflex)
     body, chain = env.env.body, env.env.ch
     st_, cs_ = body_kw.get("stature", 1.75), body_kw.get("cap_scale", 1.0)
     if name == "BC":
@@ -99,24 +103,26 @@ def eval_task(args):
     else:
         net = ens if name == "DFL" else net0
         if controller == "mpc":
-            c = SwingMPC(net, body, chain, T, H=H_mpc, control_dt=control_dt, stature=st_, cap_scale=cs_, beta=beta, density=density,
+            c = SwingMPC(net, body, chain, T, H=H_mpc, control_dt=mpc_dt, stature=st_, cap_scale=cs_, beta=beta, density=density,
                          beta_d=beta_d, replan=replan)
         else:
             c = PontryaginController(net[0] if isinstance(net, list) else net, body, chain, T, control_dt=control_dt, stature=st_, cap_scale=cs_)
     t1 = time.time()
     res = run_episode(env, c, dict(st))
     rel_err = (res["release_time"] + (st["t0"] - r["t_s0"]) - r["d_s"]) if res.get("release_time") is not None else None
+    d_min = res.get("d_min", float("inf"))
     row = dict(ref=os.path.basename(f), T=T, m=m, group="holdout" if m == holdout_m else "train", start=kind, ctrl=name,
                success=int(res["success"]), reason=res["reason"], U_peak=res["U_peak"], U_swing=res["U_swing"], U_star=r["U_peak"],
-               release_err=rel_err, t=res["t"], wall_s=round(time.time() - t1, 1), mpc_fail=getattr(c, "n_fail", 0),
-               n_solve=getattr(c, "n_solve", 0), solve_s=round(getattr(c, "solve_s", 0.0), 1))
+               release_err=rel_err, released=int(res.get("release_time") is not None), caught=int(res.get("catch_time") is not None),
+               d_min=(d_min if np.isfinite(d_min) else np.nan), t=res["t"], wall_s=round(time.time() - t1, 1), mpc_fail=getattr(c, "n_fail", 0),
+               n_solve=getattr(c, "n_solve", 0), solve_s=round(getattr(c, "solve_s", 0.0), 1), control_dt=control_dt)
     print(f"[{os.path.basename(f)[8:-4]} {kind:14s} {name:10s}] {res['reason']:26s} U={res['U_peak']:.3f} (U*={r['U_peak']:.3f}) "
-          f"rel_err={rel_err if rel_err is None else round(rel_err, 3)} t={res['t']:.2f} {time.time() - t1:.0f}s", flush=True)
+          f"rel_err={rel_err if rel_err is None else round(rel_err, 3)} d_min={d_min:.3f} t={res['t']:.2f} {time.time() - t1:.0f}s", flush=True)
     return row
 
 
-def eval_controllers(models_path, refs, out_dir, episodes_per_ref=6, seed=0, control_dt=0.02, holdout_m=None, controller="mpc", H_mpc=25,
-                     beta=2.0, workers=8, ctrl_names=("DFL", "DFL-noSob", "BC"), beta_d=1.0, replan=2):
+def eval_controllers(models_path, refs, out_dir, episodes_per_ref=6, seed=0, control_dt=0.004, holdout_m=None, controller="mpc", H_mpc=25,
+                     beta=2.0, workers=8, ctrl_names=("DFL", "DFL-noSob", "BC"), beta_d=1.0, replan=2, exec_kw=None):
     rng = np.random.default_rng(seed)
     tasks = []
     for f in refs:
@@ -132,7 +138,7 @@ def eval_controllers(models_path, refs, out_dir, episodes_per_ref=6, seed=0, con
             starts.append((dict(t0=float(tS[k]), state=(x[:NTH], x[NTH:])), f"perturbed_k{k}"))
         for st, kind in starts:
             for name in ctrl_names:
-                tasks.append((f, st, kind, name, models_path, refs, control_dt, controller, H_mpc, beta, holdout_m, beta_d, replan))
+                tasks.append((f, st, kind, name, models_path, refs, control_dt, controller, H_mpc, beta, holdout_m, beta_d, replan, exec_kw))
     import multiprocessing as mp
     rows = []
     ctx = mp.get_context("forkserver")
@@ -169,13 +175,21 @@ def main():
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--no-eval", action="store_true")
     ap.add_argument("--no-dense", action="store_true", help="point labels only (no trajectory labels from the defect multipliers)")
+    ap.add_argument("--control-dt", type=float, default=0.002, help="environment control period [s] (executor rate)")
+    ap.add_argument("--sub-dt", type=float, default=0.001, help="environment integration step [s]")
+    ap.add_argument("--mpc-dt", type=float, default=0.02, help="dual-field MPC plan period [s] (horizon H * mpc_dt)")
+    ap.add_argument("--reach", type=float, default=0.25, help="landing-reflex flight reach-correction gain")
+    ap.add_argument("--kp-hold", type=float, default=3.0); ap.add_argument("--kd-hold", type=float, default=0.3)
+    ap.add_argument("--hook-cap-B", type=float, default=0.1, help="finger-hook capacity on B (fraction of f_cap)")
+    ap.add_argument("--exec-refs", default=None, help="glob of oracle solutions for the landing reflex (default: the evaluation references)")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
+    exec_kw = dict(reach=a.reach, hook_cap_B=a.hook_cap_B, mpc_dt=a.mpc_dt, exec_refs=a.exec_refs, sub_dt=a.sub_dt, kp_hold=a.kp_hold, kd_hold=a.kd_hold)
     if a.eval_only:
         refs = sorted(glob.glob(a.eval_refs or a.refs))
-        rows = eval_controllers(a.eval_only, refs, a.out, episodes_per_ref=a.episodes, seed=a.seed, holdout_m=a.holdout_m,
+        rows = eval_controllers(a.eval_only, refs, a.out, episodes_per_ref=a.episodes, seed=a.seed, holdout_m=a.holdout_m, control_dt=a.control_dt,
                                 controller=a.controller, H_mpc=a.H, beta=a.beta, workers=a.workers, ctrl_names=tuple(a.ctrls.split(",")),
-                            beta_d=a.beta_d, replan=a.replan)
+                                beta_d=a.beta_d, replan=a.replan, exec_kw=exec_kw)
         import pandas as pd
         df = pd.DataFrame(rows)
         summ = df.groupby(["group", "ctrl"]).agg(n=("success", "size"), success=("success", "mean"), U_peak=("U_peak", "median"),
@@ -213,8 +227,8 @@ def main():
         return
     refs = sorted(glob.glob(a.eval_refs or a.refs))
     rows = eval_controllers(os.path.join(a.out, "models.pt"), refs, a.out, episodes_per_ref=a.episodes, seed=a.seed, holdout_m=a.holdout_m,
-                            controller=a.controller, H_mpc=a.H, beta=a.beta, workers=a.workers, ctrl_names=tuple(a.ctrls.split(",")),
-                            beta_d=a.beta_d, replan=a.replan)
+                            control_dt=a.control_dt, controller=a.controller, H_mpc=a.H, beta=a.beta, workers=a.workers,
+                            ctrl_names=tuple(a.ctrls.split(",")), beta_d=a.beta_d, replan=a.replan, exec_kw=exec_kw)
     import pandas as pd
     df = pd.DataFrame(rows)
     summ = df.groupby(["group", "ctrl"]).agg(n=("success", "size"), success=("success", "mean"), U_peak=("U_peak", "median"),

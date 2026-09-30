@@ -80,12 +80,21 @@ def dfl_results(dfl_dir, out):
         print(fits[cols].round(3).to_string(index=False))
     summ = pd.DataFrame()
     if len(eps):
-        eps["released"] = eps["release_err"].notna() | (eps["reason"].isin(["held B", "missed B", "hit B's face", "lost hook", "cone exceeded on B"]))
+        if "released" not in eps.columns:
+            eps["released"] = np.nan
+        eps["released"] = eps["released"].where(eps["released"].notna(),
+            (eps["release_err"].notna() | eps["reason"].isin(["held B", "missed B", "hit B's face", "lost hook", "cone exceeded on B"])).astype(float))
+        if "caught" not in eps.columns:
+            eps["caught"] = eps["reason"].isin(["held B", "lost hook", "grip capacity exceeded"]).astype(float) * eps["released"]
+        if "d_min" not in eps.columns:
+            eps["d_min"] = np.nan
         g = eps.groupby(["ctrl"])
-        summ = g.agg(n=("success", "size"), success=("success", "mean"), released=("released", "mean"), t_med=("t", "median"),
-                     U_med=("U_peak", "median"), U_star=("U_star", "median")).reset_index()
+        summ = g.agg(n=("success", "size"), success=("success", "mean"), released=("released", "mean"), caught=("caught", "mean"),
+                     d_min_med=("d_min", "median"), t_med=("t", "median"), U_med=("U_peak", "median"), U_star=("U_star", "median")).reset_index()
         summ["main_failure"] = [eps[eps["ctrl"] == c]["reason"].value_counts().index[0] for c in summ["ctrl"]]
         summ["n_slip"] = [int((eps[eps["ctrl"] == c]["reason"] == "slipped off A").sum()) for c in summ["ctrl"]]
+        summ["n_wall"] = [int((eps[eps["ctrl"] == c]["reason"] == "hit wall").sum()) for c in summ["ctrl"]]
+        summ["n_cap"] = [int((eps[eps["ctrl"] == c]["reason"] == "grip capacity exceeded").sum()) for c in summ["ctrl"]]
         print(summ.round(3).to_string(index=False))
         eps.to_csv(os.path.join(out, "dfl_episodes_all.csv"), index=False)
         summ.to_csv(os.path.join(out, "dfl_closedloop.csv"), index=False)
@@ -102,9 +111,11 @@ def dfl_results(dfl_dir, out):
     REASON = {"slipped off A": "A で滑り", "hit wall": "壁に接触", "grip capacity exceeded": "容量超過", "missed B": "B を逃す",
               "hit B's face": "B 前面に衝突", "no release": "離手せず", "lost hook": "フック喪失", "held B": "成功"}
     with open(os.path.join("paper", "tab_dfl_closedloop.tex"), "w") as f:
-        f.write("\\begin{tabular}{lrrrrrl}\n\\toprule\n制御器 & $n$ & 成功 & 離手率 & 生存時間中央値 [s] & $\\Upk$ 中央値 & 主な失敗 \\\\\n\\midrule\n")
+        f.write("\\begin{tabular}{lrrrrrrrl}\n\\toprule\n制御器 & $n$ & 離手 & 捕捉 & 保持（成功） & 最接近中央値 [cm] & 生存時間中央値 [s] & $\\Upk$ 中央値 & 主な失敗 \\\\\n\\midrule\n")
         for r in summ.itertuples():
-            f.write(f"{NAMES.get(r.ctrl, r.ctrl)} & {r.n} & {100 * r.success:.0f}\\% & {100 * r.released:.0f}\\% & {r.t_med:.1f} & {r.U_med:.2f}（$U^*$={r.U_star:.2f}） & {REASON.get(r.main_failure, r.main_failure)} \\\\\n")
+            dm = "---" if not np.isfinite(r.d_min_med) else f"{100 * r.d_min_med:.1f}"
+            f.write(f"{NAMES.get(r.ctrl, r.ctrl)} & {r.n} & {100 * r.released:.0f}\\% & {100 * r.caught:.0f}\\% & {100 * r.success:.0f}\\% & {dm} & {r.t_med:.1f} & "
+                    f"{r.U_med:.2f}（$U^*$={r.U_star:.2f}） & {REASON.get(r.main_failure, r.main_failure)} \\\\\n")
         f.write("\\bottomrule\n\\end{tabular}\n")
     return fits, summ
 

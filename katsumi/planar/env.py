@@ -54,7 +54,11 @@ class PlanarCliffEnv(gym.Env):
                  shaping="none", prices=None, price_scale=3.0, U_target=1.2, U_cap=2.0, w_U=10.0, w_E=1.0, w_time=0.0, w_early=40.0,
                  w_dist=20.0, w_energy=20.0, eps=0.20, K_att=40000.0, D_att=1500.0, hook_tol=0.025,
                  catch_box=(0.03, -0.005, 0.05), seed=0, T_set=None, m_set=None, body_set=None, joint_stop_k=15.0,
-                 stop_damp=0.01, ramp_att=0.01, obs_body=True, cache_dir=None, u_rate=10.0, release_thresh=0.8, hook_cap=0.1):
+                 stop_damp=0.01, ramp_att=0.01, obs_body=True, cache_dir=None, u_rate=10.0, release_thresh=0.8, hook_cap=0.1,
+                 hold="zoh", hook_cap_B=0.1):
+        """hold: 'zoh' applies the commanded torque for the whole control period (sampled data); 'foh' ramps the torque
+        linearly from the previous command to the new one over the period (the optimiser's piecewise-linear controls;
+        the command is the torque reached at the end of the period)."""
         super().__init__()
         self.T_fixed, self.m_fixed, self.phi0_fixed = T, m, phi0
         self.T_set, self.m_set, self.body_set = T_set, m_set, body_set
@@ -68,6 +72,7 @@ class PlanarCliffEnv(gym.Env):
         self.K_att, self.D_att, self.hook_tol, self.catch_box = K_att, D_att, hook_tol, catch_box
         self.joint_stop_k, self.ramp_att, self.stop_damp = joint_stop_k, ramp_att, stop_damp
         self.u_rate, self.release_thresh, self.hook_cap = u_rate, release_thresh, hook_cap
+        assert hold in ("zoh", "foh"); self.hold = hold; self.hook_cap_B = hook_cap_B
         self.obs_body = obs_body
         self.cache_dir = cache_dir
         self.rng = np.random.default_rng(seed)
@@ -85,7 +90,7 @@ class PlanarCliffEnv(gym.Env):
             body = make_body(float(m), **body_kw)
             chain = PlanarChain(body)
             sim = FastSim(body, chain, self.sub_dt, self.n_sub, self.eps, self.K_att, self.D_att, self.joint_stop_k,
-                          ramp_att=self.ramp_att, stop_damp=self.stop_damp, cache_dir=self.cache_dir)
+                          ramp_att=self.ramp_att, stop_damp=self.stop_damp, cache_dir=self.cache_dir, hook_cap_B=self.hook_cap_B)
             self._sims[key] = (body, chain, sim)
         self.body, self.ch, self.sim = self._sims[key]
         self.cur_body_kw = dict(body_kw)
@@ -181,6 +186,7 @@ class PlanarCliffEnv(gym.Env):
         if self.u_rate > 0:                       # activation-rate limit of the commands (as in the optimiser)
             du = self.u_rate * self.control_dt
             u = np.clip(u, self.u_prev - du, self.u_prev + du)
+        u_from = self.u_prev.copy()
         self.u_prev = u.copy()
         U_peak0, E0 = self.U_peak, self.E
         term, reason = False, ""
@@ -192,13 +198,18 @@ class PlanarCliffEnv(gym.Env):
         while remaining > 0 and not term:
             k = remaining
             tt = self.t + self.sub_dt * np.arange(k)
-            TT = np.full(k, self.T); tauM = np.tile(u[:, None], (1, k))
+            TT = np.full(k, self.T)
+            if self.hold == "foh":                # torque ramps from the previous command to the new one over the period
+                i0 = self.n_sub - remaining
+                tauM = u_from[:, None] + (u - u_from)[:, None] * ((np.arange(k) + i0 + 1.0) / self.n_sub)[None, :]
+            else:
+                tauM = np.tile(u[:, None], (1, k))
             if self.mode == "A":
                 f = self.sim.fA if k == self.n_sub else None
                 if f is not None:
                     X, R, jr, wall, GC, GV = [np.array(o) for o in f(np.concatenate([self.th, self.thd]), tt, TT, tauM)]
                 else:
-                    X, R, jr, wall, GC, GV = self._loop(self.sim.fA1, np.concatenate([self.th, self.thd]), tt, u, None, 6)
+                    X, R, jr, wall, GC, GV = self._loop(self.sim.fA1, np.concatenate([self.th, self.thd]), tt, tauM, None, 6)
                 jr = jr.ravel(); wall = wall.ravel()
                 Uarr = np.linalg.norm(R, axis=0) / self.f_cap
                 exc = self._cone_excess_A(R)
@@ -228,7 +239,7 @@ class PlanarCliffEnv(gym.Env):
                 if f is not None:
                     X, jr, wall = [np.array(o) for o in f(np.concatenate([self.q, self.qd]), tt, TT, tauM)]
                 else:
-                    X, jr, wall = self._loop(self.sim.fF1, np.concatenate([self.q, self.qd]), tt, u, None, 3)
+                    X, jr, wall = self._loop(self.sim.fF1, np.concatenate([self.q, self.qd]), tt, tauM, None, 3)
                 jr = jr.ravel(); wall = wall.ravel()
                 te = tt + self.sub_dt
                 dvs = self.dev(te)
@@ -275,7 +286,7 @@ class PlanarCliffEnv(gym.Env):
                 if f is not None:
                     X, Fa, Fraw, sep, jr, wall, slip = [np.array(o) for o in f(xc, tt, TT, tauM, np.full(k, self.hook_tol))]
                 else:
-                    X, Fa, Fraw, sep, jr, wall, slip = self._loop(self.sim.fC1, xc, tt, u, self.hook_tol, 7)
+                    X, Fa, Fraw, sep, jr, wall, slip = self._loop(self.sim.fC1, xc, tt, tauM, self.hook_tol, 7)
                 sep = sep.ravel(); jr = jr.ravel(); wall = wall.ravel(); slip = slip.ravel()
                 Uarr = np.linalg.norm(Fa, axis=0) / self.f_cap
                 exc = np.linalg.norm(Fraw - Fa, axis=0) / self.f_cap
@@ -337,10 +348,13 @@ class PlanarCliffEnv(gym.Env):
         return self._obs(), float(r), bool(term), bool(trunc), info
 
     def _loop(self, f1, x, tt, u, off, n_out):
-        """Single-substep function looped in Python (only used for the partial control steps at mode changes)."""
+        """Single-substep function looped in Python (only used for the partial control steps at mode changes).
+        u: (NTAU,) or (NTAU, len(tt)) torques per sub-step."""
         outs = [[] for _ in range(n_out)]
-        for ti in tt:
-            res = f1(x, ti, self.T, u) if off is None else f1(x, ti, self.T, u, off)
+        u = np.asarray(u)
+        for i, ti in enumerate(tt):
+            ui = u[:, i] if u.ndim == 2 else u
+            res = f1(x, ti, self.T, ui) if off is None else f1(x, ti, self.T, ui, off)
             res = [np.array(o) for o in res]
             x = res[0].ravel()
             for j in range(n_out):

@@ -26,11 +26,13 @@ def _rel(th):
 
 
 class LandingReflex:
-    def __init__(self, refs, kp=1.0, kd=0.1, reach_gain=1.0):
-        """refs: list of oracle solution dicts (any bodies); the nearest mass is used for a given episode."""
+    def __init__(self, refs, kp=1.0, kd=0.1, reach_gain=1.0, kp_hold=None, kd_hold=None):
+        """refs: list of oracle solution dicts (any bodies); the nearest mass is used for a given episode.
+        kp, kd: flight tracking gains; kp_hold, kd_hold: hold-phase gains (default: the flight gains)."""
         self.refs = [r for r in refs if r.get("ok")]
         assert self.refs, "no converged reference solutions"
         self.kp, self.kd, self.reach_gain = kp, kd, reach_gain
+        self.kp_hold = kp if kp_hold is None else kp_hold; self.kd_hold = kd if kd_hold is None else kd_hold
         self.r = None
 
     @classmethod
@@ -38,10 +40,15 @@ class LandingReflex:
         refs = [pickle.load(open(f, "rb")) for f in sorted(glob.glob(pattern))]
         return cls(refs, **kw)
 
-    def select(self, m, T=None):
-        ms = np.array([r["m"] for r in self.refs]); Ts = np.array([r["T"] for r in self.refs])
-        d = np.abs(ms - m) + (0.5 * np.abs(Ts - T) if T is not None else 0.0)
-        self.r = self.refs[int(np.argmin(d))]
+    def select(self, m, T=None, plan=None):
+        """plan: a controller's own multi-phase plan (solution dict with F_X/F_U/H_X/H_U and an absolute t_l), used
+        instead of the nearest stored reference when given (oracle-in-the-loop MPC)."""
+        if plan is not None and plan.get("ok") and "F_X" in plan:
+            self.r = plan
+        else:
+            ms = np.array([r["m"] for r in self.refs]); Ts = np.array([r["T"] for r in self.refs])
+            d = np.abs(ms - m) + (0.5 * np.abs(Ts - T) if T is not None else 0.0)
+            self.r = self.refs[int(np.argmin(d))]
         r = self.r
         self.tauF = np.linspace(0, r["d_f"], r["F_X"].shape[1])
         self.tauH = np.linspace(0, r["params"]["T_hold"], r["H_X"].shape[1])
@@ -88,11 +95,12 @@ class LandingReflex:
             tau_h = tau - (self.tauC[-1] if self.tauC is not None else 0.0)
             u = self._interp(tau_h, self.tauH, r["H_U"])
             th_ref = self._interp(tau_h, self.tauH, r["H_X"][:NTH]); thd_ref = self._interp(tau_h, self.tauH, r["H_X"][NTH:])
-        return self._pd(u, th_ref, thd_ref, env)
+        return self._pd(u, th_ref, thd_ref, env, self.kp_hold, self.kd_hold)
 
-    def _pd(self, u, th_ref, thd_ref, env):
+    def _pd(self, u, th_ref, thd_ref, env, kp=None, kd=None):
+        kp = self.kp if kp is None else kp; kd = self.kd if kd is None else kd
         th, thd = env.q[2:], env.qd[2:]
-        return np.clip(u + self.kp * (_rel(th_ref) - _rel(th)) + self.kd * (_rel(thd_ref) - _rel(thd)), -1, 1)
+        return np.clip(u + kp * (_rel(th_ref) - _rel(th)) + kd * (_rel(thd_ref) - _rel(thd)), -1, 1)
 
     def __call__(self, env):
         """Torques for the current mode (F or C); None while on A."""
@@ -113,12 +121,16 @@ class ReflexEnv:
 
     def reset(self, **kw):
         obs, info = self.env.reset(**kw)
+        self.env.flight_plan = None
         self.reflex.select(self.env.body.m, self.env.T)
         return obs, info
 
     def step(self, action):
         a = np.array(action, float)
         if self.env.mode != "A":
+            plan = getattr(self.env, "flight_plan", None)
+            if plan is not None and plan is not self.reflex.r:      # a controller handed over its own flight / hold plan
+                self.reflex.select(self.env.body.m, self.env.T, plan=plan)
             a[:4] = self.reflex(self.env)
             a[4] = -1.0
         return self.env.step(a)

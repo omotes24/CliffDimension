@@ -92,7 +92,8 @@ class OracleMPC:
         pl = self.plan["sol"]
         tt = pl["tS"]
         tc = min(max(t, tt[0]), tt[-1])
-        u = np.array([np.interp(tc, tt, row) for row in pl["S_U"]])
+        tm = min(max(t + 0.5 * self.dt, tt[0]), tt[-1])          # feed-forward at the mid-point of the control interval
+        u = np.array([np.interp(tm, tt, row) for row in pl["S_U"]])
         th_ref = np.array([np.interp(tc, tt, row) for row in pl["S_X"][:NTH]]); thd_ref = np.array([np.interp(tc, tt, row) for row in pl["S_X"][NTH:]])
         u = np.clip(u + self.kp * (_rel(th_ref) - _rel(th)) + self.kd * (_rel(thd_ref) - _rel(thd)), -1, 1)
         u = np.clip(u, self.u_prev - 10.0 * self.dt, self.u_prev + 10.0 * self.dt)      # the environment's activation-rate limit
@@ -102,6 +103,9 @@ class OracleMPC:
         return u, release
 
     def __call__(self, env):
+        self.dt = env.control_dt
         u, release = self.act(env.th, env.thd, env.t)
+        if release and self.plan is not None and self.plan["ok"]:
+            env.flight_plan = self.plan["sol"]                 # the landing reflex tracks the plan's own flight and hold
         a = np.zeros(NTAU + 1); a[:NTAU] = u; a[NTAU] = 1.0 if release else -1.0
         return a

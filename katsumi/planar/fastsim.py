@@ -46,11 +46,13 @@ def _rel(th):
 
 class FastSim:
     def __init__(self, body, chain, sub_dt=0.002, n_sub=10, eps=0.20, K_att=40000.0, D_att=1500.0,
-                 joint_stop_k=15.0, ramp_att=0.01, stop_damp=0.01, cache_dir=None, verbose=False):
+                 joint_stop_k=15.0, ramp_att=0.01, stop_damp=0.01, cache_dir=None, verbose=False, hook_cap_B=0.1):
+        """hook_cap_B: finger-hook capacity on B (fraction of f_cap): the hooked fingers resist a pull away from the
+        wall of up to hook_cap_B * f_cap on top of the friction/hook cone mu_out * F_y (as `hook_cap` on A)."""
         self.body, self.chain = body, chain
         self.sub_dt, self.n_sub, self.eps = float(sub_dt), int(n_sub), float(eps)
         self.K_att, self.D_att, self.joint_stop_k, self.ramp_att = float(K_att), float(D_att), float(joint_stop_k), float(ramp_att)
-        self.stop_damp = float(stop_damp)
+        self.stop_damp = float(stop_damp); self.hook_cap_B = float(hook_cap_B)
         self.cache_dir = cache_dir or os.environ.get("KATSUMI_FASTSIM_CACHE",
                                                      os.path.join(os.path.expanduser("~"), ".cache", "katsumi_fastsim"))
         os.makedirs(self.cache_dir, exist_ok=True)
@@ -76,7 +78,8 @@ class FastSim:
         b = self.body
         parts = [b.m, b.lengths, b.masses, b.coms, b.inertias, b.tips, b.clearance, b.forearm_points, b.forearm_clearance,
                  b.tau_cap, b.f_cap, b.mu_out, b.mu_in, self.sub_dt, self.n_sub, self.eps, self.K_att, self.D_att,
-                 self.joint_stop_k, self.ramp_att, self.stop_damp, REL_LO_NEG, REL_HI_NEG, device.D_LEDGE, device.WALL_BOTTOM_OFFSET, ca.__version__, "v5"]
+                 self.joint_stop_k, self.ramp_att, self.stop_damp, self.hook_cap_B, REL_LO_NEG, REL_HI_NEG, device.D_LEDGE,
+                 device.WALL_BOTTOM_OFFSET, ca.__version__, "v6"]
         s = "|".join(np.array2string(np.atleast_1d(np.asarray(p, float)), precision=10) if not isinstance(p, str) else p
                      for p in parts)
         return hashlib.md5(s.encode()).hexdigest()[:16]
@@ -113,7 +116,7 @@ class FastSim:
         ramp = ca.tanh(ca.sqrt(ca.sumsqr(dp) + 1e-12) / self.ramp_att)      # Hunt-Crossley-like ramp, as in the NLP
         F = -self.K_att * dp - self.D_att * ramp * dvv
         Fy = ca.fmax(F[1], 0.0)
-        Fx = ca.fmin(ca.fmax(F[0], -b.mu_in * Fy), b.mu_out * Fy)
+        Fx = ca.fmin(ca.fmax(F[0], -b.mu_in * Fy), b.mu_out * Fy + self.hook_cap_B * b.f_cap)
         return ca.vertcat(Fx, Fy), F, ca.sqrt(ca.sumsqr(dp) + 1e-12)
 
     @staticmethod
@@ -192,7 +195,7 @@ class FastSim:
         n = self.n_sub
         funcs = [A1, F1, C1, aux]
         if n > 1:
-            funcs += [A1.mapaccum(n), F1.mapaccum(n), C1.mapaccum(n)]      # exported as <name>_acc<n>
+            funcs += [A1.mapaccum(f"A1_acc{n}", n), F1.mapaccum(f"F1_acc{n}", n), C1.mapaccum(f"C1_acc{n}", n)]   # <name>_acc<n>
         tmpname = f"fastsim_{self.key}_p{os.getpid()}"
         cg = ca.CodeGenerator(tmpname, dict(with_header=False, casadi_real="double", casadi_int="long long int"))
         for f in funcs:

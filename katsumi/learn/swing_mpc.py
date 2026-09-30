@@ -177,6 +177,7 @@ class SwingMPC:
         self.n_fail = 0
         self.lam_g = None
         self.plan_left = 0
+        self.t_plan = -np.inf
 
     def field(self, x, t):
         z = torch.tensor(make_features(x, t, self.T, self.body.m, self.stature, self.cap_scale), dtype=torch.float32)
@@ -204,10 +205,13 @@ class SwingMPC:
             Ag[:, k] = thdd; Rg[:, k] = Rk / self.body.f_cap
         return dict(X=Xg, A=Ag, Am=Ag[:, :H], U=Ug, R=Rg, Rm=Rg[:, :H])
 
-    def act(self, th, thd, t):
+    def act(self, th, thd, t, dt_env=None):
+        """One MPC solve at (x, t); returns the torque for the next environment control interval (dt_env, default
+        the plan period) sampled at the interval mid-point, and the release flag."""
+        dt_env = self.dt if dt_env is None else dt_env
         x = np.concatenate([th, thd])
         V0, U0, tau0 = self.field(x, t)
-        release = tau0 <= self.release_slack * self.dt
+        release = tau0 <= self.release_slack * dt_env
         dv = device.device_state(t, self.T, self.eps)
         q = np.concatenate([dv["pA"], th]); qd = np.concatenate([dv["vA"], thd])
         _, Rnow = self.ch.pinned(q, qd, self.u_prev * self.body.tau_cap, dv["aA"])
@@ -234,25 +238,28 @@ class SwingMPC:
             ok = False; self.n_fail += 1
             stats = opti.debug.stats()
         self.sol = {k: np.array(val(v)) for k, v in self.v.items()}
-        u = np.clip(self.sol["U"][:, 0], -1, 1)
-        u = np.clip(u, self.u_prev - self.u_rate * self.dt, self.u_prev + self.u_rate * self.dt)
+        u = np.array([np.interp(0.5 * dt_env, self.dt * np.arange(self.H + 1), row) for row in self.sol["U"]])
+        u = np.clip(np.clip(u, -1, 1), self.u_prev - self.u_rate * dt_env, self.u_prev + self.u_rate * dt_env)
         self.u_prev = u
         self.last = dict(V=V0, U=U0, tau=tau0, ok=ok, iters=stats.get("iter_count", -1), VH=float(val(self.VH_expr)), Ucap=Ucap,
                          nll=float(val(self.nll_expr)) if self.nll_expr is not None else float("nan"))
         return u, release
 
     def __call__(self, env):
-        # re-plan every `replan` control periods; in between apply the stored plan (shifted)
-        if self.plan_left > 0 and self.sol is not None:
-            k = self.replan - self.plan_left
-            u = np.clip(self.sol["U"][:, k], -1, 1)
-            u = np.clip(u, self.u_prev - self.u_rate * self.dt, self.u_prev + self.u_rate * self.dt)
-            self.u_prev = u
-            _, _, tau0 = self.field(np.concatenate([env.th, env.thd]), env.t)
-            release = tau0 <= self.release_slack * self.dt
-            self.plan_left -= 1
+        """Re-plan every `replan` MPC periods (self.dt); in between the stored plan is interpolated at the mid-point of
+        the environment's control interval (zero-order-hold equivalent of the piecewise-linear plan; the environment
+        may run at a finer control period than the plan)."""
+        t = env.t; dt_env = env.control_dt
+        if self.sol is None or t - self.t_plan >= self.replan * self.dt - 1e-9:
+            u, release = self.act(env.th, env.thd, t, dt_env)
+            self.t_plan = t
         else:
-            u, release = self.act(env.th, env.thd, env.t)
-            self.plan_left = self.replan - 1
+            tt = self.t_plan + self.dt * np.arange(self.H + 1)
+            tc = min(max(t + 0.5 * dt_env, tt[0]), tt[-1])
+            u = np.array([np.interp(tc, tt, row) for row in self.sol["U"]])
+            u = np.clip(np.clip(u, -1, 1), self.u_prev - self.u_rate * dt_env, self.u_prev + self.u_rate * dt_env)
+            self.u_prev = u
+            _, _, tau0 = self.field(np.concatenate([env.th, env.thd]), t)
+            release = tau0 <= self.release_slack * dt_env
         a = np.zeros(NTAU + 1); a[:NTAU] = u; a[NTAU] = 1.0 if release else -1.0
         return a
