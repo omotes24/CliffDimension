@@ -16,6 +16,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from katsumi.planar.env import PlanarCliffEnv
 from katsumi.planar.model import NTH, NQ
+from katsumi import device
 
 
 def _rel(th):
@@ -25,8 +26,8 @@ def _rel(th):
 class OracleTracker:
     """Feed-forward torques + PD tracking of an oracle solution (usable as a policy in the environment)."""
 
-    def __init__(self, r, kp=1.0, kd=0.1):
-        self.r, self.kp, self.kd = r, kp, kd
+    def __init__(self, r, kp=1.0, kd=0.1, reach_gain=1.0):
+        self.r, self.kp, self.kd, self.reach_gain = r, kp, kd, reach_gain
         self.t_l, self.d_f, self.t_h0, self.t_c = r["t_l"], r["d_f"], r["t_h0"], r["t_c"]
         N_S = r["S_U"].shape[1] - 1
         self.tS = r["t_s0"] + np.linspace(0, r["d_s"], N_S + 1)
@@ -52,10 +53,42 @@ class OracleTracker:
         thd = np.array([np.interp(t, tt, row) for row in X[n + off:]])
         return u, th, thd
 
+    def reach_correction(self, env, t, th_ref):
+        """Flight: correct the hand position relative to B's tip towards the reference (hand - CoM is a function of
+        the joint angles only; the CoM is ballistic). Returns a joint-angle offset (least squares, arm-weighted)."""
+        r = self.r
+        tt = self.tF
+        tc = min(max(t, tt[0]), tt[-1])
+        hand_ref = np.array([np.interp(tc, tt, row) for row in r["F_X"][0:2]])
+        dv_ref = device.device_state(tc, r["T"], r["params"]["eps"])
+        dv = env.dev(t)
+        e = (hand_ref - dv_ref["pB"]) - (env.q[0:2] - dv["pB"])        # desired shift of the hand relative to B
+        vhand_ref = np.array([np.interp(tc, tt, row) for row in r["F_X"][NQ:NQ + 2]])
+        ev = (vhand_ref - dv_ref["vB"]) - (env.qd[0:2] - dv["vB"])     # hand velocity error relative to B
+        # J = d(hand - CoM)/d th = -d CoM/d th  (finite differences on the chain CoM)
+        q = env.q.copy()
+        c0 = env.ch.com(q)
+        J = np.zeros((2, NTH))
+        for i in range(NTH):
+            qq = q.copy(); qq[2 + i] += 1e-5
+            J[:, i] = -(env.ch.com(qq) - c0) / 1e-5
+        # only relative joint motions are controllable in flight (the whole-body rotation follows the angular
+        # momentum): parametrise the correction by the 4 relative joints with the trunk angle held
+        P = np.array([[1, -1, 0, 0], [0, -1, 0, 0], [0, 0, 0, 0], [0, 0, 1, 0], [0, 0, 1, 1]], float)
+        Jr = J @ P
+        W = np.diag([1.0, 1.0, 0.3, 0.3])                                  # prefer the arms (elbow, shoulder)
+        Minv = W @ Jr.T @ np.linalg.inv(Jr @ W @ Jr.T + 1e-4 * np.eye(2))
+        drel = np.clip(Minv @ (self.reach_gain * e), -0.5, 0.5)
+        dreld = np.clip(Minv @ (self.reach_gain * ev), -3.0, 3.0)
+        return P @ drel, P @ dreld
+
     def __call__(self, env):
         t = env.t
         u, th_ref, thd_ref = self.ref(t)
         th, thd = env.q[2:], env.qd[2:]
+        if env.mode == "F" and self.reach_gain > 0:
+            dth, dthd = self.reach_correction(env, t, th_ref)
+            th_ref = th_ref + dth; thd_ref = thd_ref + dthd
         u = u + self.kp * (_rel(th_ref) - _rel(th)) + self.kd * (_rel(thd_ref) - _rel(thd))
         a = np.zeros(5)
         a[:4] = np.clip(u, -1, 1)
@@ -63,11 +96,11 @@ class OracleTracker:
         return a
 
 
-def replay(r, control_dt=0.002, sub_dt=0.002, kp=1.0, kd=0.1, verbose=True, **env_kw):
+def replay(r, control_dt=0.002, sub_dt=0.002, kp=1.0, kd=0.1, reach_gain=1.0, verbose=True, **env_kw):
     T, m = r["T"], r["m"]
     body_kw = r.get("body_kw", {}) or {}
     env = PlanarCliffEnv(T=T, m=m, body_kw=body_kw, control_dt=control_dt, sub_dt=sub_dt, **env_kw)
-    pol = OracleTracker(r, kp, kd)
+    pol = OracleTracker(r, kp, kd, reach_gain)
     t_s0 = r["t_s0"]
     obs, info = env.reset(options=dict(t0=t_s0, state=(r["S_X"][:NTH, 0], r["S_X"][NTH:, 0])))
     errs = []; U_env = []
@@ -103,11 +136,12 @@ def main():
     ap.add_argument("--control-dt", type=float, default=0.002)
     ap.add_argument("--kp", type=float, default=1.0)
     ap.add_argument("--kd", type=float, default=0.1)
+    ap.add_argument("--reach", type=float, default=1.0, help="flight reach-correction gain (0 = pure joint tracking)")
     a = ap.parse_args()
     for f in a.pkl:
         r = pickle.load(open(f, "rb"))
         print(f, "ok" if r.get("ok") else "NOT CONVERGED")
-        replay(r, control_dt=a.control_dt, sub_dt=a.sub_dt, kp=a.kp, kd=a.kd)
+        replay(r, control_dt=a.control_dt, sub_dt=a.sub_dt, kp=a.kp, kd=a.kd, reach_gain=a.reach)
 
 
 if __name__ == "__main__":

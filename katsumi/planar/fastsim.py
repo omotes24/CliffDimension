@@ -46,10 +46,11 @@ def _rel(th):
 
 class FastSim:
     def __init__(self, body, chain, sub_dt=0.002, n_sub=10, eps=0.20, K_att=40000.0, D_att=1500.0,
-                 joint_stop_k=200.0, ramp_att=0.01, cache_dir=None, verbose=False):
+                 joint_stop_k=15.0, ramp_att=0.01, stop_damp=0.01, cache_dir=None, verbose=False):
         self.body, self.chain = body, chain
         self.sub_dt, self.n_sub, self.eps = float(sub_dt), int(n_sub), float(eps)
         self.K_att, self.D_att, self.joint_stop_k, self.ramp_att = float(K_att), float(D_att), float(joint_stop_k), float(ramp_att)
+        self.stop_damp = float(stop_damp)
         self.cache_dir = cache_dir or os.environ.get("KATSUMI_FASTSIM_CACHE",
                                                      os.path.join(os.path.expanduser("~"), ".cache", "katsumi_fastsim"))
         os.makedirs(self.cache_dir, exist_ok=True)
@@ -69,7 +70,7 @@ class FastSim:
         b = self.body
         parts = [b.m, b.lengths, b.masses, b.coms, b.inertias, b.tips, b.clearance, b.forearm_points, b.forearm_clearance,
                  b.tau_cap, b.f_cap, b.mu_out, b.mu_in, self.sub_dt, self.n_sub, self.eps, self.K_att, self.D_att,
-                 self.joint_stop_k, self.ramp_att, REL_LO_NEG, REL_HI_NEG, device.D_LEDGE, device.WALL_BOTTOM_OFFSET, ca.__version__, "v4"]
+                 self.joint_stop_k, self.ramp_att, self.stop_damp, REL_LO_NEG, REL_HI_NEG, device.D_LEDGE, device.WALL_BOTTOM_OFFSET, ca.__version__, "v5"]
         s = "|".join(np.array2string(np.atleast_1d(np.asarray(p, float)), precision=10) if not isinstance(p, str) else p
                      for p in parts)
         return hashlib.md5(s.encode()).hexdigest()[:16]
@@ -79,8 +80,8 @@ class FastSim:
         rel, reld = _rel(th), _rel(thd)
         over, under = rel - ca.DM(hi), ca.DM(lo) - rel
         # unilateral stops: a stop only pushes back into the range (never pulls), damping included
-        push_hi = ca.fmax(ca.if_else(over > 0, over + 0.05 * reld, 0.0), 0.0)
-        push_lo = ca.fmax(ca.if_else(under > 0, under - 0.05 * reld, 0.0), 0.0)
+        push_hi = ca.fmax(ca.if_else(over > 0, over + self.stop_damp * reld, 0.0), 0.0)
+        push_lo = ca.fmax(ca.if_else(under > 0, under - self.stop_damp * reld, 0.0), 0.0)
         tq = -k * tc * push_hi + k * tc * push_lo
         tq = ca.fmin(ca.fmax(tq, -2 * tc), 2 * tc)
         jr = ca.sum1(ca.fmax(over, 0)) + ca.sum1(ca.fmax(under, 0))

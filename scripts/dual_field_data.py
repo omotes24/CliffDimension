@@ -24,6 +24,41 @@ CATS = ["cone_A", "cone_B", "cone_C", "cone_impact", "joint_range", "joint_speed
         "hook", "settle", "rate", "torque", "duration", "flight_inv"]
 
 
+REL_LO = np.array([0.0, -4.2, -2.1, 0.0]); REL_HI = np.array([2.6, 0.60, 0.35, 2.6])     # facing -x (swing on A)
+P_REL = np.array([[1, -1, 0, 0], [0, -1, 0, 0], [0, 0, 0, 0], [0, 0, 1, 0], [0, 0, 1, 1]], float)   # th = th2*1 + P rel
+
+
+def perturb_state(x, lv, rng, body, t0, T, eps, qd_max=10.0, margin=0.02):
+    """Perturb a swing state in relative-joint coordinates (kept inside the optimiser's joint ranges, incl. the
+    joint-speed limit) plus a whole-body rotation; reject perturbations that put a body point inside a wall."""
+    from katsumi import device
+    from katsumi.planar.model import PlanarChain
+    th, thd = x[:NTH], x[NTH:]
+    rel = np.array([th[0] - th[1], th[2] - th[1], th[3] - th[2], th[4] - th[3]])
+    reld = np.array([thd[0] - thd[1], thd[2] - thd[1], thd[3] - thd[2], thd[4] - thd[3]])
+    chain = PlanarChain(body)
+    dv = device.device_state(t0, T, eps)
+    for _ in range(20):
+        rel_n = np.clip(rel + rng.normal(0, SIG_TH * lv, 4), REL_LO + margin, REL_HI - margin)
+        reld_n = np.clip(reld + rng.normal(0, SIG_THD * lv, 4), -0.9 * qd_max, 0.9 * qd_max)
+        th2 = th[2] + rng.normal(0, SIG_TH * lv); thd2 = thd[2] + rng.normal(0, SIG_THD * lv)
+        th_n = th2 + P_REL @ rel_n; thd_n = thd2 + P_REL @ reld_n
+        q = np.concatenate([dv["pA"], th_n])
+        P = np.array(chain.f_tips(q)); Pf = np.array(chain.f_forearm(q))
+        pts = np.hstack([q[0:2, None], P, Pf])
+        clear = np.concatenate([[0.0], body.clearance, body.forearm_clearance])
+        ok = True
+        for i in range(pts.shape[1]):
+            xx, yy = pts[0, i], pts[1, i]
+            aA = xx - (-device.D_LEDGE + clear[i]); bA = (dv["h"] - device.WALL_BOTTOM_OFFSET) - yy
+            aB = (dv["x"] + device.D_LEDGE - clear[i]) - xx; bB = -device.WALL_BOTTOM_OFFSET - yy
+            if max(aA, bA) < 0.005 or max(aB, bB) < 0.005:
+                ok = False
+        if ok:
+            return np.concatenate([th_n, thd_n])
+    return None
+
+
 def sample_jobs(ref_files, stride, levels, n_rep, seed, t_margin):
     rng = np.random.default_rng(seed)
     jobs = []
@@ -31,6 +66,7 @@ def sample_jobs(ref_files, stride, levels, n_rep, seed, t_margin):
         r = pickle.load(open(f, "rb"))
         if not r.get("ok") or r["U_peak"] > 2.5:
             continue
+        body = make_body(r["m"], **(r.get("body_kw", {}) or {}))
         N = r["S_X"].shape[1] - 1
         tS = r["t_s0"] + np.linspace(0, r["d_s"], N + 1)
         ks = list(range(0, N + 1, stride))
@@ -39,7 +75,13 @@ def sample_jobs(ref_files, stride, levels, n_rep, seed, t_margin):
             for lv in levels:
                 reps = 1 if lv == 0 else n_rep
                 for j in range(reps):
-                    d = np.concatenate([rng.normal(0, SIG_TH * lv, NTH), rng.normal(0, SIG_THD * lv, NTH)]) if lv > 0 else np.zeros(2 * NTH)
+                    if lv > 0:
+                        xn = perturb_state(r["S_X"][:, k], lv, rng, body, float(tS[k]), r["T"], r["params"]["eps"], body.qd_max)
+                        if xn is None:
+                            continue
+                        d = xn - r["S_X"][:, k]
+                    else:
+                        d = np.zeros(2 * NTH)
                     jobs.append(dict(ref=f, k=int(k), level=float(lv), rep=j, delta=d.tolist()))
     return jobs
 

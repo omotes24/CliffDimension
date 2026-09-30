@@ -50,8 +50,8 @@ class PlanarCliffEnv(gym.Env):
     def __init__(self, T=20.0, m=66.0, phi0=None, body_kw=None, control_dt=0.02, sub_dt=0.002, hold_time=2.0,
                  shaping="none", prices=None, price_scale=10.0, U_target=1.2, U_cap=2.0, w_U=3.0, w_E=3.0, w_time=0.01,
                  w_dist=20.0, w_energy=20.0, eps=0.20, K_att=40000.0, D_att=1500.0, hook_tol=0.025,
-                 catch_box=(0.03, -0.005, 0.05), seed=0, T_set=None, m_set=None, body_set=None, joint_stop_k=200.0,
-                 ramp_att=0.01, obs_body=True, cache_dir=None):
+                 catch_box=(0.03, -0.005, 0.05), seed=0, T_set=None, m_set=None, body_set=None, joint_stop_k=15.0,
+                 stop_damp=0.01, ramp_att=0.01, obs_body=True, cache_dir=None):
         super().__init__()
         self.T_fixed, self.m_fixed, self.phi0_fixed = T, m, phi0
         self.T_set, self.m_set, self.body_set = T_set, m_set, body_set
@@ -63,7 +63,7 @@ class PlanarCliffEnv(gym.Env):
         self.price_scale, self.U_target, self.U_cap = price_scale, U_target, U_cap
         self.w_U, self.w_E, self.w_time, self.w_dist, self.w_energy = w_U, w_E, w_time, w_dist, w_energy
         self.K_att, self.D_att, self.hook_tol, self.catch_box = K_att, D_att, hook_tol, catch_box
-        self.joint_stop_k, self.ramp_att = joint_stop_k, ramp_att
+        self.joint_stop_k, self.ramp_att, self.stop_damp = joint_stop_k, ramp_att, stop_damp
         self.obs_body = obs_body
         self.cache_dir = cache_dir
         self.rng = np.random.default_rng(seed)
@@ -81,7 +81,7 @@ class PlanarCliffEnv(gym.Env):
             body = make_body(float(m), **body_kw)
             chain = PlanarChain(body)
             sim = FastSim(body, chain, self.sub_dt, self.n_sub, self.eps, self.K_att, self.D_att, self.joint_stop_k,
-                          ramp_att=self.ramp_att, cache_dir=self.cache_dir)
+                          ramp_att=self.ramp_att, stop_damp=self.stop_damp, cache_dir=self.cache_dir)
             self._sims[key] = (body, chain, sim)
         self.body, self.ch, self.sim = self._sims[key]
         self.cur_body_kw = dict(body_kw)
