@@ -165,10 +165,13 @@ def main():
     ap.add_argument("--max-cpu", type=float, default=900)
     ap.add_argument("--N-min", type=int, default=30)
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--no-shuffle", action="store_true")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     files = sorted(set(sum([glob.glob(g) for g in a.refs], [])))
     jobs = sample_jobs(files, a.stride, a.levels, a.reps, a.seed, a.t_margin)
+    if not a.no_shuffle:                      # interleave references so that partial tables already cover all bodies
+        np.random.default_rng(a.seed).shuffle(jobs)
     if a.limit:
         jobs = jobs[:a.limit]
     print(f"{len(files)} references, {len(jobs)} from-state solves", flush=True)
