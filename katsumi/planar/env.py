@@ -11,7 +11,8 @@ knee; rate-limited to u_rate per second as in the optimiser) + a release trigger
 the catch box (from `hook_tol` = 2.5 cm behind the tip, the reach of the distal phalanges, to the wall; height
 -0.5 .. +5 cm) with an admissible approach (fingers close reflexively). Success = holding B for `hold_time`
 with the grip inside the admissible set. Failures: no release within one period, hand falls past B, hits B's
-face, slip on A (grip outside the cone for 30 ms), grip capacity exceeded, hook lost on B (the fingers slide along
+face, slip on A (grip outside the friction/hook cone plus the finger-hook capacity `hook_cap` f_cap for 30 ms), grip
+capacity exceeded, hook lost on B (the fingers slide along
 the ledge whenever the demanded force leaves the friction/hook cone and lose the edge beyond `hook_tol`), body
 through a wall.
 
@@ -53,7 +54,7 @@ class PlanarCliffEnv(gym.Env):
                  shaping="none", prices=None, price_scale=3.0, U_target=1.2, U_cap=2.0, w_U=10.0, w_E=1.0, w_time=0.0, w_early=40.0,
                  w_dist=20.0, w_energy=20.0, eps=0.20, K_att=40000.0, D_att=1500.0, hook_tol=0.025,
                  catch_box=(0.03, -0.005, 0.05), seed=0, T_set=None, m_set=None, body_set=None, joint_stop_k=15.0,
-                 stop_damp=0.01, ramp_att=0.01, obs_body=True, cache_dir=None, u_rate=10.0, release_thresh=0.8):
+                 stop_damp=0.01, ramp_att=0.01, obs_body=True, cache_dir=None, u_rate=10.0, release_thresh=0.8, hook_cap=0.1):
         super().__init__()
         self.T_fixed, self.m_fixed, self.phi0_fixed = T, m, phi0
         self.T_set, self.m_set, self.body_set = T_set, m_set, body_set
@@ -66,7 +67,7 @@ class PlanarCliffEnv(gym.Env):
         self.w_U, self.w_E, self.w_time, self.w_dist, self.w_energy, self.w_early = w_U, w_E, w_time, w_dist, w_energy, w_early
         self.K_att, self.D_att, self.hook_tol, self.catch_box = K_att, D_att, hook_tol, catch_box
         self.joint_stop_k, self.ramp_att, self.stop_damp = joint_stop_k, ramp_att, stop_damp
-        self.u_rate, self.release_thresh = u_rate, release_thresh
+        self.u_rate, self.release_thresh, self.hook_cap = u_rate, release_thresh, hook_cap
         self.obs_body = obs_body
         self.cache_dir = cache_dir
         self.rng = np.random.default_rng(seed)
@@ -148,10 +149,12 @@ class PlanarCliffEnv(gym.Env):
         return np.array([th[0] - th[1], th[2] - th[1], th[3] - th[2], th[4] - th[3]])
 
     def _cone_excess_A(self, R):
-        """Distance of the hand force on A from the admissible cone, normalised (0 inside); R: (2, n)."""
+        """Distance of the hand force on A from the admissible set, normalised (0 inside); R: (2, n).
+        The fingers hooked over the 3 cm ledge resist a pull away from the wall of up to hook_cap * f_cap even when
+        the hand is unloaded (mechanical hook), on top of the friction/hook cone mu_out * R_y of the optimiser."""
         rx, ry = R[0] / self.f_cap, R[1] / self.f_cap
         ryp = np.maximum(ry, 0)
-        exc = np.maximum.reduce([-ry, -(rx + self.body.mu_out * ryp), rx - self.body.mu_in * ryp, np.zeros_like(rx)])
+        exc = np.maximum.reduce([-ry, -(rx + self.body.mu_out * ryp + self.hook_cap), rx - self.body.mu_in * ryp, np.zeros_like(rx)])
         return exc
 
     def _qd_excess(self, QD):

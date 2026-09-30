@@ -25,15 +25,12 @@ def main():
         d = pd.read_csv(rows_csv)
         ok = d[d["ok"] == 1]
         M["dflNsolve"] = str(len(d)); M["dflNok"] = str(len(ok)); M["dflNref"] = str(d["ref"].nunique())
-        n_dense = 0
-        for f in glob.glob(os.path.join(a.data, "sol_*.pkl")):
-            pass
-        # dense rows: from the last fit log if present
-        for lg in sorted(glob.glob("logs/dfl_it*.log")):
-            m = re.search(r"dense rows: (\d+)", open(lg).read())
-            if m:
-                n_dense = int(m.group(1))
-        M["dflNrows"] = str(n_dense + len(ok)) if n_dense else str(len(ok))
+        try:
+            from katsumi.learn.dual_field import load_dataset
+            dd, _, _ = load_dataset(a.data)
+            M["dflNrows"] = str(len(dd))
+        except Exception:
+            M["dflNrows"] = str(len(ok))
         el = -ok["sens_tau_cap"] / ok["J"]                    # elasticity d ln J / d ln tau_cap (negative -> report magnitude)
         M["elastTau"] = f"{np.median(ok['sens_tau_cap'] / ok['J']):.2f}"
         M["elastTauMean"] = f"{np.mean(ok['sens_tau_cap'] / ok['J']):.2f}"
@@ -70,10 +67,23 @@ def main():
         M["rlEpisodesAll"] = str(n_ep); M["rlSuccessAll"] = str(n_s)
     # ---- v3 window from the grid ------------------------------------------------------------------------------
     files = sorted(glob.glob(os.path.join(a.grid, "rows_ref_T*_m*.csv")))
-    if files:
-        g = pd.concat([pd.read_csv(x) for x in files], ignore_index=True)
+    pkls = sorted(glob.glob(os.path.join(a.grid, "sol_ref_T*_m*_phi*.pkl")))
+    if files or pkls:
+        if pkls:                                       # build the table from the solution pickles (grid in progress)
+            import pickle
+            recs = []
+            for f in pkls:
+                r = pickle.load(open(f, "rb"))
+                recs.append(dict(T=r["T"], m=r["m"], phi_l=r["phi_l"], ok=int(bool(r.get("ok"))), U_peak=r["U_peak"],
+                                 req_cap_BW=r["U_peak"] * 1300.0 / (r["m"] * 9.81), catch_gap=r.get("catch_gap", np.nan)))
+            g = pd.DataFrame(recs)
+        else:
+            g = pd.concat([pd.read_csv(x) for x in files], ignore_index=True)
         g["phi_l"] = g["phi_l"].round(4)
         g = g.sort_values("ok", ascending=False).drop_duplicates(["T", "m", "phi_l"])
+        M["gridNsolved"] = str(int((g["ok"] == 1).sum())); M["gridNcases"] = str(len(g))
+        feas = g[(g["ok"] == 1) & (g["U_peak"] < 2.0)]
+        M["winNfeasible"] = str(len(feas)); M["winPhiMin"] = f"{feas['phi_l'].min():.3f}"; M["winPhiMax"] = f"{feas[feas['phi_l'] < 0.5]['phi_l'].max():.3f}"
         okg = g[(g["ok"] == 1) & (g["U_peak"] < 2.0)]
         if len(okg):
             win = okg[(okg["phi_l"] >= 0.2) & (okg["phi_l"] <= 0.35)]

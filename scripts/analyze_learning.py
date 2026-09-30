@@ -46,7 +46,7 @@ def rl_curves(rl_dir, out, window=2000):
                          released_last2000=last["release_time"].notna().mean(),
                          reasons_last2000=json.dumps(last["reason"].value_counts().head(4).to_dict(), ensure_ascii=False)))
     axes[0].set_ylabel("closest approach to B [m]\n(released episodes, rolling median)"); axes[1].set_ylabel("episode length [s]"); axes[2].set_ylabel("released fraction")
-    axes[0].set_yscale("log")
+    axes[0].set_ylim(0, 2.6)
     for ax in axes:
         ax.set_xlabel("environment steps [M]")
     axes[0].legend(fontsize=7)
@@ -59,47 +59,52 @@ def rl_curves(rl_dir, out, window=2000):
 
 
 def dfl_results(dfl_dir, out):
+    """Fit tables from results/dfl/it*/fit.json; closed-loop table from every results/dfl/*/episodes.csv."""
     its = sorted(glob.glob(os.path.join(dfl_dir, "it*")), key=lambda s: int(re.search(r"it(\d+)", s).group(1)))
-    fits, summ = [], []
+    fits = []
     for d in its:
         it = int(re.search(r"it(\d+)", d).group(1))
-        fj = os.path.join(d, "fit.json"); sj = os.path.join(d, "summary.csv"); ej = os.path.join(d, "episodes.csv")
+        fj = os.path.join(d, "fit.json")
         if os.path.exists(fj):
             f = json.load(open(fj))
             for r in f["fits"]:
                 r = dict(r); r["it"] = it; fits.append(r)
-        if os.path.exists(ej):
-            e = pd.read_csv(ej); e["it"] = it
-            g = e.groupby(["group", "ctrl"]).agg(n=("success", "size"), success=("success", "mean"), U_peak=("U_peak", "median"),
-                                                U_star=("U_star", "median"),
-                                                rel_err=("release_err", lambda s: np.nanmedian(np.abs(pd.to_numeric(s, errors="coerce"))))).reset_index()
-            g["it"] = it
-            summ.append(g)
-    fits = pd.DataFrame(fits); summ = pd.concat(summ, ignore_index=True) if summ else pd.DataFrame()
-    fits.to_csv(os.path.join(out, "dfl_fits.csv"), index=False); summ.to_csv(os.path.join(out, "dfl_closedloop.csv"), index=False)
+    fits = pd.DataFrame(fits)
+    eps = []
+    for f in sorted(glob.glob(os.path.join(dfl_dir, "*", "episodes.csv"))):
+        e = pd.read_csv(f); e["run"] = os.path.basename(os.path.dirname(f)); eps.append(e)
+    eps = pd.concat(eps, ignore_index=True) if eps else pd.DataFrame()
+    fits.to_csv(os.path.join(out, "dfl_fits.csv"), index=False)
     if len(fits):
-        print(fits[["it", "model", "split", "n", "r2_V", "r2_p", "r2_tau", "r2_U", "r2_u"]].round(3).to_string(index=False))
-    if len(summ):
+        cols = [c for c in ["it", "model", "split", "n", "r2_V", "r2_p", "rho_p", "sign_p", "r2_tau", "r2_U", "r2_u"] if c in fits.columns]
+        print(fits[cols].round(3).to_string(index=False))
+    summ = pd.DataFrame()
+    if len(eps):
+        eps["released"] = eps["release_err"].notna() | (eps["reason"].isin(["held B", "missed B", "hit B's face", "lost hook", "cone exceeded on B"]))
+        g = eps.groupby(["ctrl"])
+        summ = g.agg(n=("success", "size"), success=("success", "mean"), released=("released", "mean"), t_med=("t", "median"),
+                     U_med=("U_peak", "median"), U_star=("U_star", "median")).reset_index()
+        summ["main_failure"] = [eps[eps["ctrl"] == c]["reason"].value_counts().index[0] for c in summ["ctrl"]]
+        summ["n_slip"] = [int((eps[eps["ctrl"] == c]["reason"] == "slipped off A").sum()) for c in summ["ctrl"]]
         print(summ.round(3).to_string(index=False))
-        fig, axes = plt.subplots(1, 2, figsize=(7.5, 2.8))
-        for j, grp in enumerate(["train", "holdout"]):
-            ax = axes[j]
-            for i, ctrl in enumerate(sorted(summ["ctrl"].unique())):
-                s = summ[(summ["group"] == grp) & (summ["ctrl"] == ctrl)].sort_values("it")
-                ax.plot(s["it"], s["success"], "-o", ms=3, color=CAT[i], label=ctrl)
-            ax.set_title(f"{grp} bodies", fontsize=9); ax.set_xlabel("DAgger iteration"); ax.set_ylim(-0.02, 1.02)
-        axes[0].set_ylabel("closed-loop success rate"); axes[0].legend(fontsize=7)
-        fig.tight_layout(); fig.savefig(os.path.join(out, "dfl_closedloop.pdf")); fig.savefig(os.path.join(out, "dfl_closedloop.png"), dpi=200); plt.close(fig)
+        eps.to_csv(os.path.join(out, "dfl_episodes_all.csv"), index=False)
+        summ.to_csv(os.path.join(out, "dfl_closedloop.csv"), index=False)
     # LaTeX tables
-    with open(os.path.join("paper", "tab_dfl_fit.tex"), "w") as f:
-        f.write("\\begin{tabular}{llrrrrr}\n\\toprule\n反復 & モデル & 分割 & $R^2(V)$ & $R^2(\\bm p)$ & $R^2(\\tau)$ & $R^2(U^*)$ \\\\\n\\midrule\n")
-        for r in fits.itertuples():
-            f.write(f"{r.it} & {r.model} & {r.split} & {r.r2_V:.3f} & {r.r2_p:.3f} & {r.r2_tau:.3f} & {r.r2_U:.3f} \\\\\n")
-        f.write("\\bottomrule\n\\end{tabular}\n")
+    if len(fits):
+        with open(os.path.join("paper", "tab_dfl_fit.tex"), "w") as f:
+            f.write("\\begin{tabular}{llrrrrrr}\n\\toprule\nモデル & 分割 & $n$ & $R^2(V)$ & $R^2(\\tau)$ & $\\rho_S(\\bm p)$ & 符号一致$(\\bm p)$ & $R^2(\\bm u)$ \\\\\n\\midrule\n")
+            last_it = fits["it"].max()
+            for r in fits[fits["it"] == last_it].itertuples():
+                rho = getattr(r, "rho_p", float("nan")); sg = getattr(r, "sign_p", float("nan"))
+                f.write(f"{r.model} & {r.split} & {r.n} & {r.r2_V:.2f} & {r.r2_tau:.2f} & {rho:.2f} & {sg:.2f} & {r.r2_u:.2f} \\\\\n")
+            f.write("\\bottomrule\n\\end{tabular}\n")
+    NAMES = {"BC": "行動模倣（BC）", "DFL": "双対場 MPC", "DFL-noSob": "双対場 MPC（値のみ）", "ORACLE": "オラクル MPC"}
+    REASON = {"slipped off A": "A で滑り", "hit wall": "壁に接触", "grip capacity exceeded": "容量超過", "missed B": "B を逃す",
+              "hit B's face": "B 前面に衝突", "no release": "離手せず", "lost hook": "フック喪失", "held B": "成功"}
     with open(os.path.join("paper", "tab_dfl_closedloop.tex"), "w") as f:
-        f.write("\\begin{tabular}{llrrrr}\n\\toprule\n反復 & 制御器 & 身体 & 成功率 & $\\Upk$（中央値） & $|\\Delta t_\\ell|$ [s] \\\\\n\\midrule\n")
+        f.write("\\begin{tabular}{lrrrrrl}\n\\toprule\n制御器 & $n$ & 成功 & 離手率 & 生存時間中央値 [s] & $\\Upk$ 中央値 & 主な失敗 \\\\\n\\midrule\n")
         for r in summ.itertuples():
-            f.write(f"{r.it} & {r.ctrl} & {r.group} & {100 * r.success:.0f}\\% ({r.n}) & {r.U_peak:.2f} / $U^*$={r.U_star:.2f} & {r.rel_err:.3f} \\\\\n")
+            f.write(f"{NAMES.get(r.ctrl, r.ctrl)} & {r.n} & {100 * r.success:.0f}\\% & {100 * r.released:.0f}\\% & {r.t_med:.1f} & {r.U_med:.2f}（$U^*$={r.U_star:.2f}） & {REASON.get(r.main_failure, r.main_failure)} \\\\\n")
         f.write("\\bottomrule\n\\end{tabular}\n")
     return fits, summ
 

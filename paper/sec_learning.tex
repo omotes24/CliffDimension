@@ -61,27 +61,29 @@ costate は Sobolev 項があると $R^2=$\fitPhold，無いと \fitPholdNoSob �
 \end{table}
 
 \subsection{閉ループ：双対場からの制御}
+\label{sec:closedloop}
 点ごとの Hamiltonian 最小化（Pontryagin 制御器）は，1 制御周期でトルクが価値に与える影響が小さいため
 $H$ が $\bm u$ についてほぼ平坦で，costate の 10\,\%程度の誤差で最小点が飽和値へ飛ぶ（条件が悪い）ことが分かった．
 オラクル自身の costate を用いても復元トルクの中央値誤差は 0.07，最大 0.6 であり，
 最適解のトルクは点ごとの最小化では決まらない（変化率制限と離散化のため）．
-そこで，既知の剛体力学を 0.5\,s 先まで陽に積分し，その終端で双対場を評価する短地平線 MPC
-（暗黙 Hermite--Simpson，IPOPT，価値ネットワークを CasADi に埋め込み厳密微分；4 個の場のアンサンブル平均$+2\sigma$ の悲観的終端値）を
-双対場の制御器とした．表~\ref{tab:dflcl} と図~\ref{fig:dflcl} に，参照軌道の静止開始と摂動開始からの成功率，
-$\Upk$，離手時刻誤差を，行動模倣・双対 DAgger 反復ごとに示す．
+そこで，既知の剛体力学を 0.3--0.5\,s 先まで陽に積分し，その終端で双対場を評価する短地平線 MPC
+（暗黙 Hermite--Simpson，IPOPT，価値ネットワークを CasADi に埋め込み厳密微分）を双対場の制御器とした．
+学習した価値場をそのまま終端コストにすると，MPC はデータの外で価値が低く外挿された状態を「発見」して
+そこへ向かう（0.3\,s 先で $V_\vartheta$ が 2--3 低い状態；学習器と最適化器の敵対）．
+4 個の場のアンサンブル（平均$+2\sigma$）だけでは外挿の一致のため防げず，
+学習データの混合ガウス密度による分布外ペナルティを終端に加えることで初めて価値の搾取が止まった．
+執行側では，オラクル解が引っ掛かり錐と可動域の境界上にあるため，計画の錐を 25\,\%＋絶対値 0.03\,$F_{\rm cap}$ だけ
+内側に締め（制約タイトニング），最初の指令を現在の指令に変化率制限で結ぶ必要があった．
+比較のため，同じ執行系で (i)~行動模倣（BC），(ii)~双対場 MPC，(iii)~オラクルを 0.4--0.5\,s ごとに解き直す
+オラクル・イン・ザ・ループ MPC（計算量の上限；1 エピソード 10--40 分）を評価した（表~\ref{tab:dflcl}）．
 \begin{table}[t]
 \centering\scriptsize
-\caption{閉ループ評価（$T=18$\,s，各身体 2 位相，静止開始＋摂動開始）．}
+\caption{閉ループ評価（$T=18$\,s，$m\in\{60,\dots,75\}$\,kg の参照解，静止開始＋摂動開始）．
+生存時間は失敗までの時間，離手率は離手に至ったエピソードの割合．}
 \label{tab:dflcl}
 \IfFileExists{tab_dfl_closedloop.tex}{\input{tab_dfl_closedloop}}{（計算中）}
 \end{table}
-\IfFileExists{../results/figs/dfl_closedloop.pdf}{%
-\begin{figure}[t]
-\centering
-\includegraphics[width=.9\linewidth]{../results/figs/dfl_closedloop.pdf}
-\caption{双対 DAgger 反復に対する閉ループ成功率（学習身体・未知身体）．}
-\label{fig:dflcl}
-\end{figure}}{}
+\closedloopSummary
 
 \subsection{強化学習との比較}
 同じ環境・同じ着地反射で PPO（8 並列環境，300 万ステップ）を，疎報酬，振りエネルギー整形，
