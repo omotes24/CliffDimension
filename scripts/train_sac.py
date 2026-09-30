@@ -19,6 +19,9 @@ def main():
     ap.add_argument("--fixed-T", type=float, default=None)
     ap.add_argument("--fixed-m", type=float, default=None)
     ap.add_argument("--n-envs", type=int, default=8)
+    ap.add_argument("--shaping", default="none", choices=["none", "margin"])
+    ap.add_argument("--device", default="auto")
+    ap.add_argument("--phi0", type=float, default=None, help="fixed start phase (with --fixed-T/--fixed-m); default random")
     a = ap.parse_args()
     from stable_baselines3 import SAC
     from stable_baselines3.common.vec_env import SubprocVecEnv
@@ -26,18 +29,20 @@ def main():
     from katsumi.mujoco.gym_wrapper import CliffGym
     fixed = None
     if a.fixed_T is not None and a.fixed_m is not None:
-        fixed = dict(T=a.fixed_T, m=a.fixed_m, phi0=0.0)
+        fixed = dict(T=a.fixed_T, m=a.fixed_m, phi0=a.phi0)
 
     def make(rank):
         def _f():
-            return Monitor(CliffGym(fixed=fixed, seed=a.seed * 1000 + rank))
+            return Monitor(CliffGym(fixed=fixed, seed=a.seed * 1000 + rank, shaping=a.shaping), info_keywords=("success",))
         return _f
 
     os.makedirs(a.out, exist_ok=True)
     venv = SubprocVecEnv([make(i) for i in range(a.n_envs)])
     model = SAC("MlpPolicy", venv, learning_rate=3e-4, batch_size=256, gamma=0.999, buffer_size=1_000_000,
-                policy_kwargs=dict(net_arch=[256, 256, 256]), seed=a.seed, verbose=1, tensorboard_log=a.out)
-    model.learn(total_timesteps=a.steps, log_interval=10)
+                policy_kwargs=dict(net_arch=[256, 256, 256]), seed=a.seed, verbose=1, tensorboard_log=a.out, device=a.device)
+    from stable_baselines3.common.callbacks import CheckpointCallback
+    ckpt = CheckpointCallback(save_freq=max(50_000 // a.n_envs, 1), save_path=a.out, name_prefix="sac")
+    model.learn(total_timesteps=a.steps, log_interval=10, callback=ckpt)
     model.save(os.path.join(a.out, "sac_final"))
 
 

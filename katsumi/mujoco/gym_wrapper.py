@@ -25,8 +25,13 @@ class CliffGym(gym.Env):
     metadata = {"render_modes": []}
 
     def __init__(self, T_set=None, m_set=None, phi0_set=None, fixed=None, env_params: EnvParams | None = None,
-                 seed: int = 0):
+                 seed: int = 0, shaping: str = "none", w_dist: float = 20.0, w_face: float = 10.0):
+        """shaping: "none" (plan reward only) or "margin" (adds -w_dist * d_min - w_face * (1 - facing) at the end of a
+        failed episode, where d_min is the closest approach of the hand mid-point to B's tip after the release —
+        the dense 'constraint margin' signal of the dual-world-model proposal)."""
         super().__init__()
+        self.shaping, self.w_dist, self.w_face = shaping, w_dist, w_face
+        self._d_min, self._face_best = np.inf, -1.0
         self.T_set = T_set or TRAIN_T
         self.m_set = m_set or TRAIN_M
         self.phi0_set = phi0_set                  # None -> Uniform[0, 2)
@@ -51,12 +56,15 @@ class CliffGym(gym.Env):
             self.rng = np.random.default_rng(seed)
         if self.fixed:
             T, m, phi0 = self.fixed["T"], self.fixed["m"], self.fixed.get("phi0", 0.0)
+            if phi0 is None:
+                phi0 = float(self.rng.uniform(0, 1))
         else:
             T = float(self.rng.choice(self.T_set))
             m = float(self.rng.choice(self.m_set))
             phi0 = float(self.rng.uniform(0, 1)) if self.phi0_set is None else float(self.rng.choice(self.phi0_set))
         self.env = self._env_for(m)
         obs = self.env.reset(T=T, phi0=phi0)
+        self._d_min, self._face_best = np.inf, -1.0
         return obs, dict(T=T, m=m, phi0=phi0)
 
     def step(self, action):
@@ -64,4 +72,17 @@ class CliffGym(gym.Env):
         a_env = a.copy()
         a_env[-2:] = 0.5 * (a[-2:] + 1.0)          # finger channels: [-1, 1] -> [0, 1]
         obs, r, term, trunc, info = self.env.step(a_env)
+        if self.shaping == "margin":
+            env = self.env
+            if env.released_A:
+                pB = env.cliffs["B"][0]
+                mid = 0.5 * (env.data.site_xpos[env.hands["left"].site] + env.data.site_xpos[env.hands["right"].site])
+                dist = float(np.linalg.norm(mid - pB))
+                if dist < self._d_min:
+                    self._d_min = dist
+                    self._face_best = float(env.data.site_xmat[env.chest_site].reshape(3, 3)[:, 2][0])
+            if (term or trunc) and not info.get("success", False):
+                dm = self._d_min if np.isfinite(self._d_min) else 3.0
+                r = r - self.w_dist * dm - self.w_face * (1.0 - self._face_best)
+                info = dict(info, d_min=dm, face_best=self._face_best)
         return obs, float(r), bool(term), bool(trunc), info
