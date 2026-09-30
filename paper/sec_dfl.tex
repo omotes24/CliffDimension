@@ -16,7 +16,14 @@
 \label{eq:envelope}
 \end{equation}
 が身体・装置パラメータ $\bm\theta$（体重，身長，筋力，摩擦係数，周期）に対しても成り立つ．
-本稿はこの\textbf{双対場}（value・costate・価格の場）を学習対象とすることを提案する．
+本稿はこの\textbf{双対場}（value・costate・価格の場）を学習対象とすることを提案する（図~\ref{fig:dfl}）．
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{../results/figs/dfl_schematic.pdf}
+\caption{双対場学習の全体像．上：状態遷移（主変数）を学ぶ従来の世界モデルと，価値・costate・価格（双対変数）を学ぶ提案の対比．
+下：厳密オラクルの KKT 乗数が双対ラベルを与え，Sobolev 学習した場から既知の力学で行動を導く．訪問状態はオラクルが再ラベルする．}
+\label{fig:dfl}
+\end{figure*}
 主変数の学習（方策の模倣，状態遷移モデル）と異なり，双対場は
 (i)~密である（成功／失敗ではなく，全状態で微分可能なスカラーとベクトル），
 (ii)~行動に直接変換できる（Pontryagin の最小原理），

@@ -43,12 +43,14 @@ def mlp_casadi(net, z):
 class SwingMPC:
     def __init__(self, net, body, chain, T, H=25, control_dt=0.02, eps=0.20, w_E=1.0, t_ref=1.0, u_rate=10.0, U_margin=1.0,
                  stature=1.75, cap_scale=1.0, release_slack=0.5, wall_smooth=0.01, w_smooth=1e-3, max_iter=80, verbose=False,
-                 terminal_weight=1.0, beta=2.0):
+                 terminal_weight=1.0, beta=2.0, replan=1, density=None, beta_d=1.0):
         """net: a DualFieldNet or a list of them (ensemble: terminal value = mean + beta * std, pessimistic where the
         members disagree, i.e. away from the oracle data)."""
         self.nets = list(net) if isinstance(net, (list, tuple)) else [net]
         self.net = self.nets[0]
         self.beta = beta
+        self.replan = replan
+        self.density, self.beta_d = density, beta_d
         self.body, self.ch, self.T = body, chain, float(T)
         self.H, self.dt, self.eps = H, control_dt, eps
         self.w_E, self.t_ref, self.u_rate, self.U_margin = w_E, t_ref, u_rate, U_margin
@@ -139,6 +141,23 @@ class SwingMPC:
             VH = Vmean + self.beta * ca.sqrt(Vvar + 1e-6)
         else:
             VH = Vmean
+        # out-of-distribution penalty: Gaussian-mixture density of the oracle data in the standardised feature space
+        self.nll_expr = None
+        if self.density is not None:
+            w, means, prec_chol, c0 = self.density
+            zs = (zf - ca.DM(self.net.mu.numpy().astype(float))) / ca.DM(self.net.sd.numpy().astype(float))
+            terms = []
+            for k in range(len(w)):
+                Lk = ca.DM(prec_chol[k])                               # z-space: (z - mu)^T P (z - mu) with P = L L^T
+                dz = Lk.T @ (zs - ca.DM(means[k]))
+                logdet = float(np.sum(np.log(np.diag(prec_chol[k]))))
+                terms.append(np.log(w[k]) + logdet - 0.5 * ca.sumsqr(dz))
+            tv = ca.vertcat(*terms)
+            mx = ca.mmax(tv)
+            logp = mx + ca.log(ca.sum1(ca.exp(tv - mx)))
+            nll = -logp
+            self.nll_expr = nll
+            VH = VH + self.beta_d * ca.fmax(nll - c0, 0.0) ** 2 / 10.0
         J += self.terminal_weight * VH
         self.VH_expr = VH
         opti.minimize(J)
@@ -157,6 +176,7 @@ class SwingMPC:
         self.last = {}
         self.n_fail = 0
         self.lam_g = None
+        self.plan_left = 0
 
     def field(self, x, t):
         z = torch.tensor(make_features(x, t, self.T, self.body.m, self.stature, self.cap_scale), dtype=torch.float32)
@@ -170,10 +190,9 @@ class SwingMPC:
         H = self.H
         if self.sol is not None:
             g = {k: np.array(v) for k, v in self.sol.items()}
-            for k in ("X", "A", "U", "R"):
-                g[k] = np.concatenate([g[k][:, 1:], g[k][:, -1:]], 1)
-            for k in ("Am", "Rm"):
-                g[k] = np.concatenate([g[k][:, 1:], g[k][:, -1:]], 1)
+            sft = self.replan
+            for k in ("X", "A", "U", "R", "Am", "Rm"):
+                g[k] = np.concatenate([g[k][:, sft:], np.repeat(g[k][:, -1:], sft, 1)], 1)
             g["X"][:, 0] = x
             return g
         Xg = np.tile(x[:, None], (1, H + 1)); Ug = np.tile(self.u_prev[:, None], (1, H + 1))
@@ -218,10 +237,22 @@ class SwingMPC:
         u = np.clip(self.sol["U"][:, 0], -1, 1)
         u = np.clip(u, self.u_prev - self.u_rate * self.dt, self.u_prev + self.u_rate * self.dt)
         self.u_prev = u
-        self.last = dict(V=V0, U=U0, tau=tau0, ok=ok, iters=stats.get("iter_count", -1), VH=float(val(self.VH_expr)), Ucap=Ucap)
+        self.last = dict(V=V0, U=U0, tau=tau0, ok=ok, iters=stats.get("iter_count", -1), VH=float(val(self.VH_expr)), Ucap=Ucap,
+                         nll=float(val(self.nll_expr)) if self.nll_expr is not None else float("nan"))
         return u, release
 
     def __call__(self, env):
-        u, release = self.act(env.th, env.thd, env.t)
+        # re-plan every `replan` control periods; in between apply the stored plan (shifted)
+        if self.plan_left > 0 and self.sol is not None:
+            k = self.replan - self.plan_left
+            u = np.clip(self.sol["U"][:, k], -1, 1)
+            u = np.clip(u, self.u_prev - self.u_rate * self.dt, self.u_prev + self.u_rate * self.dt)
+            self.u_prev = u
+            _, _, tau0 = self.field(np.concatenate([env.th, env.thd]), env.t)
+            release = tau0 <= self.release_slack * self.dt
+            self.plan_left -= 1
+        else:
+            u, release = self.act(env.th, env.thd, env.t)
+            self.plan_left = self.replan - 1
         a = np.zeros(NTAU + 1); a[:NTAU] = u; a[NTAU] = 1.0 if release else -1.0
         return a

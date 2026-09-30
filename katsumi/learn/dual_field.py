@@ -358,3 +358,14 @@ def run_episode(env, controller, start, max_steps=2000):
     res["U_swing"] = U_swing
     res.update({f"field_{k_}": v for k_, v in getattr(controller, "last", {}).items()})
     return res
+
+
+def fit_density(F, mu, sd, n_components=24, seed=0):
+    """Gaussian mixture of the standardised oracle features (for the out-of-distribution penalty of the MPC).
+    Returns (weights, means, precisions_cholesky, c0) with c0 = 95th percentile of the negative log-density on the data."""
+    from sklearn.mixture import GaussianMixture
+    Z = (F - mu) / sd
+    gm = GaussianMixture(n_components=n_components, covariance_type="full", reg_covar=1e-3, random_state=seed, max_iter=200).fit(Z)
+    nll = -gm.score_samples(Z)
+    return dict(w=gm.weights_.tolist(), means=gm.means_.tolist(), prec_chol=gm.precisions_cholesky_.tolist(), c0=float(np.quantile(nll, 0.95)),
+                nll_median=float(np.median(nll)))

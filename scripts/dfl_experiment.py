@@ -18,7 +18,7 @@ from katsumi.planar.env import PlanarCliffEnv
 from katsumi.planar.anthro import make_body
 from katsumi.planar.model import PlanarChain, NTH
 from katsumi.learn.dual_field import (load_rows, load_dataset, train_dual_field, train_bc, r2, PontryaginController, BCController, run_episode,
-                                      make_features, DualFieldNet, BCNet)
+                                      make_features, DualFieldNet, BCNet, fit_density)
 from katsumi.learn.reflex import LandingReflex, ReflexEnv
 from katsumi.learn.swing_mpc import SwingMPC
 
@@ -41,10 +41,23 @@ def report_fit(net, bc, F, Y, idx, name):
     V, U, tau, p = V.detach().numpy(), U.detach().numpy(), tau.detach().numpy(), p.detach().numpy()
     with torch.no_grad():
         u = bc(z).numpy()
+    from scipy import stats
+    P = Y["p"][idx]
+    # robust costate metrics: Spearman rank correlation per component and the sign agreement (the costate is heavy
+    # tailed near active constraints, which dominates a plain R^2)
+    rho = [stats.spearmanr(P[:, i], p[:, i]).correlation for i in range(2 * NTH)]
+    sign = [np.mean(np.sign(P[:, i]) == np.sign(p[:, i])) for i in range(2 * NTH)]
+    # R^2 on the central 90% of |p| per component
+    r2c = []
+    for i in range(2 * NTH):
+        q = np.quantile(np.abs(P[:, i]), 0.95); msk = np.abs(P[:, i]) <= q
+        r2c.append(r2(P[msk, i], p[msk, i]))
     out = dict(split=name, n=len(idx), r2_V=r2(Y["J"][idx], V), r2_U=r2(Y["U"][idx], U), r2_tau=r2(Y["tau"][idx], tau),
-               r2_p=float(np.mean([r2(Y["p"][idx][:, i], p[:, i]) for i in range(2 * NTH)])),
-               r2_p_th=float(np.mean([r2(Y["p"][idx][:, i], p[:, i]) for i in range(NTH)])),
-               r2_p_thd=float(np.mean([r2(Y["p"][idx][:, i], p[:, i]) for i in range(NTH, 2 * NTH)])),
+               r2_p=float(np.mean([r2(P[:, i], p[:, i]) for i in range(2 * NTH)])),
+               r2_p_th=float(np.mean([r2(P[:, i], p[:, i]) for i in range(NTH)])),
+               r2_p_thd=float(np.mean([r2(P[:, i], p[:, i]) for i in range(NTH, 2 * NTH)])),
+               r2_p_c90=float(np.mean(r2c)), rho_p=float(np.nanmean(rho)), sign_p=float(np.mean(sign)),
+               rho_p_thd=float(np.nanmean(rho[NTH:])), sign_p_thd=float(np.mean(sign[NTH:])),
                r2_u=float(np.mean([r2(Y["u"][idx][:, i], u[:, i]) for i in range(4)])),
                rmse_tau=float(np.sqrt(np.mean((Y["tau"][idx] - tau) ** 2))), rmse_U=float(np.sqrt(np.mean((Y["U"][idx] - U) ** 2))))
     return out
@@ -59,16 +72,18 @@ def _load_models(path):
         n_.load_state_dict(sd); n_.eval(); return n_
     ens = [mk(sd) for sd in (ck.get("ens") or [ck["dfl"]])]
     net0 = mk(ck["dfl0"])
+    dens = ck.get("density")
+    density = (np.array(dens["w"]), np.array(dens["means"]), np.array(dens["prec_chol"]), dens["c0"]) if dens else None
     lin = [k for k in ck["bc"] if k.endswith(".weight")]
     bc = BCNet(ck["mu"].numpy(), ck["sd"].numpy(), width=ck["bc"][lin[0]].shape[0], depth=len(lin) - 1); bc.load_state_dict(ck["bc"]); bc.eval()
-    return ens, net0, bc
+    return ens, net0, bc, density
 
 
 def eval_task(args):
     """One (reference, start, controller) episode; models are loaded from disk in the worker."""
-    f, st, kind, name, models_path, refs, control_dt, controller, H_mpc, beta, holdout_m = args
+    f, st, kind, name, models_path, refs, control_dt, controller, H_mpc, beta, holdout_m, beta_d, replan = args
     torch.set_num_threads(1)
-    ens, net0, bc = _load_models(models_path)
+    ens, net0, bc, density = _load_models(models_path)
     r = pickle.load(open(f, "rb"))
     T, m = r["T"], r["m"]
     body_kw = r.get("body_kw", {}) or {}
@@ -81,7 +96,8 @@ def eval_task(args):
     else:
         net = ens if name == "DFL" else net0
         if controller == "mpc":
-            c = SwingMPC(net, body, chain, T, H=H_mpc, control_dt=control_dt, stature=st_, cap_scale=cs_, beta=beta)
+            c = SwingMPC(net, body, chain, T, H=H_mpc, control_dt=control_dt, stature=st_, cap_scale=cs_, beta=beta, density=density,
+                         beta_d=beta_d, replan=replan)
         else:
             c = PontryaginController(net[0] if isinstance(net, list) else net, body, chain, T, control_dt=control_dt, stature=st_, cap_scale=cs_)
     t1 = time.time()
@@ -96,12 +112,12 @@ def eval_task(args):
 
 
 def eval_controllers(models_path, refs, out_dir, episodes_per_ref=6, seed=0, control_dt=0.02, holdout_m=None, controller="mpc", H_mpc=25,
-                     beta=2.0, workers=8, ctrl_names=("DFL", "DFL-noSob", "BC")):
+                     beta=2.0, workers=8, ctrl_names=("DFL", "DFL-noSob", "BC"), beta_d=1.0, replan=2):
     rng = np.random.default_rng(seed)
     tasks = []
     for f in refs:
         r = pickle.load(open(f, "rb"))
-        if not r.get("ok") or r["U_peak"] > 2.5:
+        if not r.get("ok") or r["U_peak"] > 1.6:                 # feasible for a human grip (< U_cap of the environment)
             continue
         N = r["S_X"].shape[1] - 1
         tS = r["t_s0"] + np.linspace(0, r["d_s"], N + 1)
@@ -112,7 +128,7 @@ def eval_controllers(models_path, refs, out_dir, episodes_per_ref=6, seed=0, con
             starts.append((dict(t0=float(tS[k]), state=(x[:NTH], x[NTH:])), f"perturbed_k{k}"))
         for st, kind in starts:
             for name in ctrl_names:
-                tasks.append((f, st, kind, name, models_path, refs, control_dt, controller, H_mpc, beta, holdout_m))
+                tasks.append((f, st, kind, name, models_path, refs, control_dt, controller, H_mpc, beta, holdout_m, beta_d, replan))
     import multiprocessing as mp
     rows = []
     ctx = mp.get_context("forkserver")
@@ -138,6 +154,9 @@ def main():
     ap.add_argument("--H", type=int, default=25, help="MPC horizon (control periods)")
     ap.add_argument("--ensemble", type=int, default=4, help="number of Sobolev fields (terminal value = mean + beta std)")
     ap.add_argument("--beta", type=float, default=2.0)
+    ap.add_argument("--beta-d", type=float, default=1.0, help="out-of-distribution (GMM negative log-density) penalty weight")
+    ap.add_argument("--replan", type=int, default=2, help="MPC re-planning interval (control periods)")
+    ap.add_argument("--gmm", type=int, default=24)
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--ctrls", default="DFL,BC", help="controllers to evaluate (DFL, DFL-noSob, BC)")
     ap.add_argument("--eval-only", default=None, help="models.pt to evaluate (skip training)")
@@ -151,7 +170,8 @@ def main():
     if a.eval_only:
         refs = sorted(glob.glob(a.eval_refs or a.refs))
         rows = eval_controllers(a.eval_only, refs, a.out, episodes_per_ref=a.episodes, seed=a.seed, holdout_m=a.holdout_m,
-                                controller=a.controller, H_mpc=a.H, beta=a.beta, workers=a.workers, ctrl_names=tuple(a.ctrls.split(",")))
+                                controller=a.controller, H_mpc=a.H, beta=a.beta, workers=a.workers, ctrl_names=tuple(a.ctrls.split(",")),
+                            beta_d=a.beta_d, replan=a.replan)
         import pandas as pd
         df = pd.DataFrame(rows)
         summ = df.groupby(["group", "ctrl"]).agg(n=("success", "size"), success=("success", "mean"), U_peak=("U_peak", "median"),
@@ -181,13 +201,16 @@ def main():
         print(json.dumps(f1), "\n", json.dumps(f0), flush=True)
     json.dump(dict(fits=fits, hist_sobolev=h1, hist_value=h2, hist_bc=h3, n=dict(train=len(tr), val=len(va), holdout=len(te))),
               open(os.path.join(a.out, "fit.json"), "w"), indent=1)
+    dens = fit_density(F[tr], net.mu.numpy(), net.sd.numpy(), n_components=a.gmm, seed=a.seed)
+    print("density: median nll %.2f, c0 %.2f" % (dens["nll_median"], dens["c0"]), flush=True)
     torch.save(dict(dfl=net.state_dict(), dfl0=net0.state_dict(), bc=bc.state_dict(), mu=net.mu, sd=net.sd, y_mu=net.y_mu, y_sd=net.y_sd,
-                    ens=[n_.state_dict() for n_ in ens]), os.path.join(a.out, "models.pt"))
+                    ens=[n_.state_dict() for n_ in ens], density=dens), os.path.join(a.out, "models.pt"))
     if a.no_eval:
         return
     refs = sorted(glob.glob(a.eval_refs or a.refs))
     rows = eval_controllers(os.path.join(a.out, "models.pt"), refs, a.out, episodes_per_ref=a.episodes, seed=a.seed, holdout_m=a.holdout_m,
-                            controller=a.controller, H_mpc=a.H, beta=a.beta, workers=a.workers, ctrl_names=tuple(a.ctrls.split(",")))
+                            controller=a.controller, H_mpc=a.H, beta=a.beta, workers=a.workers, ctrl_names=tuple(a.ctrls.split(",")),
+                            beta_d=a.beta_d, replan=a.replan)
     import pandas as pd
     df = pd.DataFrame(rows)
     summ = df.groupby(["group", "ctrl"]).agg(n=("success", "size"), success=("success", "mean"), U_peak=("U_peak", "median"),
