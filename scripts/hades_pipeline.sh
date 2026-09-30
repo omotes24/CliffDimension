@@ -22,7 +22,7 @@ fi
 
 # ---------------------------------------------------------------- 1. dense grid (T x m x 16 phases) --------
 step "1. dense grid (warm-started from the v2 solutions where available)"
-KATSUMI_MAX_CPU=1500 $PY scripts/run_grid.py --out results/grid --T 16 17 18 19 20 21 22 23 24 --m 60 63 66 69 72 75 \
+KATSUMI_MAX_CPU=2400 $PY scripts/run_grid.py --out results/grid --T 16 17 18 19 20 21 22 23 24 --m 60 63 66 69 72 75 \
     --nphi 16 --workers $NW --tag ref --init-from-grid results/legacy_v2/grid > logs/grid.log 2>&1
 
 # ---------------------------------------------------------------- 2. lower envelope ------------------------

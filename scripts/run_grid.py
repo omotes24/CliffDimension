@@ -30,25 +30,32 @@ def hs_residuals(r, body):
 MAX_CPU = float(os.environ.get("KATSUMI_MAX_CPU", "900"))
 
 
-def solve_case(T, m, phi_l, prev, params_kw, tag, outdir, d_s_guesses=(3.0, 2.0, 4.0)):
+COLD_GUESSES = ((3.0, 0.6), (4.5, 0.6), (2.0, 0.6), (3.5, 0.9), (5.5, 0.4))   # (d_s, swing amplitude)
+
+
+def solve_case(T, m, phi_l, prev, params_kw, tag, outdir, d_s_guesses=None, alt_prev=None):
+    """prev: primary warm start (chain neighbour); alt_prev: secondary warm start (e.g. an older model's solution);
+    cold starts (several swing guesses) are tried when the warm starts fail."""
     body_kw = params_kw.pop("body_kw", {})
     body = make_body(m, **body_kw)
     p = ReducedParams(fixed_release_phase=phi_l, wait_in_cost=False, **params_kw)
     best = None
     tried = []
     t0 = time.time()
-    if prev is not None:
+    for pw in [x for x in (prev, alt_prev) if x is not None]:
         nlp = PlanarNLP(body, T, phi_l, p)
-        nlp.set_initial(prev=prev)
+        nlp.set_initial(prev=pw)
         r = nlp.solve(print_level=0, max_iter=2500, tol=1e-4, max_cpu_time=MAX_CPU)
         r["cold_start"] = 0
         tried.append(r)
         if r["ok"]:
             best = r
+            break
     if best is None:
-        for d_s in d_s_guesses:
+        guesses = [(d, 0.6) for d in d_s_guesses] if d_s_guesses else list(COLD_GUESSES)
+        for d_s, amp in guesses:
             nlp = PlanarNLP(body, T, phi_l, p)
-            nlp.set_initial(d_w=T - d_s, d_s=d_s)
+            nlp.set_initial(d_w=max(0.0, T - d_s), d_s=d_s, swing_amp=amp)
             r = nlp.solve(print_level=0, max_iter=2500, tol=1e-4, max_cpu_time=MAX_CPU)
             r["cold_start"] = 1
             tried.append(r)
@@ -105,8 +112,8 @@ def worker(args):
                 r = pickle.load(open(fn, "rb"))
                 body = make_body(m, **dict(params_kw).get("body_kw", {}))
             else:
-                p0 = prev
-                if init_grid:   # warm start from a saved solution of the same condition (or the nearest mass)
+                alt = None
+                if init_grid:   # secondary warm start: a saved solution of the same condition (or the nearest mass)
                     cands = [f for f in os.listdir(init_grid) if f.endswith(f"_T{T:g}_m{m:g}_phi{phi_l:.3f}.pkl")]
                     same_tag = [f for f in cands if f.startswith(f"sol_{tag}_")]
                     cands = same_tag or cands
@@ -119,8 +126,9 @@ def worker(args):
                                 pool_.append((abs(float(mm.group(1)) - m), f))
                         cands = [sorted(pool_)[0][1]] if pool_ else []
                     if cands:
-                        p0 = pickle.load(open(os.path.join(init_grid, sorted(cands)[0]), "rb"))
-                r, body = solve_case(T, m, phi_l, p0, dict(params_kw), tag, outdir)
+                        alt = pickle.load(open(os.path.join(init_grid, sorted(cands)[0]), "rb"))
+                # the chain neighbour is the primary warm start; the saved solution is the fallback
+                r, body = solve_case(T, m, phi_l, prev, dict(params_kw), tag, outdir, alt_prev=alt)
                 pickle.dump(r, open(fn, "wb"))
             row = row_from(r, body)
             prev = r if r["ok"] else prev
