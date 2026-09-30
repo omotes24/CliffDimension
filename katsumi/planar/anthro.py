@@ -44,6 +44,9 @@ class Body:
     mu_out: float = 1.0                    # friction/hook coefficient against pulls away from the wall
     mu_in: float = 2.0                     # coefficient against pulls towards the wall (fingertips on the face)
     clearance: np.ndarray = field(default_factory=lambda: np.array([0.04, 0.12, 0.12, 0.07, 0.10]))
+    # points along the forearm (distance from the hook line) and their clearances to the face plane [m]
+    forearm_points: np.ndarray = field(default_factory=lambda: np.array([0.08, 0.16]))
+    forearm_clearance: np.ndarray = field(default_factory=lambda: np.array([0.01, 0.02]))
     stature: float = 1.75
     arm_scale: float = 1.0
 
@@ -158,6 +161,7 @@ def make_body(m: float, cap_scale: float = 1.0, grip_scale: float = 1.0, grip_of
     body.tau_cap = body.tau_cap * cap_scale
     body.f_cap = body.f_cap * grip_scale
     body.clearance = body.clearance * ks
+    body.forearm_points = body.forearm_points * ka
     if mu_out is not None:
         body.mu_out = mu_out
     assert abs(sum(l.mass for l in links) - m) < 1e-9

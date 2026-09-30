@@ -28,7 +28,8 @@ LABEL = {"mu060": r"$\mu_{out}=0.6$", "mu150": r"$\mu_{out}=1.5$", "cap070": "jo
          "eps010": r"$\epsilon=0.10$ s", "eps040": r"$\epsilon=0.40$ s", "comp": "compliant catch",
          "stature160": "H = 1.60 m", "stature165": "H = 1.65 m", "stature170": "H = 1.70 m", "stature180": "H = 1.80 m",
          "stature185": "H = 1.85 m", "arm095": "arm ×0.95", "arm105": "arm ×1.05", "dc030": r"$\Delta_c=30$ ms",
-         "dc100": r"$\Delta_c=100$ ms", "vrel3": r"$|v_{rel}|\le3$", "vrel5": r"$|v_{rel}|\le5$"}
+         "dc100": r"$\Delta_c=100$ ms", "vrel3": r"$|v_{rel}|\le3$", "vrel5": r"$|v_{rel}|\le5$",
+         "shx015": "shoulder hyperext. 15°", "shx052": "shoulder hyperext. 52°"}
 
 
 def load_curve(files):

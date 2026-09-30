@@ -95,7 +95,7 @@ def fig_sensitivity(out, path="results/figs/sensitivity.csv"):
     s["rel"] = 100 * (s["min_cap_BW"] / ref - 1)
     short = {"eps010": "ε = 0.10 s", "eps040": "ε = 0.40 s", "cap070": "joint capacity ×0.7", "cap130": "joint capacity ×1.3",
              "dc030": "Δc = 30 ms", "dc100": "Δc = 100 ms", "vrel3": "|v_rel| ≤ 3 m/s", "vrel5": "|v_rel| ≤ 5 m/s",
-             "mu060": "μ_out = 0.6", "mu150": "μ_out = 1.5"}
+             "mu060": "μ_out = 0.6", "mu150": "μ_out = 1.5", "shx015": "shoulder hyperext. 15°", "shx052": "shoulder hyperext. 52°"}
     s["label"] = s["tag"].map(short)
     s = s.sort_values("rel")
     fig, ax = plt.subplots(figsize=(4.0, 2.3))

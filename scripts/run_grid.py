@@ -108,6 +108,8 @@ def worker(args):
                 p0 = prev
                 if init_grid:   # warm start from a saved solution of the same condition (or the nearest mass)
                     cands = [f for f in os.listdir(init_grid) if f.endswith(f"_T{T:g}_m{m:g}_phi{phi_l:.3f}.pkl")]
+                    same_tag = [f for f in cands if f.startswith(f"sol_{tag}_")]
+                    cands = same_tag or cands
                     if not cands:
                         import re as _re
                         pool_ = []

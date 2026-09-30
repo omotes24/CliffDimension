@@ -74,6 +74,8 @@ class Params3D:
     pitch_max: float = 2.5
     trunk_rate_max: float = 15.0
     clearances: dict | None = None
+    baumgarte: tuple = (10.0, 10.0)    # (alpha, beta) of the acceleration-level pin constraints [1/s]
+    pin_mode: str = "position"         # "position" (knots + mid-points) or "baumgarte" (acceleration level)
 
 
 def smax(a, b, delta):
@@ -84,7 +86,7 @@ def _is_const(expr):
     return isinstance(expr, ca.MX) and expr.is_constant()
 
 
-CLEAR_DEFAULT = dict(hand_L=0.0, hand_R=0.0, wrist_L=0.03, wrist_R=0.03, elbow_L=0.06, elbow_R=0.06,
+CLEAR_DEFAULT = dict(hand_L=0.0, hand_R=0.0, wrist_L=0.01, wrist_R=0.01, forearm_L=0.02, forearm_R=0.02, elbow_L=0.06, elbow_R=0.06,
                      shoulder_L=0.12, shoulder_R=0.12, head=0.12, S0=0.12, hip=0.12, knee=0.07, ankle=0.05, toe=0.05)
 
 
@@ -95,6 +97,7 @@ class SpatialNLP:
         self.phi0 = float(phi0)
         self.p = params or Params3D()
         self.chain = SpatialChain(body)
+        self.exprs = []
         self._build()
 
     # ------------------------------------------------------------------ registry / helpers ---
@@ -103,6 +106,28 @@ class SpatialNLP:
         self.cons.append((cat, expr.numel() if rows is None else rows))
         if cat.startswith("cap_"):
             self.cap_cons.append((cat, expr))
+        if getattr(self, "keep_exprs", False):
+            self.exprs.append((cat, expr))
+
+    def violations(self, sol):
+        """Max violation per constraint category at a (debug) solution; needs keep_exprs=True before _build."""
+        from collections import defaultdict
+        groups = defaultdict(list)
+        for cat, e in self.exprs:
+            if e.is_op(ca.OP_LE) or e.is_op(ca.OP_LT):
+                groups[(cat, "le")].append(ca.vec(e.dep(0) - e.dep(1)))
+            elif e.is_op(ca.OP_EQ):
+                groups[(cat, "eq")].append(ca.vec(e.dep(0) - e.dep(1)))
+        out = {}
+        for key, lst in groups.items():
+            g = ca.vertcat(*lst)
+            try:
+                val = np.array(sol.value(g)).ravel()
+            except RuntimeError:                       # not solved yet: evaluate at the initial guess
+                val = np.array(sol.value(g, self.opti.initial())).ravel()
+            v = np.abs(val) if key[1] == "eq" else np.maximum(val, 0)
+            out[key[0] + ":" + key[1]] = (float(v.max()), int(np.argmax(v)), int(v.size))
+        return dict(sorted(out.items(), key=lambda kv: -kv[1][0]))
 
     def _ge0(self, expr, cat):
         if _is_const(expr):
@@ -324,15 +349,21 @@ class SpatialNLP:
 
         def path_of(attached, which, ys, free_hands_check=()):
             side_cone = which
+            al, be = p.baumgarte
 
             def path(t, x, a, u, r, at_knot):
                 q, qd = x[0:NQ], x[NQ:]
                 dv = self._dev(t)
-                hL, hR = ch.f_hands(q)
-                H = {"L": hL, "R": hR}
+                hL, hR, vL, vR, aL, aR = ch.f_hand_kin(q, qd, a)
+                H = {"L": hL, "R": hR}; Vh = {"L": vL, "R": vR}; Ah = {"L": aL, "R": aR}
                 for i, s in enumerate(attached):
                     pos, vel, acc = self.ledge_point(dv, which, ys[s])
-                    self._con(H[s] - pos == 0, "pin")
+                    if p.pin_mode == "baumgarte":
+                        # index-1 (acceleration level) pin with Baumgarte stabilisation
+                        self._con(Ah[s] - acc + 2 * al * (Vh[s] - vel) + be ** 2 * (H[s] - pos) == 0, "pin")
+                    else:
+                        # position-level pin at knots and mid-points (forces determined through the residuals)
+                        self._con(H[s] - pos == 0, "pin")
                     self._cone(r[3 * i:3 * i + 3], side_cone, "cone_" + which)
                 if at_knot:
                     self._joint_limits(q, qd)
@@ -345,11 +376,18 @@ class SpatialNLP:
         # ---- S: swing, both hands on A ---------------------------------------------------------------
         XS, US, UmS, RS = self._hs_phase("S", p.N_S, d_s, t_s0, 6, residual_of(["L", "R"], "A", yA),
                                          path_of(["L", "R"], "A", yA), effort_of(2), [U_of_hand(0), U_of_hand(1)])
-        # start at rest, facing A, trunk upright, legs straight (arm angles / position by the pin constraints)
-        self._con(XS[NQ:, 0] == 0, "init")
+        # start at rest relative to A (body translating with the ledge), facing A, trunk upright, legs straight;
+        # exact position pins at the start (afterwards the acceleration-level pins keep the hands on the ledge)
+        dv0 = self._dev(t_s0)
+        self._con(XS[NQ:NQ + 3, 0] == ca.vertcat(0.0, 0.0, dv0["vA"][1]), "init")
+        self._con(XS[NQ + 3:, 0] == 0, "init")
         self._con(XS[3, 0] == np.pi, "init")
         self._con(XS[4:6, 0] == 0, "init")
         self._con(XS[12:14, 0] == 0, "init")
+        hL0, hR0 = ch.f_hands(XS[0:NQ, 0])
+        for s_, h0 in (("L", hL0), ("R", hR0)):
+            pos0, _, _ = self.ledge_point(dv0, "A", yA[s_])
+            self._con(h0 - pos0 == 0, "init")
         x_last, u_last, t_last = XS[:, -1], US[:, -1], t_r1
         # ---- S1: one hand remains on A ---------------------------------------------------------------
         if p.release_first:
@@ -618,12 +656,15 @@ class SpatialNLP:
 
     # ------------------------------------------------------------------ solve -------------------
     def solve(self, max_iter=3000, print_level=0, tol=1e-4, max_cpu_time=3600.0, sensitivities=False, expand=False,
-              hessian="limited-memory"):
+              hessian="exact"):
         opts = {"expand": expand, "ipopt.max_iter": max_iter, "ipopt.hessian_approximation": hessian,
                 "ipopt.limited_memory_max_history": 30, "ipopt.print_level": print_level, "print_time": 0,
                 "ipopt.tol": tol, "ipopt.acceptable_tol": 1e-3, "ipopt.acceptable_iter": 10,
                 "ipopt.acceptable_constr_viol_tol": 1e-6, "ipopt.mu_strategy": "adaptive",
-                "ipopt.linear_solver": "mumps", "ipopt.max_cpu_time": max_cpu_time, "ipopt.sb": "yes"}
+                "ipopt.linear_solver": "mumps", "ipopt.max_cpu_time": max_cpu_time, "ipopt.sb": "yes",
+                # generous MUMPS memory and a larger pivot tolerance: avoids the reallocation / inaccurate
+                # factorisations that made the multipliers explode on this problem
+                "ipopt.mumps_mem_percent": 2000, "ipopt.mumps_pivtol": 1e-4}
         for k, v in self.par.items():
             self.opti.set_value(v, self.par_values[k])
         self.opti.solver("ipopt", opts)

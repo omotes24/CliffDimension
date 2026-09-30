@@ -17,6 +17,8 @@ from katsumi.spatial.anthro3d import make_body3d
 from katsumi.spatial.nlp3d import SpatialNLP, Params3D
 from katsumi.spatial.model3d import NQ
 
+STAGE_A_ITERS = 300
+
 FIELDS = ["tag", "T", "m", "phi_l", "ok", "status", "iters", "solve_s", "U_peak", "req_hand_N", "req_hand_BW", "req_two_hand_BW",
           "effort", "d_s", "d_r", "d_f", "d_c", "dB", "yB", "grip_A", "release_first", "catch_first",
           "U_S_L", "U_S_R", "U_H_L", "U_H_R", "U_S1", "U_C1", "catch_L_first", "catch_R_first", "catch_L_hold", "catch_R_hold",
@@ -86,7 +88,18 @@ def job(args):
                 nlp.set_initial_from_planar(sol, make_body(sol["m"]))
                 init_from = os.path.basename(pf)
             t0 = time.time()
-            r = nlp.solve(print_level=0, max_iter=maxit, tol=1e-4, max_cpu_time=max_cpu)
+            # two-stage solve: L-BFGS (cheap iterations) to feasibility, then exact Hessian from that point
+            if prev is None or not prev.get("ok"):
+                rA = nlp.solve(print_level=0, max_iter=STAGE_A_ITERS, tol=1e-4, max_cpu_time=max_cpu / 3, hessian="limited-memory")
+                nlp = SpatialNLP(body3d, T, phi, p)
+                nlp.set_initial_from_prev(rA)
+            r = nlp.solve(print_level=0, max_iter=maxit, tol=1e-4, max_cpu_time=max_cpu, hessian="exact")
+            if not r["ok"]:                      # fall back: continue with L-BFGS from the best point so far
+                nlp = SpatialNLP(body3d, T, phi, p)
+                nlp.set_initial_from_prev(r)
+                r2 = nlp.solve(print_level=0, max_iter=maxit, tol=1e-4, max_cpu_time=max_cpu, hessian="limited-memory")
+                if r2["ok"] or r2["U_peak"] < r["U_peak"]:
+                    r = r2
             r["solve_s"] = time.time() - t0
             r["tag"] = tag; r["init_from"] = init_from; r["body_kw"] = body_kw
             pickle.dump(r, open(fn, "wb"))

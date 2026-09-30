@@ -52,8 +52,11 @@ class PlanarChain:
         P = [ph]
         for i in range(NTH):
             P.append(P[-1] + L[i] * dvec(th[i]))
-        # clearance points (link tips; for the shank the hanging toe)
+        # clearance points (link tips; for the shank the hanging toe) + points along the forearm: the forearm
+        # hangs against the cliff face while hooked, so it must never pass behind the face plane (the elbow and
+        # everything below it are under the board and free)
         Ptip = [P[i] + tips[i] * dvec(th[i]) for i in range(NTH)]
+        Pfa = [P[0] + d * dvec(th[0]) for d in body.forearm_points]
         # link CoMs
         C = [P[i] + Ci[i] * dvec(th[i]) for i in range(NTH)]
         Cd = [ca.jtimes(C[i], q, qd) for i in range(NTH)]
@@ -87,6 +90,7 @@ class PlanarChain:
         self.B = np.array(ca.DM(Bmat))
         self.f_points = ca.Function("points", [q], [ca.horzcat(*P)])          # 2 x 6
         self.f_tips = ca.Function("tips", [q], [ca.horzcat(*Ptip)])           # 2 x 5
+        self.f_forearm = ca.Function("forearm", [q], [ca.horzcat(*Pfa)])      # 2 x n_forearm_points
         self.f_com = ca.Function("com", [q], [Gc])
         self.f_comd = ca.Function("comd", [q, qd], [Gcd])
         self.f_rel = ca.Function("rel", [q], [rel])

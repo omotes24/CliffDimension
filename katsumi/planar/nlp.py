@@ -73,7 +73,7 @@ class ReducedParams:
     w_smooth: float = 1e-3
     # joint ranges [rad] for the "facing -x" convention (elbow, shoulder, hip, knee); mirrored when facing +x
     rel_lo_face_neg: tuple = (0.0, -4.2, -2.1, 0.0)
-    rel_hi_face_neg: tuple = (2.6, 0.26, 0.35, 2.6)
+    rel_hi_face_neg: tuple = (2.6, 0.60, 0.35, 2.6)   # shoulder hyperextension in the hang up to 35 deg (arched swing)
     # ---- catch model -------------------------------------------------------------------------------
     catch_model: str = "impact"       # "impact" (rigid inelastic) or "compliant" (finite stiffness phase C)
     K_catch: float = 40000.0          # [N/m]  hook-line / ledge stiffness (as in simulate.release_window)
@@ -151,8 +151,8 @@ class PlanarNLP:
         p = self.p
         pts = self.chain.f_tips(q)                # 2 x 5 clearance points
         hand = q[0:2]
-        allP = ca.horzcat(hand, pts)
-        clear = np.concatenate([[0.0], self.body.clearance])
+        allP = ca.horzcat(hand, pts, self.chain.f_forearm(q))
+        clear = np.concatenate([[0.0], self.body.clearance, self.body.forearm_clearance])
         h = dev["h"]
         xB = dev["x"]
         for i in range(allP.shape[1]):

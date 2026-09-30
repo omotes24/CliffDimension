@@ -91,10 +91,11 @@ class SpatialChain:
             bodies.append((sg["ua_" + side].mass, c_ua, R_sh, sg["ua_" + side].inertia))
             bodies.append((sg["fa_" + side].mass, c_fa, R_fa, sg["fa_" + side].inertia))
             shoulders[side], elbows[side], hands[side], dfa[side] = sh, el, hd, d_fa_
-            wrists[side] = hd - 0.10 * d_fa_
+            wrists[side] = hd - 0.08 * d_fa_
             pts["shoulder_" + side] = sh
             pts["elbow_" + side] = el
             pts["wrist_" + side] = wrists[side]
+            pts["forearm_" + side] = hd - 0.16 * d_fa_
             pts["hand_" + side] = hd
         # legs (pair)
         chi, kap = q[12], q[13]
@@ -175,6 +176,12 @@ class SpatialChain:
         Jd_L = ca.reshape(ca.jtimes(ca.vec(JL), q, qd), 3, NQ)
         Jd_R = ca.reshape(ca.jtimes(ca.vec(JR), q, qd), 3, NQ)
         self.f_Jd = ca.Function("Jd3", [q, qd], [Jd_L, Jd_R])
+        # hand velocities / accelerations as one embedded function (used by the pin constraints of the NLP)
+        vL, vR = JL @ qd, JR @ qd
+        aL = JL @ acc + ca.jtimes(vL, q, qd)
+        aR = JR @ acc + ca.jtimes(vR, q, qd)
+        self.f_hand_kin = ca.Function("handkin3", [q, qd, acc], [hands["L"], hands["R"], vL, vR, aL, aR],
+                                      {"ad_weight": 1.0, "ad_weight_sp": 1.0})
 
     # -------------------------------------------------------------------- numpy wrappers ------------
     def points(self, q):
