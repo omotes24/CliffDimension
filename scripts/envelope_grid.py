@@ -22,7 +22,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from katsumi.planar.anthro import make_body
 from katsumi.planar.nlp import PlanarNLP, ReducedParams
 
-COLD_GUESSES = [(2.5, 0.4), (3.5, 0.8), (4.5, 0.6), (5.5, 0.5), (2.0, 0.9), (4.0, 0.3)]
+COLD_GUESSES = [(2.5, 0.4, "quadratic"), (8.0, 0.6, "linear"), (4.5, 0.6, "quadratic"), (11.0, 0.7, "linear"),
+                (3.5, 0.8, "quadratic"), (6.0, 0.9, "linear")]
 
 
 def sol_path(grid, tag, T, m, ph):
@@ -54,14 +55,14 @@ def _finish(new, r, kind):
 
 
 def cold_job(args):
-    f, r, d_s, amp = args
+    f, r, d_s, amp, pump = args
     t0 = time.time()
     nlp = make_nlp(r)
-    nlp.set_initial(d_w=max(0.0, r["T"] - d_s), d_s=d_s, swing_amp=amp)
+    nlp.set_initial(d_w=max(0.0, r["T"] - d_s), d_s=d_s, swing_amp=amp, pump=pump)
     new = nlp.solve(print_level=0, max_iter=2500, tol=1e-4, max_cpu_time=900)
     new["solve_s"] = time.time() - t0
     new["cold_start"] = 1
-    return f, _finish(new, r, f"cold d_s={d_s} amp={amp}")
+    return f, _finish(new, r, f"cold d_s={d_s} amp={amp} {pump}")
 
 
 def warm_job(args):
@@ -166,8 +167,8 @@ def main():
             for ph, r in s.items():
                 if unreachable(r):
                     continue
-                for (d_s, amp) in COLD_GUESSES[:a.cold]:
-                    jobs.append((sol_path(a.grid, a.tag, c[0], c[1], ph), r, d_s, amp))
+                for (d_s, amp, pump) in COLD_GUESSES[:a.cold]:
+                    jobs.append((sol_path(a.grid, a.tag, c[0], c[1], ph), r, d_s, amp, pump))
         print(f"multi-start: {len(jobs)} cold solves", flush=True)
         n_imp = 0
         with mp.Pool(a.workers) as pool:

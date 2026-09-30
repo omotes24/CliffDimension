@@ -48,10 +48,10 @@ class ReducedParams:
     eps: float = 0.20            # device turnaround smoothing [s]
     T_hold: float = 2.0          # required hold time on B [s]
     release_deadline_factor: float = 1.0   # release within one full period T (plan Sec. 7.3: 2 x one-way time)
-    N_S: int = 150
+    N_S: int = 180
     N_F: int = 30
     N_H: int = 60
-    d_s_bounds: tuple = (0.3, 6.0)
+    d_s_bounds: tuple = (0.3, 12.0)   # up to 12 s of swing (gradual pumping over several cycles is allowed)
     d_f_bounds: tuple = (0.10, 1.20)
     # catch = inelastic impact of the hands on the ledge corner of B (rigid limit), see _build
     v_rel_max: float = 4.0            # sanity bound on |hand velocity relative to B| at contact [m/s]
@@ -551,7 +551,9 @@ class PlanarNLP:
         opti.minimize(p.w_E * self.effort + p.w_U * U_peak + p.w_smooth * self.smooth)
 
     # ------------------------------------------------------------------ initial guess --
-    def set_initial(self, d_w=0.0, d_s=3.0, d_f=0.5, swing_amp=0.6, prev=None):
+    def set_initial(self, d_w=0.0, d_s=3.0, d_f=0.5, swing_amp=0.6, prev=None, swing_period=2.2, pump="quadratic"):
+        """Cold start: a growing oscillation of all links (period `swing_period`) over the swing; `pump` = "quadratic"
+        (amplitude ~ s^2, i.e. a late build-up) or "linear" (a swing-like gradual build-up over many cycles)."""
         opti, p, T = self.opti, self.p, self.T
         if prev is not None:
             self._set_initial_from_prev(prev, d_f)
@@ -566,8 +568,9 @@ class PlanarNLP:
         # swing: growing oscillation ending with the body ahead (+x) and moving +x
         N = p.N_S
         s_ = np.linspace(0, 1, N + 1)
-        w = 2 * np.pi / 2.2
-        th = swing_amp * s_ ** 2 * np.sin(w * d_s * s_)
+        w = 2 * np.pi / swing_period
+        env = s_ ** 2 if pump == "quadratic" else s_
+        th = swing_amp * env * np.sin(w * d_s * s_)
         thd = np.gradient(th, d_s / N)
         gain = np.array([[0.8], [1.0], [1.0], [1.2], [1.3]])
         XS = np.vstack([np.tile(th, (NTH, 1)) * gain, np.tile(thd, (NTH, 1)) * gain])

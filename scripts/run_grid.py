@@ -30,7 +30,9 @@ def hs_residuals(r, body):
 MAX_CPU = float(os.environ.get("KATSUMI_MAX_CPU", "900"))
 
 
-COLD_GUESSES = ((3.0, 0.6), (4.5, 0.6), (2.0, 0.6), (3.5, 0.9), (5.5, 0.4))   # (d_s, swing amplitude)
+# (d_s, swing amplitude, pump): short late build-ups and long swing-like gradual build-ups over several cycles
+COLD_GUESSES = ((3.0, 0.6, "quadratic"), (4.5, 0.6, "quadratic"), (8.0, 0.6, "linear"), (11.0, 0.7, "linear"),
+                (2.0, 0.6, "quadratic"), (6.0, 0.9, "linear"))
 
 
 def solve_case(T, m, phi_l, prev, params_kw, tag, outdir, d_s_guesses=None, alt_prev=None):
@@ -55,12 +57,12 @@ def solve_case(T, m, phi_l, prev, params_kw, tag, outdir, d_s_guesses=None, alt_
         if r["status"] == "Infeasible_Problem_Detected":
             infeasible_hits += 1
     if best is None:
-        guesses = [(d, 0.6) for d in d_s_guesses] if d_s_guesses else list(COLD_GUESSES)
-        if infeasible_hits:          # fast fail: a clearly unreachable release phase gets one more (cold) attempt only
-            guesses = guesses[:1]
-        for d_s, amp in guesses:
+        guesses = [(d, 0.6, "quadratic") for d in d_s_guesses] if d_s_guesses else list(COLD_GUESSES)
+        if infeasible_hits:          # fast fail: an unreachable phase gets one short and one long (multi-cycle) attempt only
+            guesses = [g for g in guesses if g[2] == "quadratic"][:1] + [g for g in guesses if g[2] == "linear"][:1]
+        for d_s, amp, pump in guesses:
             nlp = PlanarNLP(body, T, phi_l, p)
-            nlp.set_initial(d_w=max(0.0, T - d_s), d_s=d_s, swing_amp=amp)
+            nlp.set_initial(d_w=max(0.0, T - d_s), d_s=d_s, swing_amp=amp, pump=pump)
             r = nlp.solve(print_level=0, max_iter=2500, tol=1e-4, max_cpu_time=MAX_CPU)
             r["cold_start"] = 1
             tried.append(r)
