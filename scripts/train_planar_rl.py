@@ -77,7 +77,7 @@ def main():
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--control-dt", type=float, default=0.02)
-    ap.add_argument("--log-std-init", type=float, default=-1.5, help="PPO initial exploration std = exp(.) (0.22)")
+    ap.add_argument("--log-std-init", type=float, default=-1.0, help="PPO initial exploration std = exp(.) (0.37)")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     refs = sorted(glob.glob(a.refs))

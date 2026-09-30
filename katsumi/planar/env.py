@@ -6,8 +6,8 @@ sub-step functions of `fastsim` (several thousand control steps per second on on
 an exact oracle for this environment: its solutions give the minimum required grip capacity U* and the Lagrange
 multipliers ("prices") of every physical constraint, against which learning methods can be measured.
 
-Episode: start hanging on A at device phase phi0; actions = 4 normalised joint torques (elbow, shoulder, hip,
-knee) + a release trigger (a[4] > 0 releases, once). The hands hook B automatically when the hook line enters
+Episode: start hanging on A at device phase phi0; actions = 4 normalised joint torque commands (elbow, shoulder, hip,
+knee; rate-limited to u_rate per second as in the optimiser) + a release trigger (a[4] > release_thresh releases, once). The hands hook B automatically when the hook line enters
 the catch box (from `hook_tol` = 2.5 cm behind the tip, the reach of the distal phalanges, to the wall; height
 -0.5 .. +5 cm) with an admissible approach (fingers close reflexively). Success = holding B for `hold_time`
 with the grip inside the admissible set. Failures: no release within one period, hand falls past B, hits B's
@@ -53,7 +53,7 @@ class PlanarCliffEnv(gym.Env):
                  shaping="none", prices=None, price_scale=3.0, U_target=1.2, U_cap=2.0, w_U=10.0, w_E=1.0, w_time=0.0, w_early=40.0,
                  w_dist=20.0, w_energy=20.0, eps=0.20, K_att=40000.0, D_att=1500.0, hook_tol=0.025,
                  catch_box=(0.03, -0.005, 0.05), seed=0, T_set=None, m_set=None, body_set=None, joint_stop_k=15.0,
-                 stop_damp=0.01, ramp_att=0.01, obs_body=True, cache_dir=None):
+                 stop_damp=0.01, ramp_att=0.01, obs_body=True, cache_dir=None, u_rate=10.0, release_thresh=0.8):
         super().__init__()
         self.T_fixed, self.m_fixed, self.phi0_fixed = T, m, phi0
         self.T_set, self.m_set, self.body_set = T_set, m_set, body_set
@@ -66,6 +66,7 @@ class PlanarCliffEnv(gym.Env):
         self.w_U, self.w_E, self.w_time, self.w_dist, self.w_energy, self.w_early = w_U, w_E, w_time, w_dist, w_energy, w_early
         self.K_att, self.D_att, self.hook_tol, self.catch_box = K_att, D_att, hook_tol, catch_box
         self.joint_stop_k, self.ramp_att, self.stop_damp = joint_stop_k, ramp_att, stop_damp
+        self.u_rate, self.release_thresh = u_rate, release_thresh
         self.obs_body = obs_body
         self.cache_dir = cache_dir
         self.rng = np.random.default_rng(seed)
@@ -94,6 +95,7 @@ class PlanarCliffEnv(gym.Env):
         self.mode = "A"
         self.th = np.zeros(NTH); self.thd = np.zeros(NTH)
         self.q = np.zeros(NQ); self.qd = np.zeros(NQ)
+        self.u_prev = np.zeros(NTAU)
         self.t = 0.0; self.t0 = 0.0
         self.released = False; self.t_release = None; self.t_catch = None; self.off = 0.0
         self.U = 0.0; self.U_peak = 0.0; self.E = 0.0
@@ -173,10 +175,14 @@ class PlanarCliffEnv(gym.Env):
         assert not self.done, "call reset()"
         a = np.clip(np.asarray(action, dtype=float), -1, 1)
         u = a[:NTAU]
+        if self.u_rate > 0:                       # activation-rate limit of the commands (as in the optimiser)
+            du = self.u_rate * self.control_dt
+            u = np.clip(u, self.u_prev - du, self.u_prev + du)
+        self.u_prev = u.copy()
         U_peak0, E0 = self.U_peak, self.E
         term, reason = False, ""
         wall_pen = 0.0; jr_max = 0.0; cone_exc = 0.0; qd_exc = 0.0
-        if self.mode == "A" and not self.released and a[NTAU] > 0.0:
+        if self.mode == "A" and not self.released and a[NTAU] > self.release_thresh:
             self.released = True; self.t_release = self.t; self.mode = "F"
         remaining = self.n_sub
         Gc = Gv = None
@@ -352,7 +358,7 @@ class PlanarCliffEnv(gym.Env):
         mode = np.array([self.mode == "A", self.mode == "F", self.mode == "C"], float)
         t_rel = (self.t - self.t_release) if self.released else 0.0
         parts = [q[2:], qd[2:] / 5.0, rel, reld / 5.0, [np.sin(2 * np.pi * ph), np.cos(2 * np.pi * ph), dv["h"], dv["x"] - 2.25],
-                 hand_rel_B / 2.0, vrel_B / 3.0, mode, [t_rel, self.U, self.U_peak, (self.t - self.t0) / self.T]]
+                 hand_rel_B / 2.0, vrel_B / 3.0, mode, [t_rel, self.U, self.U_peak, (self.t - self.t0) / self.T], self.u_prev]
         if self.obs_body:
             bk = self.cur_body_kw
             parts.append([self.T / 20.0 - 1.0, self.body.m / 66.0 - 1.0, bk.get("stature", 1.75) / 1.75 - 1.0,
