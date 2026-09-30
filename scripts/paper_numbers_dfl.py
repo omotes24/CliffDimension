@@ -70,7 +70,8 @@ def main():
     if os.path.exists(cl):
         c = pd.read_csv(cl)
         NAMES = {"BC": "行動模倣", "DFL": "双対場 MPC（$V$ 終端，0.3\\,s）", "DFL-H40": "双対場 MPC（$V$ 終端，0.8\\,s）", "DFL-tau": "双対場 MPC（$V$＋$\\tau$ 進行，0.3\\,s）",
-                 "DFL-tau-H40": "双対場 MPC（$V$＋$\\tau$ 進行，0.8\\,s）", "DFL-noSob": "双対場 MPC（値のみ）", "ORACLE": "オラクル MPC"}
+                 "DFL-tau-H40": "双対場 MPC（$V$＋$\\tau$ 進行，0.8\\,s）", "DFL-tau2": "双対場 MPC（$V$＋$\\tau$ 進行，初期節点緩和）", "DFL-tau3": "双対場 MPC（$V$＋$\\tau$ 進行，計画の PD 追従）",
+                 "DFL-noSob": "双対場 MPC（値のみ）", "ORACLE": "オラクル MPC"}
         REASON = {"slipped off A": "A での滑り", "hit wall": "壁への接触", "grip capacity exceeded": "容量超過", "missed B": "B を逃す",
                   "hit B's face": "B 前面への衝突", "no release": "離手せず", "lost hook": "フック喪失"}
         parts = []

@@ -84,7 +84,7 @@ def eval_task(args):
     f, st, kind, name, models_path, refs, control_dt, controller, H_mpc, beta, holdout_m, beta_d, replan, exec_kw = args
     exec_kw = dict(exec_kw or {})
     mpc_dt = exec_kw.pop("mpc_dt", 0.02); exec_refs = exec_kw.pop("exec_refs", None); reach = exec_kw.pop("reach", 0.25)
-    w_tau = exec_kw.pop("w_tau", 0.0)
+    w_tau = exec_kw.pop("w_tau", 0.0); kp_track = exec_kw.pop("kp_track", 0.0); kd_track = exec_kw.pop("kd_track", 0.0)
     kp_hold = exec_kw.pop("kp_hold", 3.0); kd_hold = exec_kw.pop("kd_hold", 0.3)
     torch.set_num_threads(1)
     ens, net0, bc, density = _load_models(models_path) if (models_path and os.path.exists(models_path)) else ([None], None, None, None)
@@ -105,7 +105,7 @@ def eval_task(args):
         net = ens if name == "DFL" else net0
         if controller == "mpc":
             c = SwingMPC(net, body, chain, T, H=H_mpc, control_dt=mpc_dt, stature=st_, cap_scale=cs_, beta=beta, density=density,
-                         beta_d=beta_d, replan=replan, w_tau=w_tau)
+                         beta_d=beta_d, replan=replan, w_tau=w_tau, kp_track=kp_track, kd_track=kd_track)
         else:
             c = PontryaginController(net[0] if isinstance(net, list) else net, body, chain, T, control_dt=control_dt, stature=st_, cap_scale=cs_)
     t1 = time.time()
@@ -183,11 +183,13 @@ def main():
     ap.add_argument("--kp-hold", type=float, default=3.0); ap.add_argument("--kd-hold", type=float, default=0.3)
     ap.add_argument("--hook-cap-B", type=float, default=0.1, help="finger-hook capacity on B (fraction of f_cap)")
     ap.add_argument("--w-tau", type=float, default=0.0, help="MPC progress term on the time-to-release field")
+    ap.add_argument("--kp-track", type=float, default=0.0, help="PD tracking of the MPC plan between re-plans (as the oracle MPC: 1.0)")
+    ap.add_argument("--kd-track", type=float, default=0.0)
     ap.add_argument("--exec-refs", default=None, help="glob of oracle solutions for the landing reflex (default: the evaluation references)")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     exec_kw = dict(reach=a.reach, hook_cap_B=a.hook_cap_B, mpc_dt=a.mpc_dt, exec_refs=a.exec_refs, sub_dt=a.sub_dt, kp_hold=a.kp_hold, kd_hold=a.kd_hold,
-                   w_tau=a.w_tau)
+                   w_tau=a.w_tau, kp_track=a.kp_track, kd_track=a.kd_track)
     if a.eval_only:
         refs = sorted(glob.glob(a.eval_refs or a.refs))
         rows = eval_controllers(a.eval_only, refs, a.out, episodes_per_ref=a.episodes, seed=a.seed, holdout_m=a.holdout_m, control_dt=a.control_dt,

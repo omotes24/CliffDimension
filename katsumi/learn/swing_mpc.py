@@ -44,7 +44,7 @@ class SwingMPC:
     def __init__(self, net, body, chain, T, H=25, control_dt=0.02, eps=0.20, w_E=1.0, t_ref=1.0, u_rate=10.0, U_margin=1.0,
                  stature=1.75, cap_scale=1.0, release_slack=0.5, wall_smooth=0.01, w_smooth=1e-3, max_iter=80, verbose=False,
                  terminal_weight=1.0, beta=2.0, replan=1, density=None, beta_d=1.0, mu_margin=0.75, cone_abs=0.03, w_tau=0.0, hessian="exact",
-                 max_cpu=30.0):
+                 max_cpu=30.0, kp_track=0.0, kd_track=0.0):
         """net: a DualFieldNet or a list of them (ensemble: terminal value = mean + beta * std, pessimistic where the
         members disagree, i.e. away from the oracle data).
         w_tau > 0 adds a progress term on the time-to-release field: (tau(x_H, t_H) - (tau(x_0, t_0) - H dt))^2, i.e.
@@ -56,6 +56,7 @@ class SwingMPC:
         self.replan = replan
         self.density, self.beta_d, self.mu_margin, self.cone_abs, self.w_tau = density, beta_d, mu_margin, cone_abs, w_tau
         self.hessian, self.max_cpu = hessian, max_cpu
+        self.kp_track, self.kd_track = kp_track, kd_track                # PD tracking of the plan between re-plans (as the oracle MPC)
         self.body, self.ch, self.T = body, chain, float(T)
         self.H, self.dt, self.eps = H, control_dt, eps
         self.w_E, self.t_ref, self.u_rate, self.U_margin = w_E, t_ref, u_rate, U_margin
@@ -279,6 +280,11 @@ class SwingMPC:
             tt = self.t_plan + self.dt * np.arange(self.H + 1)
             tc = min(max(t + 0.5 * dt_env, tt[0]), tt[-1])
             u = np.array([np.interp(tc, tt, row) for row in self.sol["U"]])
+            if self.kp_track > 0 or self.kd_track > 0:               # PD tracking of the plan's own state trajectory
+                ts = min(max(t, tt[0]), tt[-1])
+                th_ref = np.array([np.interp(ts, tt, row) for row in self.sol["X"][:NTH]])
+                thd_ref = np.array([np.interp(ts, tt, row) for row in self.sol["X"][NTH:]])
+                u = u + self.kp_track * (A_REL @ (th_ref - env.th)) + self.kd_track * (A_REL @ (thd_ref - env.thd))
             u = np.clip(np.clip(u, -1, 1), self.u_prev - self.u_rate * dt_env, self.u_prev + self.u_rate * dt_env)
             self.u_prev = u
             _, _, tau0 = self.field(np.concatenate([env.th, env.thd]), t)

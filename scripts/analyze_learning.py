@@ -71,7 +71,7 @@ def dfl_results(dfl_dir, out):
                 r = dict(r); r["it"] = it; fits.append(r)
     fits = pd.DataFrame(fits)
     eps = []
-    RUN_SUFFIX = {"dfl_h40": "-H40", "dfl_h25": "-H25", "dfl_tau": "-tau", "dfl_tau_h40": "-tau-H40"}
+    RUN_SUFFIX = {"dfl_h40": "-H40", "dfl_h25": "-H25", "dfl_tau": "-tau", "dfl_tau_h40": "-tau-H40", "dfl_tau2": "-tau2", "dfl_tau3": "-tau3"}
     for f in sorted(glob.glob(os.path.join(dfl_dir, "*", "episodes.csv"))):
         e = pd.read_csv(f); run = os.path.basename(os.path.dirname(f)); e["run"] = run
         if run in RUN_SUFFIX:
@@ -113,6 +113,8 @@ def dfl_results(dfl_dir, out):
             f.write("\\bottomrule\n\\end{tabular}\n")
     NAMES = {"BC": "行動模倣（BC）", "DFL": "双対場 MPC（$V$ 終端，地平線 0.3\\,s）", "DFL-H40": "双対場 MPC（$V$ 終端，地平線 0.8\\,s）",
              "DFL-tau": "双対場 MPC（$V$ 終端＋$\\tau$ 進行，0.3\\,s）", "DFL-tau-H40": "双対場 MPC（$V$ 終端＋$\\tau$ 進行，0.8\\,s）",
+             "DFL-tau2": "双対場 MPC（$V$ 終端＋$\\tau$ 進行，初期節点の制約緩和，0.3\\,s）",
+             "DFL-tau3": "双対場 MPC（$V$ 終端＋$\\tau$ 進行，計画の PD 追従，0.3\\,s）",
              "DFL-noSob": "双対場 MPC（値のみ）", "ORACLE": "オラクル MPC"}
     REASON = {"slipped off A": "A で滑り", "hit wall": "壁に接触", "grip capacity exceeded": "容量超過", "missed B": "B を逃す",
               "hit B's face": "B 前面に衝突", "no release": "離手せず", "lost hook": "フック喪失", "held B": "成功"}
