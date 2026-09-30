@@ -80,9 +80,9 @@ class OracleMPC:
         x = np.concatenate([th, thd])
         if self.plan is None or (t - self.t_plan >= self.replan_dt - 1e-9 and (self.plan["t_l"] - t) > self.replan_dt):
             sol = self._solve(x, t)
+            self.t_plan = t                                   # (retry after replan_dt even when the solve failed)
             if sol["ok"] or self.plan is None:
                 self.plan = dict(sol=sol, t_l=t + sol["d_s"], ok=sol["ok"])
-                self.t_plan = t
         pl = self.plan["sol"]
         tt = pl["tS"]
         tc = min(max(t, tt[0]), tt[-1])

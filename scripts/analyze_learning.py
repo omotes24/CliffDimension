@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-CAT = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#8a5cd6", "#52514e", "#d63a8a"]
+CAT = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#8a5cd6", "#52514e", "#d63a8a", "#17becf", "#8c564b", "#bcbd22"]
 INK, INK2, GRID = "#0b0b0b", "#52514e", "#dcdcd8"
 plt.rcParams.update({"font.size": 9, "axes.edgecolor": INK2, "axes.labelcolor": INK, "xtick.color": INK2,
                      "ytick.color": INK2, "axes.grid": True, "grid.color": GRID, "grid.linewidth": 0.6,
@@ -32,16 +32,21 @@ def rl_curves(rl_dir, out, window=2000):
         e["succ"] = e["success"].rolling(window, min_periods=100).mean()
         e["len"] = e["t"].rolling(window, min_periods=100).mean()
         e["rel"] = e["release_time"].notna().astype(float).rolling(window, min_periods=100).mean()
-        axes[0].plot(e["steps"] / 1e6, e["succ"], color=CAT[i % len(CAT)], lw=1.2, label=LABEL.get(tag, tag))
-        axes[1].plot(e["steps"] / 1e6, e["len"], color=CAT[i % len(CAT)], lw=1.2)
-        axes[2].plot(e["steps"] / 1e6, e["rel"], color=CAT[i % len(CAT)], lw=1.2)
+        dm = pd.to_numeric(e["d_min"], errors="coerce").where(e["release_time"].notna())
+        e["dmin"] = dm.rolling(window, min_periods=50).median()
+        ls = "--" if tag.endswith("_rsi") else "-"
+        lab = LABEL.get(tag.replace("_rsi", ""), tag) + (" (RSI)" if tag.endswith("_rsi") else "")
+        axes[0].plot(e["steps"] / 1e6, e["dmin"], ls, color=CAT[i % len(CAT)], lw=1.2, label=lab)
+        axes[1].plot(e["steps"] / 1e6, e["len"], ls, color=CAT[i % len(CAT)], lw=1.2)
+        axes[2].plot(e["steps"] / 1e6, e["rel"], ls, color=CAT[i % len(CAT)], lw=1.2)
         last = e.tail(2000)
         rows.append(dict(run=tag, episodes=len(e), steps=int(e["steps"].iloc[-1]), success_all=e["success"].mean(),
                          success_last2000=last["success"].mean(), n_success=int(e["success"].sum()),
                          U_peak_success=float(e.loc[e["success"] == 1, "U_peak"].median()) if e["success"].sum() else np.nan,
                          released_last2000=last["release_time"].notna().mean(),
                          reasons_last2000=json.dumps(last["reason"].value_counts().head(4).to_dict(), ensure_ascii=False)))
-    axes[0].set_ylabel("success rate (rolling)"); axes[1].set_ylabel("episode length [s]"); axes[2].set_ylabel("released fraction")
+    axes[0].set_ylabel("closest approach to B [m]\n(released episodes, rolling median)"); axes[1].set_ylabel("episode length [s]"); axes[2].set_ylabel("released fraction")
+    axes[0].set_yscale("log")
     for ax in axes:
         ax.set_xlabel("environment steps [M]")
     axes[0].legend(fontsize=7)

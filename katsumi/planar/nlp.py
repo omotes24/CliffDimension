@@ -234,7 +234,9 @@ class PlanarNLP:
             F.append(ca.vertcat(X[na:, k], A[:, k]))
             self._con(residual(tk, X[:, k], A[:, k], U[:, k], Rv[:, k]) == 0, "dyn")
             E.append(effort(tk, X[:, k], A[:, k], U[:, k], Rv[:, k]))
+            self._first_knot = (k == 0)
             path(tk, X[:, k], A[:, k], U[:, k], Rv[:, k], True)
+            self._first_knot = False
             if U_of is not None:
                 self._con(U_of(tk, X[:, k], A[:, k], U[:, k], Rv[:, k]) <= self.U_peak, "cap_" + name[0])
         eff = 0
@@ -361,7 +363,9 @@ class PlanarNLP:
         def pathS(t, x, a, u, r, at_knot):
             dv, q, qd, aa = qqd_pinned(t, x, "A")
             self._grasp_cone(r, "A")
-            if at_knot:
+            if at_knot and not (p.from_state and getattr(self, "_first_knot", False)):
+                # (from-state solves: the given initial state may sit slightly inside a state constraint; the plan
+                #  must recover from it, so the state constraints start at the second knot)
                 self._joint_limits(q, qd, "neg")
                 self._wall_constraints(q, dv)
 
