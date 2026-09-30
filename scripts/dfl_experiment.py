@@ -83,7 +83,7 @@ def eval_task(args):
     """One (reference, start, controller) episode; models are loaded from disk in the worker."""
     f, st, kind, name, models_path, refs, control_dt, controller, H_mpc, beta, holdout_m, beta_d, replan = args
     torch.set_num_threads(1)
-    ens, net0, bc, density = _load_models(models_path)
+    ens, net0, bc, density = _load_models(models_path) if (models_path and os.path.exists(models_path)) else ([None], None, None, None)
     r = pickle.load(open(f, "rb"))
     T, m = r["T"], r["m"]
     body_kw = r.get("body_kw", {}) or {}
@@ -93,6 +93,9 @@ def eval_task(args):
     st_, cs_ = body_kw.get("stature", 1.75), body_kw.get("cap_scale", 1.0)
     if name == "BC":
         c = BCController(bc, ens[0], body, T, control_dt=control_dt, stature=st_, cap_scale=cs_)
+    elif name == "ORACLE":
+        from katsumi.learn.oracle_mpc import OracleMPC
+        c = OracleMPC(r, body, T, replan_dt=0.5, control_dt=control_dt)
     else:
         net = ens if name == "DFL" else net0
         if controller == "mpc":
@@ -105,7 +108,8 @@ def eval_task(args):
     rel_err = (res["release_time"] + (st["t0"] - r["t_s0"]) - r["d_s"]) if res.get("release_time") is not None else None
     row = dict(ref=os.path.basename(f), T=T, m=m, group="holdout" if m == holdout_m else "train", start=kind, ctrl=name,
                success=int(res["success"]), reason=res["reason"], U_peak=res["U_peak"], U_swing=res["U_swing"], U_star=r["U_peak"],
-               release_err=rel_err, t=res["t"], wall_s=round(time.time() - t1, 1), mpc_fail=getattr(c, "n_fail", 0))
+               release_err=rel_err, t=res["t"], wall_s=round(time.time() - t1, 1), mpc_fail=getattr(c, "n_fail", 0),
+               n_solve=getattr(c, "n_solve", 0), solve_s=round(getattr(c, "solve_s", 0.0), 1))
     print(f"[{os.path.basename(f)[8:-4]} {kind:14s} {name:10s}] {res['reason']:26s} U={res['U_peak']:.3f} (U*={r['U_peak']:.3f}) "
           f"rel_err={rel_err if rel_err is None else round(rel_err, 3)} t={res['t']:.2f} {time.time() - t1:.0f}s", flush=True)
     return row
