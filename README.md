@@ -79,6 +79,29 @@ slip, contact modes, and the wall-contact impulse. Curriculum knobs: `GraspParam
 RL baselines (SAC / MBPO / DreamerV3) are to be run against `CliffEnv` with the same
 termination / load definitions; the environment exposes `reset(T, m_body, phi0)` for conditioning.
 
+## Dual field learning (planar, compiled environment)
+
+```bash
+# 1. dual labels: remaining-problem solves (value, costate, time-to-release, capacity, prices) along / around references
+python scripts/dual_field_data.py --refs "results/grid/sol_ref_T1[6789]_m*_phi*.pkl" --out results/dual_field --stride 15 --levels 0 1 2 --workers 12
+# 2. fit the dual field (Sobolev), value-only ablation, behaviour cloning; closed-loop evaluation
+python scripts/dfl_experiment.py --data results/dual_field --refs "results/grid/sol_ref_T1[6789]_m*_phi*.pkl" --holdout-m 69 --out results/dfl/it0
+python scripts/dfl_experiment.py --eval-only results/dfl/it0/models.pt --refs "results/grid/sol_ref_T18_m*_phi0.250.pkl" \
+       --ctrls DFL,BC --H 15 --replan 2 --w-tau 20 --kp-track 1 --kd-track 0.1 --out results/dfl/eval     # executor: 2 ms, mid-point sampling
+python scripts/dfl_experiment.py --eval-only none --refs "results/grid/sol_ref_T18_m*_phi0.250.pkl" --ctrls ORACLE --out results/dfl/oracle
+# 3. executor decomposition: replay of oracle solutions (control period / feed-forward sampling / catch model)
+python scripts/replay_table.py --refs "results/grid/sol_ref_T18_m*_phi0.250.pkl" --control-dt 0.02 0.002 --lead zero half --reach 0.25
+# 4. RL baselines, analysis, paper numbers, manuscript
+python scripts/train_planar_rl.py --shaping dual --steps 3000000 --out results/rl_planar/ppo_dual
+python scripts/analyze_learning.py --rl results/rl_planar --dfl results/dfl --out results/figs
+python scripts/paper_numbers_dfl.py --data results/dual_field --dfl results/dfl --rl results/rl_planar --grid results/grid
+bash scripts/package_paper.sh outputs          # PDF + self-contained LaTeX source
+```
+Environment (`katsumi/planar/env.py`, `fastsim.py`): CasADi code-generated physics of the optimiser, soft joint stops,
+finger-hook capacity on both cliffs, sliding hook on B, bracing contact with B's wall panel while hooked, first- or
+zero-order hold of the torque commands. Controllers (`katsumi/learn/`): dual-field MPC (`swing_mpc.py`), oracle-in-the-loop
+MPC (`oracle_mpc.py`), landing reflex shared by all methods (`reflex.py`).
+
 ## Conventions
 
 `T` is the FULL device period (one cycle out and back); the one-way travel time is `T/2`.

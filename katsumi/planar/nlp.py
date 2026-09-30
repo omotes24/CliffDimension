@@ -367,8 +367,14 @@ class PlanarNLP:
 
         def pathS(t, x, a, u, r, at_knot):
             dv, q, qd, aa = qqd_pinned(t, x, "A")
-            self._grasp_cone(r, "A")
-            if at_knot and not (p.from_state and getattr(self, "_first_knot", False)):
+            first = at_knot and p.from_state and getattr(self, "_first_knot", False)
+            if first and p.u0 is not None:
+                # the hand force at the given initial state is determined by the state and the applied command: the
+                # (tightened) cone applies from the second knot on; only the true cone is kept here (R_y >= 0)
+                self._con(r[1] >= 0, "cone_A")
+            else:
+                self._grasp_cone(r, "A")
+            if at_knot and not first:
                 # (from-state solves: the given initial state may sit slightly inside a state constraint; the plan
                 #  must recover from it, so the state constraints start at the second knot)
                 self._joint_limits(q, qd, "neg")

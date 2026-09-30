@@ -82,11 +82,15 @@ def main():
                  "DFL-noSob": "双対場 MPC（値のみ）", "ORACLE": "オラクル MPC"}
         REASON = {"slipped off A": "A での滑り", "hit wall": "壁への接触", "grip capacity exceeded": "容量超過", "missed B": "B を逃す",
                   "hit B's face": "B 前面への衝突", "no release": "離手せず", "lost hook": "フック喪失"}
-        parts = []
-        for r in c.itertuples():
-            caught = getattr(r, "caught", float("nan"))
-            parts.append(f"{NAMES.get(r.ctrl, r.ctrl)}は {r.n} エピソード中，離手 {int(round(r.released * r.n))}，捕捉 {int(round(caught * r.n)) if caught == caught else '---'}，"
-                         f"保持成功 {int(round(r.success * r.n))}（生存時間の中央値 {r.t_med:.1f}\\,s，主な失敗は{REASON.get(r.main_failure, r.main_failure)}）")
+        def fam(mask, label):
+            g = c[mask]
+            if not len(g):
+                return None
+            n = int(g["n"].sum()); rel = int(round((g["released"] * g["n"]).sum())); cat = int(round((g["caught"] * g["n"]).sum())) if "caught" in g else 0
+            suc = int(round((g["success"] * g["n"]).sum()))
+            return f"{label}は {n} エピソード中，離手 {rel}，捕捉 {cat}，保持成功 {suc}"
+        parts = [x for x in (fam(c["ctrl"] == "BC", "行動模倣"), fam(c["ctrl"].str.startswith("DFL"), "双対場 MPC（全変種の合計）"),
+                             fam(c["ctrl"] == "ORACLE", "オラクル MPC")) if x]
         M["closedloopSummary"] = "，".join(parts) + "であった．"
     # ---- executor decomposition (replay table) --------------------------------------------------------------
     rts = [f for f in (os.path.join("results", "figs", "replay_table.csv"), os.path.join("results", "figs", "replay_table_comp.csv")) if os.path.exists(f)]
