@@ -103,11 +103,12 @@ class SwingMPC:
             opti.subject_to(rk == 0)
             F.append(ca.vertcat(X[NTH:, k], A[:, k]))
             E.append(eff(U[:, k], R[:, k]))
-            cone(R[:, k])
-            opti.subject_to(ca.sumsqr(R[:, k]) <= Ucap ** 2)
-            rel = ca.DM(A_REL) @ X[:NTH, k]; reld = ca.DM(A_REL) @ X[NTH:, k]
-            opti.subject_to(opti.bounded(self.lo, rel, self.hi))
-            opti.subject_to(opti.bounded(-b.qd_max, reld, b.qd_max))
+            if k > 0:                    # the initial state (and its hand force) is given: constraints start at the 2nd knot
+                cone(R[:, k])
+                opti.subject_to(ca.sumsqr(R[:, k]) <= Ucap ** 2)
+                rel = ca.DM(A_REL) @ X[:NTH, k]; reld = ca.DM(A_REL) @ X[NTH:, k]
+                opti.subject_to(opti.bounded(self.lo, rel, self.hi))
+                opti.subject_to(opti.bounded(-b.qd_max, reld, b.qd_max))
             if k > 0:                                                     # walls (the initial state is given)
                 pts = ca.horzcat(ch.f_tips(q), ch.f_forearm(q))
                 for i in range(pts.shape[1]):
@@ -248,10 +249,14 @@ class SwingMPC:
             val = lambda e: opti.debug.value(e)
             ok = False; self.n_fail += 1
             stats = opti.debug.stats()
-        if ok or self.sol is None:
+        if ok:
             self.sol = {k: np.array(val(v)) for k, v in self.v.items()}
             self.t_plan = t
             tt = self.dt * np.arange(self.H + 1); tc = 0.5 * dt_env
+        elif self.sol is None:
+            # no feasible plan yet: hold the current command (never apply an infeasible iterate)
+            self.last = dict(V=V0, U=U0, tau=tau0, ok=ok, iters=stats.get("iter_count", -1), VH=float("nan"), Ucap=Ucap, nll=float("nan"))
+            return self.u_prev.copy(), release
         else:
             # failed solve: keep executing the previous (feasible) plan, shifted in time, rather than the infeasible iterate
             tt = (self.t_plan - t) + self.dt * np.arange(self.H + 1); tc = min(max(0.5 * dt_env, tt[0]), tt[-1])
