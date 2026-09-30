@@ -96,6 +96,25 @@ class Resim:
         out["F_hand_err"] = np.abs(xf[:2] - r["F_X"][:2, -1]).max()
         out["F_pos_err"] = np.abs(xf[:NQ] - r["F_X"][:NQ, -1]).max()
         out["F_vel_err"] = np.abs(xf[NQ:] - r["F_X"][NQ:, -1]).max()
+        # compliant catch phase (if present): free chain + spring-damper hand force
+        if "C_X" in r:
+            pr = r["params"]
+            d_c = pr["d_c"]
+            xc = r["C_X"][:, 0].copy()
+            def fC(t, x):
+                dv = self.dev(r["t_c"] + t)
+                u = _hs_interp(r["C_U"], r["C_Um"], d_c, t)
+                dp = x[0:2] - dv["pB"]; dvv = x[NQ:NQ + 2] - dv["vB"]
+                ramp = np.tanh(np.linalg.norm(dp) / pr["ramp_catch"])
+                R = -pr["K_catch"] * dp - pr["D_catch"] * ramp * dvv
+                return np.concatenate([x[NQ:], ch.qdd_free(x[:NQ], x[NQ:], u * self.tau_cap, R)])
+            t = 0.0
+            n = int(round(d_c / dt)); h = d_c / n
+            for _ in range(n):
+                xc = rk4(fC, xc, t, h); t += h
+            out["C_hand_err"] = np.abs(xc[:2] - r["C_X"][:2, -1]).max()
+            out["C_pos_err"] = np.abs(xc[:NQ] - r["C_X"][:NQ, -1]).max()
+            out["C_vel_err"] = np.abs(xc[NQ:] - r["C_X"][NQ:, -1]).max()
         # hold
         Th = r["params"]["T_hold"]
         xh = r["H_X"][:, 0].copy()

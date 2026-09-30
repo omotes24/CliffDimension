@@ -85,7 +85,8 @@ def row_from(r, body):
 
 
 def worker(args):
-    T, m, phis, params_kw, tag, outdir = args
+    T, m, phis, params_kw, tag, outdir = args[:6]
+    init_grid = args[6] if len(args) > 6 else None
     prev = None
     rows = []
     # start the phase sweep away from the device turnaround (phi = 0 is a kink of the device motion and
@@ -101,7 +102,12 @@ def worker(args):
                 r = pickle.load(open(fn, "rb"))
                 body = make_body(m, **dict(params_kw).get("body_kw", {}))
             else:
-                r, body = solve_case(T, m, phi_l, prev, dict(params_kw), tag, outdir)
+                p0 = prev
+                if init_grid:   # warm start from a saved solution of the same condition (e.g. the nominal grid)
+                    cands = [f for f in os.listdir(init_grid) if f.endswith(f"_T{T:g}_m{m:g}_phi{phi_l:.3f}.pkl")]
+                    if cands:
+                        p0 = pickle.load(open(os.path.join(init_grid, sorted(cands)[0]), "rb"))
+                r, body = solve_case(T, m, phi_l, p0, dict(params_kw), tag, outdir)
                 pickle.dump(r, open(fn, "wb"))
             row = row_from(r, body)
             prev = r if r["ok"] else prev
@@ -132,14 +138,15 @@ def main():
     ap.add_argument("--params", default="{}", help="JSON of ReducedParams overrides (+ body_kw)")
     ap.add_argument("--split-phases", action="store_true",
                     help="one job per (T, m, phi): no warm start along phi, but embarrassingly parallel (many cores)")
+    ap.add_argument("--init-from-grid", default=None, help="directory of saved solutions used as warm starts")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     params_kw = json.loads(a.params)
     phis = a.phis if a.phis else list(np.arange(a.nphi) / a.nphi)
     if a.split_phases:
-        jobs = [(T, m, [ph], params_kw, a.tag, a.out) for T in a.T for m in a.m for ph in phis]
+        jobs = [(T, m, [ph], params_kw, a.tag, a.out, a.init_from_grid) for T in a.T for m in a.m for ph in phis]
     else:
-        jobs = [(T, m, phis, params_kw, a.tag, a.out) for T in a.T for m in a.m]
+        jobs = [(T, m, phis, params_kw, a.tag, a.out, a.init_from_grid) for T in a.T for m in a.m]
     if a.workers > 1:
         with mp.Pool(a.workers) as pool:
             all_rows = pool.map(worker, jobs, chunksize=1)
