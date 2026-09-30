@@ -84,6 +84,7 @@ def load_dataset(data_dir, dense=True, min_tau=0.05):
     d_all = pd.concat([d, dd], ignore_index=True)
     F_all = np.concatenate([F, Fd])
     Y_all = {k: np.concatenate([Y[k], Yd[k]]) for k in Y}
+    Y_all["w"] = np.concatenate([np.full(len(d), 5.0), np.ones(len(dd))])       # exact point costates count more
     return d_all, F_all, Y_all
 
 
@@ -149,7 +150,12 @@ def train_dual_field(F, Y, idx_tr, idx_va, epochs=4000, lr=2e-3, alpha=1.0, widt
     net = DualFieldNet(mu, sd, y_mu, y_sd, width, depth).to(dev)
     Ft = torch.tensor(F, dtype=torch.float32, device=dev); yt = torch.tensor(ymat, dtype=torch.float32, device=dev)
     pt = torch.tensor(Y["p"], dtype=torch.float32, device=dev)
-    p_sd = torch.tensor(Y["p"][idx_tr].std(0) + 1e-6, dtype=torch.float32, device=dev)
+    # robust per-component scale of the costate (median absolute deviation): the loss must resolve the typical
+    # (small) costates, not only the outliers near active constraints
+    pr = Y["p"][idx_tr]
+    mad = np.median(np.abs(pr - np.median(pr, 0)), 0) * 1.4826
+    p_sd = torch.tensor(np.maximum(mad, 0.05 * (pr.std(0) + 1e-6)) + 1e-6, dtype=torch.float32, device=dev)
+    wt = torch.tensor(Y.get("w", np.ones(len(F))), dtype=torch.float32, device=dev)
     opt = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=weight_decay)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, epochs)
     tr = torch.tensor(idx_tr, device=dev); va = torch.tensor(idx_va, device=dev)
@@ -158,8 +164,11 @@ def train_dual_field(F, Y, idx_tr, idx_va, epochs=4000, lr=2e-3, alpha=1.0, widt
 
     def losses(ix):
         V, U, tau, p = net.value_and_costate(Ft[ix])
-        lv = ((V - yt[ix, 0]) / net.y_sd[0]).pow(2).mean(); lu = ((U - yt[ix, 1]) / net.y_sd[1]).pow(2).mean()
-        lt = ((tau - yt[ix, 2]) / net.y_sd[2]).pow(2).mean(); lp = ((p - pt[ix]) / p_sd).pow(2).mean()
+        w = wt[ix] / wt[ix].mean()
+        lv = (w * ((V - yt[ix, 0]) / net.y_sd[0]).pow(2)).mean(); lu = (w * ((U - yt[ix, 1]) / net.y_sd[1]).pow(2)).mean()
+        lt = (w * ((tau - yt[ix, 2]) / net.y_sd[2]).pow(2)).mean()
+        ep = ((p - pt[ix]) / p_sd).pow(2).mean(1)
+        lp = (w * torch.clamp(ep, max=100.0)).mean()                     # clip outliers (near-constraint spikes)
         return lv, lu, lt, lp
 
     for ep in range(epochs):

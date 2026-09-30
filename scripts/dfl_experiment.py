@@ -20,6 +20,7 @@ from katsumi.planar.model import PlanarChain, NTH
 from katsumi.learn.dual_field import (load_rows, load_dataset, train_dual_field, train_bc, r2, PontryaginController, BCController, run_episode,
                                       make_features)
 from katsumi.learn.reflex import LandingReflex, ReflexEnv
+from katsumi.learn.swing_mpc import SwingMPC
 
 
 def split(d, holdout_m, seed=0):
@@ -49,7 +50,7 @@ def report_fit(net, bc, F, Y, idx, name):
     return out
 
 
-def eval_controllers(nets, refs, d, out_dir, episodes_per_ref=6, seed=0, control_dt=0.02, holdout_m=None):
+def eval_controllers(nets, refs, d, out_dir, episodes_per_ref=6, seed=0, control_dt=0.02, holdout_m=None, controller="mpc", H_mpc=25):
     rng = np.random.default_rng(seed)
     rows = []
     reflex = LandingReflex([pickle.load(open(f, "rb")) for f in refs])
@@ -70,12 +71,14 @@ def eval_controllers(nets, refs, d, out_dir, episodes_per_ref=6, seed=0, control
             starts.append(dict(t0=float(tS[k]), state=(x[:NTH], x[NTH:]), kind=f"perturbed_k{k}"))
         ctrls = {}
         for name, (net, bc) in nets.items():
+            st_, cs_ = body_kw.get("stature", 1.75), body_kw.get("cap_scale", 1.0)
             if bc is None:
-                ctrls[name] = PontryaginController(net, body, chain, T, control_dt=control_dt, stature=body_kw.get("stature", 1.75),
-                                                   cap_scale=body_kw.get("cap_scale", 1.0))
+                if controller == "mpc":
+                    ctrls[name] = SwingMPC(net, body, chain, T, H=H_mpc, control_dt=control_dt, stature=st_, cap_scale=cs_)
+                else:
+                    ctrls[name] = PontryaginController(net, body, chain, T, control_dt=control_dt, stature=st_, cap_scale=cs_)
             else:
-                ctrls[name] = BCController(bc, net, body, T, control_dt=control_dt, stature=body_kw.get("stature", 1.75),
-                                           cap_scale=body_kw.get("cap_scale", 1.0))
+                ctrls[name] = BCController(bc, net, body, T, control_dt=control_dt, stature=st_, cap_scale=cs_)
         for st in starts:
             kind = st.pop("kind")
             for name, c in ctrls.items():
@@ -100,6 +103,11 @@ def main():
     ap.add_argument("--holdout-m", type=float, default=69.0)
     ap.add_argument("--out", default="results/dfl")
     ap.add_argument("--epochs", type=int, default=4000)
+    ap.add_argument("--width", type=int, default=256)
+    ap.add_argument("--depth", type=int, default=3)
+    ap.add_argument("--lr", type=float, default=2e-3)
+    ap.add_argument("--controller", default="mpc", choices=["mpc", "pmp"], help="dual-field controller for the closed loop")
+    ap.add_argument("--H", type=int, default=25, help="MPC horizon (control periods)")
     ap.add_argument("--episodes", type=int, default=6, help="episodes per reference solution (1 rest start + perturbed starts)")
     ap.add_argument("--eval-refs", default=None, help="glob of references used for the closed-loop evaluation (default: all)")
     ap.add_argument("--seed", type=int, default=0)
@@ -111,10 +119,11 @@ def main():
     tr, va, te = split(d, a.holdout_m, a.seed)
     print(f"rows: train {len(tr)} val {len(va)} holdout(m={a.holdout_m:g}) {len(te)}  (dense rows: {int(d['dense'].sum())})", flush=True)
     t0 = time.time()
-    net, h1 = train_dual_field(F, Y, tr, va, epochs=a.epochs, alpha=1.0, seed=a.seed, log_every=1000)
+    kw = dict(epochs=a.epochs, seed=a.seed, log_every=1000, width=a.width, depth=a.depth, lr=a.lr)
+    net, h1 = train_dual_field(F, Y, tr, va, alpha=1.0, **kw)
     print(f"DFL trained {time.time() - t0:.0f}s", flush=True)
-    net0, h2 = train_dual_field(F, Y, tr, va, epochs=a.epochs, alpha=0.0, seed=a.seed, log_every=1000)
-    bc, h3 = train_bc(F, Y, tr, va, epochs=a.epochs, seed=a.seed, log_every=1000)
+    net0, h2 = train_dual_field(F, Y, tr, va, alpha=0.0, **kw)
+    bc, h3 = train_bc(F, Y, tr, va, **kw)
     fits = []
     for name, idx in (("train", tr), ("val", va), ("holdout", te)):
         if len(idx) == 0:
@@ -131,7 +140,7 @@ def main():
         return
     refs = sorted(glob.glob(a.eval_refs or a.refs))
     nets = {"DFL": (net, None), "DFL-noSob": (net0, None), "BC": (net, bc)}
-    rows = eval_controllers(nets, refs, d, a.out, episodes_per_ref=a.episodes, seed=a.seed, holdout_m=a.holdout_m)
+    rows = eval_controllers(nets, refs, d, a.out, episodes_per_ref=a.episodes, seed=a.seed, holdout_m=a.holdout_m, controller=a.controller, H_mpc=a.H)
     import pandas as pd
     df = pd.DataFrame(rows)
     summ = df.groupby(["group", "ctrl"]).agg(n=("success", "size"), success=("success", "mean"), U_peak=("U_peak", "median"),
