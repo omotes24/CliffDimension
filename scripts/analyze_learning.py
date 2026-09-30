@@ -71,8 +71,12 @@ def dfl_results(dfl_dir, out):
                 r = dict(r); r["it"] = it; fits.append(r)
     fits = pd.DataFrame(fits)
     eps = []
+    RUN_SUFFIX = {"dfl_h40": "-H40", "dfl_h25": "-H25", "dfl_tau": "-tau", "dfl_tau_h40": "-tau-H40"}
     for f in sorted(glob.glob(os.path.join(dfl_dir, "*", "episodes.csv"))):
-        e = pd.read_csv(f); e["run"] = os.path.basename(os.path.dirname(f)); eps.append(e)
+        e = pd.read_csv(f); run = os.path.basename(os.path.dirname(f)); e["run"] = run
+        if run in RUN_SUFFIX:
+            e["ctrl"] = e["ctrl"].astype(str) + RUN_SUFFIX[run]
+        eps.append(e)
     eps = pd.concat(eps, ignore_index=True) if eps else pd.DataFrame()
     fits.to_csv(os.path.join(out, "dfl_fits.csv"), index=False)
     if len(fits):
@@ -107,7 +111,9 @@ def dfl_results(dfl_dir, out):
                 rho = getattr(r, "rho_p", float("nan")); sg = getattr(r, "sign_p", float("nan"))
                 f.write(f"{r.model} & {r.split} & {r.n} & {r.r2_V:.2f} & {r.r2_tau:.2f} & {rho:.2f} & {sg:.2f} & {r.r2_u:.2f} \\\\\n")
             f.write("\\bottomrule\n\\end{tabular}\n")
-    NAMES = {"BC": "行動模倣（BC）", "DFL": "双対場 MPC", "DFL-noSob": "双対場 MPC（値のみ）", "ORACLE": "オラクル MPC"}
+    NAMES = {"BC": "行動模倣（BC）", "DFL": "双対場 MPC（$V$ 終端，地平線 0.3\\,s）", "DFL-H40": "双対場 MPC（$V$ 終端，地平線 0.8\\,s）",
+             "DFL-tau": "双対場 MPC（$V$ 終端＋$\\tau$ 進行，0.3\\,s）", "DFL-tau-H40": "双対場 MPC（$V$ 終端＋$\\tau$ 進行，0.8\\,s）",
+             "DFL-noSob": "双対場 MPC（値のみ）", "ORACLE": "オラクル MPC"}
     REASON = {"slipped off A": "A で滑り", "hit wall": "壁に接触", "grip capacity exceeded": "容量超過", "missed B": "B を逃す",
               "hit B's face": "B 前面に衝突", "no release": "離手せず", "lost hook": "フック喪失", "held B": "成功"}
     with open(os.path.join("paper", "tab_dfl_closedloop.tex"), "w") as f:

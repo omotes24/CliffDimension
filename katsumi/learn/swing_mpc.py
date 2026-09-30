@@ -43,14 +43,17 @@ def mlp_casadi(net, z):
 class SwingMPC:
     def __init__(self, net, body, chain, T, H=25, control_dt=0.02, eps=0.20, w_E=1.0, t_ref=1.0, u_rate=10.0, U_margin=1.0,
                  stature=1.75, cap_scale=1.0, release_slack=0.5, wall_smooth=0.01, w_smooth=1e-3, max_iter=80, verbose=False,
-                 terminal_weight=1.0, beta=2.0, replan=1, density=None, beta_d=1.0, mu_margin=0.75, cone_abs=0.03):
+                 terminal_weight=1.0, beta=2.0, replan=1, density=None, beta_d=1.0, mu_margin=0.75, cone_abs=0.03, w_tau=0.0):
         """net: a DualFieldNet or a list of them (ensemble: terminal value = mean + beta * std, pessimistic where the
-        members disagree, i.e. away from the oracle data)."""
+        members disagree, i.e. away from the oracle data).
+        w_tau > 0 adds a progress term on the time-to-release field: (tau(x_H, t_H) - (tau(x_0, t_0) - H dt))^2, i.e.
+        the plan must advance the optimal-release clock by the horizon (the tau field generalises far better than the
+        value gradient, so it anchors the MPC to the oracle manifold)."""
         self.nets = list(net) if isinstance(net, (list, tuple)) else [net]
         self.net = self.nets[0]
         self.beta = beta
         self.replan = replan
-        self.density, self.beta_d, self.mu_margin, self.cone_abs = density, beta_d, mu_margin, cone_abs
+        self.density, self.beta_d, self.mu_margin, self.cone_abs, self.w_tau = density, beta_d, mu_margin, cone_abs, w_tau
         self.body, self.ch, self.T = body, chain, float(T)
         self.H, self.dt, self.eps = H, control_dt, eps
         self.w_E, self.t_ref, self.u_rate, self.U_margin = w_E, t_ref, u_rate, U_margin
@@ -71,7 +74,8 @@ class SwingMPC:
         X = opti.variable(2 * NTH, H + 1); A = opti.variable(NTH, H + 1); Am = opti.variable(NTH, H)
         U = opti.variable(NTAU, H + 1); R = opti.variable(2, H + 1); Rm = opti.variable(2, H)
         x0 = opti.parameter(2 * NTH); t0 = opti.parameter(); u_prev = opti.parameter(NTAU); Ucap = opti.parameter()
-        self.par = dict(x0=x0, t0=t0, u_prev=u_prev, Ucap=Ucap)
+        tau_goal = opti.parameter()                                   # tau(x0, t0) - H dt (progress target)
+        self.par = dict(x0=x0, t0=t0, u_prev=u_prev, Ucap=Ucap, tau_goal=tau_goal)
         tau_cap = ca.DM(b.tau_cap); f_cap = b.f_cap; Bm = ca.DM(ch.B)
         clear = np.concatenate([[0.0], b.clearance, b.forearm_clearance])
 
@@ -130,12 +134,12 @@ class SwingMPC:
         tH = t0 + H * dt
         ph = ca.fmod(tH, T) / T
         zf = ca.vertcat(X[:, H], ca.sin(2 * np.pi * ph), ca.cos(2 * np.pi * ph), ca.DM(body_feats(T, b.m, self.stature, self.cap_scale)))
-        Vs = []
+        Vs = []; taus = []
         for n_ in self.nets:
             mu = ca.DM(n_.mu.numpy().astype(float)); sd = ca.DM(n_.sd.numpy().astype(float))
-            V_, _, _ = mlp_casadi(n_, (zf - mu) / sd)
-            Vs.append(V_)
-        Vmean = sum(Vs) / len(Vs)
+            V_, _, tau_ = mlp_casadi(n_, (zf - mu) / sd)
+            Vs.append(V_); taus.append(tau_)
+        Vmean = sum(Vs) / len(Vs); tau_mean = sum(taus) / len(taus)
         if len(Vs) > 1:
             Vvar = sum((V_ - Vmean) ** 2 for V_ in Vs) / len(Vs)
             VH = Vmean + self.beta * ca.sqrt(Vvar + 1e-6)
@@ -159,6 +163,8 @@ class SwingMPC:
             self.nll_expr = nll
             VH = VH + self.beta_d * ca.fmax(nll - c0, 0.0) ** 2 / 10.0
         J += self.terminal_weight * VH
+        if self.w_tau > 0:
+            J += self.w_tau * (tau_mean - tau_goal) ** 2
         self.VH_expr = VH
         opti.minimize(J)
         opts = {"expand": False, "ipopt.print_level": 5 if self.verbose else 0, "print_time": 0, "ipopt.max_iter": self.max_iter,
@@ -219,7 +225,7 @@ class SwingMPC:
         Ucap = max(self.U_margin * U0, np.linalg.norm(Rnow) / self.body.f_cap + 0.05, 0.6)
         opti = self.opti
         opti.set_value(self.par["x0"], x); opti.set_value(self.par["t0"], t); opti.set_value(self.par["u_prev"], self.u_prev)
-        opti.set_value(self.par["Ucap"], Ucap)
+        opti.set_value(self.par["Ucap"], Ucap); opti.set_value(self.par["tau_goal"], tau0 - self.H * self.dt)
         g = self._guess(x, t)
         for k, v in self.v.items():
             opti.set_initial(v, g[k])
