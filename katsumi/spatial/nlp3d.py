@@ -300,12 +300,13 @@ class SpatialNLP:
             """attached: list of sides pinned to cliff `which` at lateral coordinates ys[side]."""
             def res(t, x, a, u, r):
                 q, qd = x[0:NQ], x[NQ:]
-                rhs = Bm @ (u * tau_cap)
-                JL, JR = ch.f_J(q)
-                J = {"L": JL, "R": JR}
+                RL = ca.MX.zeros(3); RR = ca.MX.zeros(3)
                 for i, s in enumerate(attached):
-                    rhs = rhs + J[s].T @ (r[3 * i:3 * i + 3] * fh)
-                return (ch.f_M(q) @ a + ch.f_h(q, qd) - rhs) / fh
+                    if s == "L":
+                        RL = r[3 * i:3 * i + 3] * fh
+                    else:
+                        RR = r[3 * i:3 * i + 3] * fh
+                return ch.f_res(q, qd, a, u * tau_cap, RL, RR) / fh
             return res
 
         def U_of_hand(i):
@@ -609,8 +610,10 @@ class SpatialNLP:
         return np.vstack([np.interp(s_new, s_old, row) for row in arr])
 
     # ------------------------------------------------------------------ solve -------------------
-    def solve(self, max_iter=3000, print_level=0, tol=1e-4, max_cpu_time=3600.0, sensitivities=False):
-        opts = {"expand": True, "ipopt.max_iter": max_iter, "ipopt.print_level": print_level, "print_time": 0,
+    def solve(self, max_iter=3000, print_level=0, tol=1e-4, max_cpu_time=3600.0, sensitivities=False, expand=False,
+              hessian="limited-memory"):
+        opts = {"expand": expand, "ipopt.max_iter": max_iter, "ipopt.hessian_approximation": hessian,
+                "ipopt.limited_memory_max_history": 30, "ipopt.print_level": print_level, "print_time": 0,
                 "ipopt.tol": tol, "ipopt.acceptable_tol": 1e-3, "ipopt.acceptable_iter": 10,
                 "ipopt.acceptable_constr_viol_tol": 1e-6, "ipopt.mu_strategy": "adaptive",
                 "ipopt.linear_solver": "mumps", "ipopt.max_cpu_time": max_cpu_time, "ipopt.sb": "yes"}

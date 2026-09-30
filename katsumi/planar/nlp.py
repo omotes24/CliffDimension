@@ -659,7 +659,10 @@ class PlanarNLP:
                 continue
             shape = tuple(v.shape)
             base = base_name(name)
-            src = prev.get(name, prev.get(base))
+            if name.startswith("S_") and ("Sa_" + name[2:]) in prev:
+                src = prev["Sa_" + name[2:]]
+            else:
+                src = prev.get(name, prev.get(base))
             arr = resample(src, shape) if src is not None else None
             if arr is not None:
                 opti.set_initial(v, arr)
@@ -771,10 +774,52 @@ class PlanarNLP:
         return dict(C_R=Rh / f_cap, C_Uhist=U, U_catch_C=float(U.max()), U_catch_10ms=float(U10),
                     U_catch_impact_equiv=float(v["U_catch"]), U_catch=float(U.max()))
 
+    def _merge_swing(self, v, k_nom):
+        """Concatenate S (duration d_s - dw) and the first k_nom intervals of Sb (dt = 2dw/N_b) and resample onto a
+        uniform mesh with the same number of intervals (cubic Hermite for the states, linear for torques/forces)."""
+        N_S = self.p.N_S
+        dw = self.dw
+        d_sa = v["d_s"] - dw
+        tS = np.linspace(0.0, d_sa, N_S + 1)
+        dtb = 2 * dw / (self.p.robust_nsub * (self.K - 1))
+        tB = d_sa + dtb * np.arange(1, k_nom + 1)
+        tk = np.concatenate([tS, tB])                                   # knot times (non-uniform)
+        X = np.hstack([v["Sa_X"], v["Sb_X"][:, 1:k_nom + 1]])
+        A = np.hstack([v["Sa_A"], v["Sb_A"][:, 1:k_nom + 1]])
+        U = np.hstack([v["Sa_U"], v["Sb_U"][:, 1:k_nom + 1]])
+        R = np.hstack([v["Sa_R"], v["Sb_R"][:, 1:k_nom + 1]])
+        n = NTH
+        Nn = N_S + k_nom
+        tu = np.linspace(0.0, tk[-1], Nn + 1)
+        def hermite(t):
+            j = np.clip(np.searchsorted(tk, t, side="right") - 1, 0, len(tk) - 2)
+            h = tk[j + 1] - tk[j]; u = (t - tk[j]) / h
+            p0, p1 = X[:n, j], X[:n, j + 1]; v0, v1 = X[n:, j], X[n:, j + 1]; a0, a1 = A[:, j], A[:, j + 1]
+            h00 = 2 * u ** 3 - 3 * u ** 2 + 1; h10 = u ** 3 - 2 * u ** 2 + u; h01 = -2 * u ** 3 + 3 * u ** 2; h11 = u ** 3 - u ** 2
+            pos = h00 * p0 + h10 * h * v0 + h01 * p1 + h11 * h * v1
+            vel = h00 * v0 + h10 * h * a0 + h01 * v1 + h11 * h * a1
+            acc = (1 - u) * a0 + u * a1
+            return pos, vel, acc
+        Xu = np.zeros((2 * n, Nn + 1)); Au = np.zeros((n, Nn + 1))
+        for i, t in enumerate(tu):
+            pos, vel, acc = hermite(min(t, tk[-1]))
+            Xu[:n, i], Xu[n:, i], Au[:, i] = pos, vel, acc
+        Uu = np.vstack([np.interp(tu, tk, row) for row in U])
+        Ru = np.vstack([np.interp(tu, tk, row) for row in R])
+        tm = 0.5 * (tu[:-1] + tu[1:])
+        Amu = np.zeros((n, Nn))
+        for i, t in enumerate(tm):
+            Amu[:, i] = hermite(t)[2]
+        v["S_X"], v["S_A"], v["S_Am"], v["S_U"] = Xu, Au, Amu, Uu
+        v["S_Um"] = 0.5 * (Uu[:, :-1] + Uu[:, 1:])
+        v["S_R"], v["S_Rm"] = Ru, 0.5 * (Ru[:, :-1] + Ru[:, 1:])
+
     def extract(self, sol):
         v = {k: np.array(sol.value(x)) for k, x in self.vars.items()}
         for k, x in self.durs.items():
             v[k] = float(sol.value(x))
+        if "d_f" not in v:                       # robust: nominal scenario's flight time under the plain key
+            v["d_f"] = v["d_f" + self.nom["sfx"]]
         v["U_peak"] = float(sol.value(self.U_peak))
         v["U_catch"] = float(sol.value(self.U_catch))
         v["U_imp"] = float(sol.value(self.U_imp))
@@ -804,9 +849,12 @@ class PlanarNLP:
                 src = (key + sfx) if key in ("thd_plus", "Lam") else key.replace("_", sfx + "_", 1)
                 if src in v:
                     v[key] = v[src]
-            v["d_f"] = v["d_f" + sfx]
-            v["t_c"] = v["t_l"] + v["d_f"]
-            v["t_h0"] = v["t_c"] + v["d_c"]
+            # merged nominal swing (S + Sb up to the nominal release knot) on a uniform mesh under the plain keys;
+            # the raw S variables stay available as "Sa_*" for warm starts
+            k_nom = int(round((0.0 - self.deltas[0]) / (self.deltas[1] - self.deltas[0]))) * self.p.robust_nsub
+            for kind in ("X", "A", "Am", "U", "Um", "R", "Rm"):
+                v["Sa_" + kind] = v["S_" + kind]
+            self._merge_swing(v, k_nom)
             v["scen"] = [dict(k=s["k"], delta=s["delta"], d_f=float(sol.value(s["d_f"])),
                               U_catch=float(sol.value(s["U_catch"])), U_imp=float(sol.value(s["U_imp"])))
                          for s in self.scen]

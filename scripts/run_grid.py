@@ -27,6 +27,9 @@ def hs_residuals(r, body):
     return _hs(r, body)
 
 
+MAX_CPU = float(os.environ.get("KATSUMI_MAX_CPU", "900"))
+
+
 def solve_case(T, m, phi_l, prev, params_kw, tag, outdir, d_s_guesses=(3.0, 2.0, 4.0)):
     body_kw = params_kw.pop("body_kw", {})
     body = make_body(m, **body_kw)
@@ -37,7 +40,7 @@ def solve_case(T, m, phi_l, prev, params_kw, tag, outdir, d_s_guesses=(3.0, 2.0,
     if prev is not None:
         nlp = PlanarNLP(body, T, phi_l, p)
         nlp.set_initial(prev=prev)
-        r = nlp.solve(print_level=0, max_iter=2500, tol=1e-4, max_cpu_time=900)
+        r = nlp.solve(print_level=0, max_iter=2500, tol=1e-4, max_cpu_time=MAX_CPU)
         r["cold_start"] = 0
         tried.append(r)
         if r["ok"]:
@@ -46,7 +49,7 @@ def solve_case(T, m, phi_l, prev, params_kw, tag, outdir, d_s_guesses=(3.0, 2.0,
         for d_s in d_s_guesses:
             nlp = PlanarNLP(body, T, phi_l, p)
             nlp.set_initial(d_w=T - d_s, d_s=d_s)
-            r = nlp.solve(print_level=0, max_iter=2500, tol=1e-4, max_cpu_time=900)
+            r = nlp.solve(print_level=0, max_iter=2500, tol=1e-4, max_cpu_time=MAX_CPU)
             r["cold_start"] = 1
             tried.append(r)
             if r["ok"]:

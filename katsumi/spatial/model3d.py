@@ -112,30 +112,33 @@ class SpatialChain:
         bodies.append((sg["shank"].mass, c_sk, R_sk, sg["shank"].inertia))
         pts.update(hip=hip, knee=knee, ankle=ankle, toe=toe)
 
-        # ---- energies -----------------------------------------------------------------------------
-        Ttot = 0
+        # ---- energies / mass matrix from body Jacobians (lean SX graph: first derivatives only) -------------
         V = 0
         mtot = 0
         Gc = 0
+        Mmat = ca.SX.zeros(NQ, NQ)
+        Jw_list = []
         for (mi, ci, Ri, Ii) in bodies:
-            cd = ca.jtimes(ci, q, qd)
+            Jv = ca.jacobian(ci, q)                                    # 3 x NQ
             Rd = ca.reshape(ca.jtimes(ca.vec(Ri), q, qd), 3, 3)
-            om = vee(Ri.T @ Rd)
-            Ttot += 0.5 * mi * ca.dot(cd, cd) + 0.5 * ca.dot(om, ca.DM(Ii) @ om)
+            om = vee(Ri.T @ Rd)                                        # linear in qd
+            Jw = ca.jacobian(om, qd)                                   # 3 x NQ (function of q only)
+            Jw_list.append(Jw)
+            Mmat = Mmat + mi * (Jv.T @ Jv) + Jw.T @ (ca.DM(Ii) @ Jw)
             V += mi * G * ci[2]
             mtot += mi
             Gc = Gc + mi * ci
+        Mmat = 0.5 * (Mmat + Mmat.T)
         Gc = Gc / mtot
         Gcd = ca.jtimes(Gc, q, qd)
-        Mmat = ca.hessian(Ttot, qd)[0]
-        Mmat = 0.5 * (Mmat + Mmat.T)
+        Ttot = 0.5 * ca.dot(qd, Mmat @ qd)
+        # h = Mdot qd - dT/dq + dV/dq  (Mdot qd via a directional derivative of M qd along qd)
         hvec = ca.jtimes(Mmat @ qd, q, qd) - ca.gradient(Ttot, q) + ca.gradient(V, q)
         # angular momentum about the CoM (world frame)
         Lg = ca.SX.zeros(3)
-        for (mi, ci, Ri, Ii) in bodies:
+        for (mi, ci, Ri, Ii), Jw in zip(bodies, Jw_list):
             cd = ca.jtimes(ci, q, qd)
-            Rd = ca.reshape(ca.jtimes(ca.vec(Ri), q, qd), 3, 3)
-            om = vee(Ri.T @ Rd)
+            om = Jw @ qd
             Lg += mi * ca.cross(ci - Gc, cd - Gcd) + Ri @ (ca.DM(Ii) @ om)
         # hand Jacobians
         JL = ca.jacobian(hands["L"], q)
@@ -164,6 +167,10 @@ class SpatialChain:
         RR = ca.SX.sym("RR", 3)
         rhs = Bmat @ tau - hvec + JL.T @ RL + JR.T @ RR
         self.f_qdd_free = ca.Function("qdd_free3", [q, qd, tau, RL, RR], [ca.solve(Mmat, rhs)])
+        # implicit dynamics residual as ONE embedded function (its Jacobian is generated once and reused per node)
+        acc = ca.SX.sym("acc", NQ)
+        # reverse-mode AD for the embedded call (14 outputs << 56 inputs): 3x faster NLP Jacobians
+        self.f_res = ca.Function("res3", [q, qd, acc, tau, RL, RR], [Mmat @ acc - rhs], {"ad_weight": 1.0, "ad_weight_sp": 1.0})
         # constraint-consistent acceleration for a set of pinned hands (index-1 with Baumgarte stabilisation)
         Jd_L = ca.reshape(ca.jtimes(ca.vec(JL), q, qd), 3, NQ)
         Jd_R = ca.reshape(ca.jtimes(ca.vec(JR), q, qd), 3, NQ)
