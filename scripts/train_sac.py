@@ -19,7 +19,7 @@ def main():
     ap.add_argument("--fixed-T", type=float, default=None)
     ap.add_argument("--fixed-m", type=float, default=None)
     ap.add_argument("--n-envs", type=int, default=8)
-    ap.add_argument("--shaping", default="none", choices=["none", "margin"])
+    ap.add_argument("--shaping", default="none", choices=["none", "margin", "energy", "margin+energy"])
     ap.add_argument("--device", default="auto")
     ap.add_argument("--phi0", type=float, default=None, help="fixed start phase (with --fixed-T/--fixed-m); default random")
     a = ap.parse_args()

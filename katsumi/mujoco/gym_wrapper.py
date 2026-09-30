@@ -32,6 +32,8 @@ class CliffGym(gym.Env):
         super().__init__()
         self.shaping, self.w_dist, self.w_face = shaping, w_dist, w_face
         self._d_min, self._face_best = np.inf, -1.0
+        self.w_energy = 20.0                       # reward per metre of swing-energy height gained while on A
+        self._E_prev, self._com_prev = None, None
         self.T_set = T_set or TRAIN_T
         self.m_set = m_set or TRAIN_M
         self.phi0_set = phi0_set                  # None -> Uniform[0, 2)
@@ -65,6 +67,7 @@ class CliffGym(gym.Env):
         self.env = self._env_for(m)
         obs = self.env.reset(T=T, phi0=phi0)
         self._d_min, self._face_best = np.inf, -1.0
+        self._E_prev, self._com_prev = None, None
         return obs, dict(T=T, m=m, phi0=phi0)
 
     def step(self, action):
@@ -72,7 +75,25 @@ class CliffGym(gym.Env):
         a_env = a.copy()
         a_env[-2:] = 0.5 * (a[-2:] + 1.0)          # finger channels: [-1, 1] -> [0, 1]
         obs, r, term, trunc, info = self.env.step(a_env)
-        if self.shaping == "margin":
+        if "energy" in self.shaping:
+            # swing-up shaping (potential based): mechanical energy of the CoM relative to the hang, in metres of height,
+            # rewarded while the athlete is still on A -- lets a policy discover gradual pumping like on a playground swing
+            env = self.env
+            m_ = env.model
+            if getattr(self, "_hum_ids", None) is None or self._hum_model is not m_:
+                root = m_.body_rootid[env.bid["pelvis"]]
+                self._hum_ids = np.array([b for b in range(m_.nbody) if m_.body_rootid[b] == root])
+                self._hum_mass = m_.body_mass[self._hum_ids]
+                self._hum_model = m_
+            c = (self._hum_mass[:, None] * env.data.xipos[self._hum_ids]).sum(0) / self._hum_mass.sum()
+            if self._com_prev is not None and not env.released_A:
+                v = (c - self._com_prev) / env.p.control_dt
+                E = 0.5 * float(v @ v) / 9.81 + float(c[2])
+                if self._E_prev is not None:
+                    r = r + self.w_energy * (E - self._E_prev)
+                self._E_prev = E
+            self._com_prev = c
+        if "margin" in self.shaping:
             env = self.env
             if env.released_A:
                 pB = env.cliffs["B"][0]
