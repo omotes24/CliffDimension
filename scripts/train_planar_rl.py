@@ -21,7 +21,7 @@ class GymReflexEnv(gym.Env):
     """Gymnasium-compatible wrapper around ReflexEnv with outcome logging."""
     metadata = {"render_modes": []}
 
-    def __init__(self, env_kw, ref_glob, phi0, log_path=None):
+    def __init__(self, env_kw, ref_glob, phi0, log_path=None, rsi=0.0, rsi_refs=None, seed=0):
         super().__init__()
         self.base = PlanarCliffEnv(**env_kw)
         self.wrapped = ReflexEnv(self.base, LandingReflex.from_glob(ref_glob))
@@ -29,10 +29,25 @@ class GymReflexEnv(gym.Env):
         self.phi0 = phi0
         self.log_path = log_path
         self.n_ep = 0
+        # reference-state initialisation (DeepMimic-style): with probability `rsi` start from a random knot of a
+        # random oracle swing (same body / period as the environment)
+        self.rsi = rsi
+        self.rsi_pool = []
+        if rsi > 0:
+            for f in sorted(glob.glob(rsi_refs or ref_glob)):
+                r = pickle.load(open(f, "rb"))
+                if r.get("ok") and abs(r["T"] - env_kw.get("T", r["T"])) < 1e-9 and abs(r["m"] - env_kw.get("m", r["m"])) < 1e-9:
+                    self.rsi_pool.append(r)
+        self.rng = np.random.default_rng(seed)
 
     def reset(self, seed=None, options=None):
         opts = dict(options or {})
-        if self.phi0 is not None and self.phi0 >= 0 and "phi0" not in opts:
+        if self.rsi > 0 and self.rsi_pool and self.rng.uniform() < self.rsi and not opts:
+            r = self.rsi_pool[int(self.rng.integers(len(self.rsi_pool)))]
+            N = r["S_X"].shape[1] - 1
+            k = int(self.rng.integers(0, N - 5))
+            opts = dict(t0=r["t_s0"] + r["d_s"] * k / N, state=(r["S_X"][:5, k], r["S_X"][5:, k]))
+        elif self.phi0 is not None and self.phi0 >= 0 and "phi0" not in opts:
             opts["phi0"] = self.phi0
         return self.wrapped.reset(seed=seed, options=opts)
 
@@ -53,10 +68,10 @@ class GymReflexEnv(gym.Env):
         return obs, r, term, trunc, info
 
 
-def make_env_fn(env_kw, ref_glob, phi0, log_path, seed):
+def make_env_fn(env_kw, ref_glob, phi0, log_path, seed, rsi=0.0, rsi_refs=None):
     def _f():
         kw = dict(env_kw); kw["seed"] = seed
-        return GymReflexEnv(kw, ref_glob, phi0, log_path)
+        return GymReflexEnv(kw, ref_glob, phi0, log_path, rsi=rsi, rsi_refs=rsi_refs, seed=seed)
     return _f
 
 
@@ -78,6 +93,8 @@ def main():
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--control-dt", type=float, default=0.02)
     ap.add_argument("--log-std-init", type=float, default=-1.0, help="PPO initial exploration std = exp(.) (0.37)")
+    ap.add_argument("--rsi", type=float, default=0.0, help="probability of a reference-state initialisation per episode")
+    ap.add_argument("--rsi-refs", default=None, help="glob of oracle swings for RSI (default: --refs)")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     refs = sorted(glob.glob(a.refs))
@@ -89,7 +106,7 @@ def main():
     from stable_baselines3 import PPO, SAC
     from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv, VecMonitor
     from stable_baselines3.common.callbacks import CheckpointCallback
-    fns = [make_env_fn(env_kw, a.refs, phi0, os.path.join(a.out, "episodes.csv"), a.seed * 1000 + i) for i in range(a.n_envs)]
+    fns = [make_env_fn(env_kw, a.refs, phi0, os.path.join(a.out, "episodes.csv"), a.seed * 1000 + i, a.rsi, a.rsi_refs) for i in range(a.n_envs)]
     venv = VecMonitor(SubprocVecEnv(fns) if a.n_envs > 1 else DummyVecEnv(fns))
     if a.algo == "ppo":
         model = PPO("MlpPolicy", venv, n_steps=512, batch_size=2048, n_epochs=10, learning_rate=3e-4, gamma=0.995, gae_lambda=0.97,
