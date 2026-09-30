@@ -284,6 +284,8 @@ class PontryaginController:
             dict(type="ineq", fun=lambda u: (rel + reld * dt + 0.5 * (A_REL @ (c + D @ u)) * dt ** 2) - (self.lo + 0.01)),
             dict(type="ineq", fun=lambda u: self.u_rate * dt - (u - self.u_prev)),
             dict(type="ineq", fun=lambda u: self.u_rate * dt + (u - self.u_prev)),
+            dict(type="ineq", fun=lambda u: 0.95 * self.body.qd_max - (reld + (A_REL @ (c + D @ u)) * dt)),   # joint-speed look-ahead
+            dict(type="ineq", fun=lambda u: 0.95 * self.body.qd_max + (reld + (A_REL @ (c + D @ u)) * dt)),
         ]
         u0 = np.clip(self.u_prev, -1, 1)
         res = minimize(H, u0, jac=dH, bounds=[(-1, 1)] * NTAU, constraints=cons, method="SLSQP", options=dict(maxiter=60, ftol=1e-8))

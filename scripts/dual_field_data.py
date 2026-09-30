@@ -128,7 +128,7 @@ def job(args):
             t1 = time.time()
             out = nlp.solve(print_level=0, max_iter=2000, tol=1e-4, max_cpu_time=max_cpu, sensitivities=True)
             out["solve_s"] = time.time() - t1
-            out["ref"] = jb["ref"]; out["k"] = k; out["level"] = jb["level"]; out["delta"] = jb["delta"]; out["body_kw"] = body_kw
+            out["ref"] = jb["ref"]; out["k"] = k; out["level"] = jb["level"]; out["delta"] = jb.get("delta", (x0 - r["S_X"][:, k]).tolist()); out["body_kw"] = body_kw; out["t0_abs"] = t0
             # keep the pickle small: drop the mid-point arrays
             for key in list(out.keys()):
                 if key.endswith("_Am") or key.endswith("_Um") or key.endswith("_Rm"):
@@ -188,16 +188,14 @@ def main():
     import csv
     table = os.path.join(a.out, a.table)
     if os.path.exists(table):
-        rows = list(csv.DictReader(open(table)))
-        done = {r["tag"] for r in rows}
-        jobs = [jb for jb in jobs if jb.get("tag") not in done or "x0" not in jb]
+        rows = list(csv.DictReader(open(table)))                 # existing rows are kept (one row per tag, see below)
     with mp.Pool(a.workers) as pool:
         for row in pool.imap_unordered(job, [(jb, a.out, a.max_cpu, a.N_min) for jb in jobs]):
             rows = [r for r in rows if r["tag"] != row["tag"]] + [row]          # one row per tag
             keys = sorted(set().union(*[r.keys() for r in rows]))
             with open(table, "w", newline="") as f:
                 w = csv.DictWriter(f, fieldnames=keys); w.writeheader(); w.writerows(rows)
-    print("done", len(rows), "ok", sum(r["ok"] for r in rows))
+    print("done", len(rows), "ok", sum(int(r["ok"]) for r in rows))
 
 
 if __name__ == "__main__":
