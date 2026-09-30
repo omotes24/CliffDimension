@@ -21,8 +21,12 @@ def _rel(th):
 
 class OracleMPC:
     def __init__(self, ref, body, T, replan_dt=0.5, kp=1.0, kd=0.1, max_cpu=240.0, tol=1e-4, N_min=30, verbose=False,
-                 d_s_min=0.05, release_slack=0.5, control_dt=0.02):
-        self.ref, self.body, self.T = ref, body, float(T)
+                 d_s_min=0.05, release_slack=0.5, control_dt=0.02, mu_margin=0.9):
+        """mu_margin: the plans use a tightened hook/friction cone (mu_out * mu_margin) so that tracking errors do not
+        push the executed hand force out of the true cone (constraint tightening)."""
+        import copy
+        self.ref, self.T = ref, float(T)
+        self.body = copy.deepcopy(body); self.body.mu_out = body.mu_out * mu_margin
         self.replan_dt, self.kp, self.kd, self.max_cpu, self.tol, self.N_min = replan_dt, kp, kd, max_cpu, tol, N_min
         self.verbose, self.d_s_min, self.release_slack, self.dt = verbose, d_s_min, release_slack, control_dt
         self.reset()
