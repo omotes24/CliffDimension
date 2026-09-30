@@ -49,6 +49,7 @@ def make_features(x, t, T, m, stature=1.75, cap_scale=1.0):
 
 
 def load_rows(csv_path):
+    """Point labels (one per from-state solve) from the dataset table."""
     import pandas as pd
     d = pd.read_csv(csv_path)
     d = d[d["ok"] == 1].copy()
@@ -58,7 +59,32 @@ def load_rows(csv_path):
     P = d[[f"p{i}" for i in range(2 * NTH)]].values
     Y = dict(J=d["J"].values, U=d["U"].values, tau=d["d_s"].values, u=d[[f"u{i}" for i in range(4)]].values, p=P,
              dJdt=d["dJ_dt0"].values)
+    d["dense"] = 0
     return d, F, Y
+
+
+def load_dataset(data_dir, dense=True, min_tau=0.05):
+    """Point labels (rows.csv) + dense trajectory labels (defect multipliers of every solution pickle)."""
+    import pandas as pd
+    from .labels import dense_rows_from_dir
+    d, F, Y = load_rows(os.path.join(data_dir, "rows.csv"))
+    if not dense:
+        return d, F, Y
+    rows = [r for r in dense_rows_from_dir(data_dir, min_tau=min_tau) if r["knot"] > 0]      # knot 0 = the point label
+    if not rows:
+        return d, F, Y
+    Xd = np.stack([r["x"] for r in rows])
+    Fd = np.stack([make_features(r["x"], r["t0"], r["T"], r["m"], r["stature"], r["cap_scale"])[0] for r in rows])
+    Yd = dict(J=np.array([r["J"] for r in rows]), U=np.array([r["U"] for r in rows]), tau=np.array([r["tau"] for r in rows]),
+              u=np.stack([r["u"] for r in rows]), p=np.stack([r["p"] for r in rows]), dJdt=np.full(len(rows), np.nan))
+    dd = pd.DataFrame(dict(ref=[r["ref"] for r in rows], T=[r["T"] for r in rows], m=[r["m"] for r in rows], level=[r["level"] for r in rows],
+                           t0=[r["t0"] for r in rows], dense=1, src=[r["src"] for r in rows], knot=[r["knot"] for r in rows]))
+    for i in range(2 * NTH):
+        dd[f"x{i}"] = Xd[:, i]
+    d_all = pd.concat([d, dd], ignore_index=True)
+    F_all = np.concatenate([F, Fd])
+    Y_all = {k: np.concatenate([Y[k], Yd[k]]) for k in Y}
+    return d_all, F_all, Y_all
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -107,49 +133,67 @@ class BCNet(nn.Module):
         return torch.tanh(self.body((z - self.mu) / self.sd))
 
 
-def train_dual_field(F, Y, idx_tr, idx_va, epochs=4000, lr=2e-3, alpha=1.0, width=256, depth=3, seed=0, verbose=True, log_every=500):
-    """Sobolev training: value + costate (+ U, tau heads). alpha = 0 gives the value-only ablation."""
+def _device():
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def train_dual_field(F, Y, idx_tr, idx_va, epochs=4000, lr=2e-3, alpha=1.0, width=256, depth=3, seed=0, verbose=True, log_every=500,
+                     batch=8192, weight_decay=0.0):
+    """Sobolev training: value + costate (+ U, tau heads). alpha = 0 gives the value-only ablation.
+    `epochs` counts passes when the training set fits in one batch, otherwise optimisation steps."""
     torch.manual_seed(seed)
+    dev = _device()
     mu, sd = F[idx_tr].mean(0), F[idx_tr].std(0) + 1e-6
     ymat = np.stack([Y["J"], Y["U"], Y["tau"]], 1)
     y_mu, y_sd = ymat[idx_tr].mean(0), ymat[idx_tr].std(0) + 1e-6
-    net = DualFieldNet(mu, sd, y_mu, y_sd, width, depth)
-    Ft = torch.tensor(F, dtype=torch.float32); yt = torch.tensor(ymat, dtype=torch.float32); pt = torch.tensor(Y["p"], dtype=torch.float32)
-    p_sd = torch.tensor(Y["p"][idx_tr].std(0) + 1e-6, dtype=torch.float32)
-    opt = torch.optim.Adam(net.parameters(), lr=lr)
+    net = DualFieldNet(mu, sd, y_mu, y_sd, width, depth).to(dev)
+    Ft = torch.tensor(F, dtype=torch.float32, device=dev); yt = torch.tensor(ymat, dtype=torch.float32, device=dev)
+    pt = torch.tensor(Y["p"], dtype=torch.float32, device=dev)
+    p_sd = torch.tensor(Y["p"][idx_tr].std(0) + 1e-6, dtype=torch.float32, device=dev)
+    opt = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=weight_decay)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, epochs)
-    tr = torch.tensor(idx_tr); va = torch.tensor(idx_va)
+    tr = torch.tensor(idx_tr, device=dev); va = torch.tensor(idx_va, device=dev)
+    g = torch.Generator(device="cpu").manual_seed(seed)
     hist = []
+
+    def losses(ix):
+        V, U, tau, p = net.value_and_costate(Ft[ix])
+        lv = ((V - yt[ix, 0]) / net.y_sd[0]).pow(2).mean(); lu = ((U - yt[ix, 1]) / net.y_sd[1]).pow(2).mean()
+        lt = ((tau - yt[ix, 2]) / net.y_sd[2]).pow(2).mean(); lp = ((p - pt[ix]) / p_sd).pow(2).mean()
+        return lv, lu, lt, lp
+
     for ep in range(epochs):
         net.train()
-        V, U, tau, p = net.value_and_costate(Ft[tr])
-        lv = ((V - yt[tr, 0]) / net.y_sd[0]).pow(2).mean(); lu = ((U - yt[tr, 1]) / net.y_sd[1]).pow(2).mean()
-        lt = ((tau - yt[tr, 2]) / net.y_sd[2]).pow(2).mean(); lp = ((p - pt[tr]) / p_sd).pow(2).mean()
+        ix = tr if len(tr) <= batch else tr[torch.randint(0, len(tr), (batch,), generator=g).to(dev)]
+        lv, lu, lt, lp = losses(ix)
         loss = lv + lu + lt + alpha * lp
         opt.zero_grad(); loss.backward(); opt.step(); sched.step()
         if (ep % log_every == 0 or ep == epochs - 1):
             net.eval()
-            Vv, Uv, tv, pv = net.value_and_costate(Ft[va])
+            vv = va if len(va) <= 4 * batch else va[:4 * batch]
+            lvv, luv, ltv, lpv = losses(vv)
             r = dict(ep=ep, loss=float(loss), lv=float(lv), lu=float(lu), lt=float(lt), lp=float(lp),
-                     va_V=float(((Vv - yt[va, 0]) / net.y_sd[0]).pow(2).mean()), va_U=float(((Uv - yt[va, 1]) / net.y_sd[1]).pow(2).mean()),
-                     va_tau=float(((tv - yt[va, 2]) / net.y_sd[2]).pow(2).mean()), va_p=float(((pv - pt[va]) / p_sd).pow(2).mean()))
+                     va_V=float(lvv), va_U=float(luv), va_tau=float(ltv), va_p=float(lpv))
             hist.append(r)
             if verbose:
                 print(" ".join(f"{k}={v:.4g}" if isinstance(v, float) else f"{k}={v}" for k, v in r.items()), flush=True)
-    return net, hist
+    return net.cpu(), hist
 
 
-def train_bc(F, Y, idx_tr, idx_va, epochs=4000, lr=2e-3, width=256, depth=3, seed=0, verbose=True, log_every=500):
+def train_bc(F, Y, idx_tr, idx_va, epochs=4000, lr=2e-3, width=256, depth=3, seed=0, verbose=True, log_every=500, batch=8192):
     torch.manual_seed(seed)
+    dev = _device()
     mu, sd = F[idx_tr].mean(0), F[idx_tr].std(0) + 1e-6
-    net = BCNet(mu, sd, width, depth)
-    Ft = torch.tensor(F, dtype=torch.float32); ut = torch.tensor(Y["u"], dtype=torch.float32)
+    net = BCNet(mu, sd, width, depth).to(dev)
+    Ft = torch.tensor(F, dtype=torch.float32, device=dev); ut = torch.tensor(Y["u"], dtype=torch.float32, device=dev)
     opt = torch.optim.Adam(net.parameters(), lr=lr); sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, epochs)
-    tr = torch.tensor(idx_tr); va = torch.tensor(idx_va)
+    tr = torch.tensor(idx_tr, device=dev); va = torch.tensor(idx_va, device=dev)
+    g = torch.Generator(device="cpu").manual_seed(seed)
     hist = []
     for ep in range(epochs):
         net.train()
-        loss = (net(Ft[tr]) - ut[tr]).pow(2).mean()
+        ix = tr if len(tr) <= batch else tr[torch.randint(0, len(tr), (batch,), generator=g).to(dev)]
+        loss = (net(Ft[ix]) - ut[ix]).pow(2).mean()
         opt.zero_grad(); loss.backward(); opt.step(); sched.step()
         if ep % log_every == 0 or ep == epochs - 1:
             net.eval()
@@ -158,7 +202,7 @@ def train_bc(F, Y, idx_tr, idx_va, epochs=4000, lr=2e-3, width=256, depth=3, see
             hist.append(r)
             if verbose:
                 print(" ".join(f"{k}={v:.4g}" if isinstance(v, float) else f"{k}={v}" for k, v in r.items()), flush=True)
-    return net, hist
+    return net.cpu(), hist
 
 
 def r2(y, yhat):

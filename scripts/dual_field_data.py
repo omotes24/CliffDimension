@@ -93,9 +93,14 @@ def job(args):
     N = r["S_X"].shape[1] - 1
     k = jb["k"]
     tS = r["t_s0"] + np.linspace(0, r["d_s"], N + 1)
-    t0 = float(tS[k]); x0 = r["S_X"][:, k] + np.array(jb["delta"])
-    rem = r["d_s"] - (t0 - r["t_s0"])
-    tag = f"{os.path.basename(jb['ref'])[4:-4]}_k{k:03d}_l{jb['level']:g}_r{jb['rep']}"
+    if "x0" in jb:                                   # visited state (DAgger): explicit state / time, warm start from knot k
+        t0 = float(jb["t0"]); x0 = np.array(jb["x0"], float)
+        rem = float(jb.get("rem", r["d_s"] - (tS[k] - r["t_s0"])))
+        tag = jb.get("tag", f"{os.path.basename(jb['ref'])[4:-4]}_v{jb['rep']:04d}")
+    else:
+        t0 = float(tS[k]); x0 = r["S_X"][:, k] + np.array(jb["delta"])
+        rem = r["d_s"] - (t0 - r["t_s0"])
+        tag = f"{os.path.basename(jb['ref'])[4:-4]}_k{k:03d}_l{jb['level']:g}_r{jb['rep']}"
     fn = os.path.join(outdir, f"sol_{tag}.pkl")
     row = dict(tag=tag, ref=os.path.basename(jb["ref"]), T=T, m=m, k=k, level=jb["level"], rep=jb["rep"], t0=t0, phase=(t0 % T) / T,
                t_in=t0 - r["t_s0"], rem_ref=rem, U_ref=r["U_peak"], ok=0)
@@ -116,7 +121,8 @@ def job(args):
             nlp = PlanarNLP(make_body(m, **body_kw), T, t0 / T, p)
             prev = dict(r)
             for key in ("S_X", "S_A", "S_U", "S_R", "S_Am", "S_Um", "S_Rm"):
-                prev[key] = r[key][:, k:]
+                if key in r:
+                    prev[key] = r[key][:, k:]
             prev["d_s"] = rem; prev["d_w"] = 0.0
             nlp.set_initial(prev=prev)
             t1 = time.time()
@@ -154,7 +160,8 @@ def job(args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--refs", nargs="+", required=True, help="glob(s) of reference solution pickles")
+    ap.add_argument("--refs", nargs="+", default=[], help="glob(s) of reference solution pickles")
+    ap.add_argument("--states", default=None, help="JSON list of visited states {ref, t0, x0, k, rem, rep, level} (DAgger)")
     ap.add_argument("--out", default="results/dual_field")
     ap.add_argument("--stride", type=int, default=10)
     ap.add_argument("--levels", type=float, nargs="+", default=[0.0, 0.5, 1.0, 2.0])
@@ -166,23 +173,29 @@ def main():
     ap.add_argument("--N-min", type=int, default=30)
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--no-shuffle", action="store_true")
+    ap.add_argument("--table", default="rows.csv")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     files = sorted(set(sum([glob.glob(g) for g in a.refs], [])))
-    jobs = sample_jobs(files, a.stride, a.levels, a.reps, a.seed, a.t_margin)
+    jobs = json.load(open(a.states)) if a.states else sample_jobs(files, a.stride, a.levels, a.reps, a.seed, a.t_margin)
     if not a.no_shuffle:                      # interleave references so that partial tables already cover all bodies
         np.random.default_rng(a.seed).shuffle(jobs)
     if a.limit:
         jobs = jobs[:a.limit]
     print(f"{len(files)} references, {len(jobs)} from-state solves", flush=True)
-    json.dump(jobs, open(os.path.join(a.out, "jobs.json"), "w"))
+    json.dump(jobs, open(os.path.join(a.out, "jobs.json" if not a.states else "jobs_states.json"), "w"))
     rows = []
     import csv
+    table = os.path.join(a.out, a.table)
+    if os.path.exists(table):
+        rows = list(csv.DictReader(open(table)))
+        done = {r["tag"] for r in rows}
+        jobs = [jb for jb in jobs if jb.get("tag") not in done or "x0" not in jb]
     with mp.Pool(a.workers) as pool:
         for row in pool.imap_unordered(job, [(jb, a.out, a.max_cpu, a.N_min) for jb in jobs]):
-            rows.append(row)
+            rows = [r for r in rows if r["tag"] != row["tag"]] + [row]          # one row per tag
             keys = sorted(set().union(*[r.keys() for r in rows]))
-            with open(os.path.join(a.out, "rows.csv"), "w", newline="") as f:
+            with open(table, "w", newline="") as f:
                 w = csv.DictWriter(f, fieldnames=keys); w.writeheader(); w.writerows(rows)
     print("done", len(rows), "ok", sum(r["ok"] for r in rows))
 

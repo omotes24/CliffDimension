@@ -17,7 +17,7 @@ import torch
 from katsumi.planar.env import PlanarCliffEnv
 from katsumi.planar.anthro import make_body
 from katsumi.planar.model import PlanarChain, NTH
-from katsumi.learn.dual_field import (load_rows, train_dual_field, train_bc, r2, PontryaginController, BCController, run_episode,
+from katsumi.learn.dual_field import (load_rows, load_dataset, train_dual_field, train_bc, r2, PontryaginController, BCController, run_episode,
                                       make_features)
 from katsumi.learn.reflex import LandingReflex, ReflexEnv
 
@@ -104,11 +104,12 @@ def main():
     ap.add_argument("--eval-refs", default=None, help="glob of references used for the closed-loop evaluation (default: all)")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--no-eval", action="store_true")
+    ap.add_argument("--no-dense", action="store_true", help="point labels only (no trajectory labels from the defect multipliers)")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
-    d, F, Y = load_rows(os.path.join(a.data, "rows.csv"))
+    d, F, Y = load_dataset(a.data, dense=not a.no_dense)
     tr, va, te = split(d, a.holdout_m, a.seed)
-    print(f"rows: train {len(tr)} val {len(va)} holdout(m={a.holdout_m:g}) {len(te)}", flush=True)
+    print(f"rows: train {len(tr)} val {len(va)} holdout(m={a.holdout_m:g}) {len(te)}  (dense rows: {int(d['dense'].sum())})", flush=True)
     t0 = time.time()
     net, h1 = train_dual_field(F, Y, tr, va, epochs=a.epochs, alpha=1.0, seed=a.seed, log_every=1000)
     print(f"DFL trained {time.time() - t0:.0f}s", flush=True)
