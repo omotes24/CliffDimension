@@ -30,7 +30,7 @@ B 先端に対する手先位置の最小二乗補正，捕捉後は参照解の
 関節角速度上限と捕捉速度の上限は一度も拘束的でない（価格 0）ことを示す．
 容量エピグラフの乗数は保持相に \capHoldShare\,\%，捕捉衝撃に \capCatchShare\,\%，振りに \capSwingShare\,\%が配分され，
 必要把持容量を決めているのは振りではなく捕捉後の保持であることが乗数から直接読める．
-\begin{table}[t]
+\begin{table*}[t]
 \centering\scriptsize
 \caption{costate の検証（$T=18$\,s，$m=66$\,kg，振り開始 2.3\,s 後の状態）．}
 \label{tab:costate}
@@ -42,13 +42,13 @@ $\partial J^*/\partial\theta_1$ & 0.1582 & 0.1589 & 0.1625 & 0.4\,\% / 2.3\,\% \
 $\partial J^*/\partial\dot\theta_1$ & --- & $-0.0198$ & $-0.0198$ & $<0.1$\,\% \\
 \bottomrule
 \end{tabular}
-\end{table}
-\begin{table}[t]
+\end{table*}
+\begin{table*}[t]
 \centering\scriptsize
 \caption{能力パラメータの影の価格 $\partial J^*/\partial\ln p$（残り最適化問題 \dflNok 個の統計）と容量乗数の相別配分．}
 \label{tab:prices}
 \IfFileExists{tab_prices.tex}{\input{tab_prices}}{（計算中）}
-\end{table}
+\end{table*}
 
 \subsection{双対場の適合と身体間の汎化}
 双対場ネットワーク（SiLU，\dflWidth$\times$\dflDepth）を，学習用参照軌道（$m\ne69$\,kg）の 85\,\%（\fitNtrain 状態）で学習し，
@@ -60,15 +60,22 @@ Sobolev 項があれば未知の身体で $\rho_S=$\fitRhohold，符号一致 \f
 価値そのものはどちらの学習でも同程度に合うが，その勾配は明示的な双対ラベル無しには学べない．
 これが「双対を教師にする」ことの直接の根拠である．
 行動模倣（トルク回帰）の未知身体への $R^2$ は \fitUhold，未知軌道では \fitUval であった．
-\begin{table}[t]
+\begin{table*}[t]
 \centering\scriptsize
 \caption{双対場の適合（決定係数）．val：学習身体群の未知参照軌道，holdout：未知の身体（$m=69$\,kg）．}
 \label{tab:dflfit}
 \IfFileExists{tab_dfl_fit.tex}{\input{tab_dfl_fit}}{（計算中）}
-\end{table}
+\end{table*}
 
 \subsection{閉ループ I：執行系の分解}
 \label{sec:executor}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{../results/figs/sim_frames.pdf}
+\caption{シミュレーションのスナップショット（$T=18$\,s，$m=66$\,kg，$\phi_\ell=0.25$）．上：オラクル解（振り・飛行・保持）．
+下：同じ解を環境で実行したもの（2\,ms 執行系＋着地反射；B を捕捉して 2\,s の保持に成功した例）．$U$ は把持利用率．}
+\label{fig:sim}
+\end{figure*}
 学習器を比較する前に，オラクル軌道そのものが環境で実行できるかを，振りは前饋トルク＋弱い PD（1/rad，0.1\,s/rad），
 離手後は共通の着地反射，という執行系で再生して確かめた（表~\ref{tab:exec}）．
 結果は執行系（トルクの標本化保持と制御周期）が支配的であることを示す．
@@ -95,7 +102,7 @@ Sobolev 項があれば未知の身体で $\rho_S=$\fitRhohold，符号一致 \f
 \caption{執行系の分解：オラクル軌道の環境再生（$T=18$\,s，$m\in\{60,\dots,75\}$\,kg；剛体衝突解は $\phi_\ell=0.25$，
 順応捕捉解は $\phi_\ell\in\{0.25,0.31\}$）．離手・捕捉・保持（2\,s）に至った本数と振り中の関節角追従誤差の中央値．}
 \label{tab:exec}
-\IfFileExists{tab_exec.tex}{\input{tab_exec}}{（計算中）}
+\IfFileExists{tab_exec.tex}{\resizebox{\textwidth}{!}{\input{tab_exec}}}{（計算中）}
 \end{table*}
 
 \subsection{閉ループ II：双対場からの制御}
@@ -125,7 +132,7 @@ $w_\tau(\tau_\vartheta(\bm x_H,t_H)-(\tau_\vartheta(\bm x_0,t_0)-H\Delta t))^2$ 
 $m=69$\,kg は学習に用いない身体；執行系は 2\,ms・区間中点標本化・共通の着地反射）．
 離手・捕捉・保持（2\,s，成功）に至った割合，離手した試行の手先と B 先端の最接近距離の中央値，失敗までの生存時間．}
 \label{tab:dflcl}
-\IfFileExists{tab_dfl_closedloop.tex}{\input{tab_dfl_closedloop}}{（計算中）}
+\IfFileExists{tab_dfl_closedloop.tex}{\resizebox{\textwidth}{!}{\input{tab_dfl_closedloop}}}{（計算中）}
 \end{table*}
 \closedloopSummary
 オラクル・イン・ザ・ループ MPC は，振りの途中で摂動を受けても 10 本すべてで離手に到達し，
