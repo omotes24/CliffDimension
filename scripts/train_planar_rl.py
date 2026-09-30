@@ -72,7 +72,7 @@ def main():
     ap.add_argument("--refs", default="results/grid/sol_ref_T18_m66_phi0.250.pkl")
     ap.add_argument("--duals", default=None, help="run_duals JSON for the constraint prices (dual shaping)")
     ap.add_argument("--prices-rows", default=None, help="dual-field rows.csv for the constraint prices (dual shaping)")
-    ap.add_argument("--price-scale", type=float, default=10.0)
+    ap.add_argument("--price-scale", type=float, default=3.0)
     ap.add_argument("--out", required=True)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", default="cpu")

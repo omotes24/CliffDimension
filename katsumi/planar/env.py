@@ -16,7 +16,8 @@ the ledge whenever the demanded force leaves the friction/hook cone and lose the
 through a wall.
 
 Reward: -w_U dU_peak - w_E dE - w_time dt per step (w_U = 10, w_E = 1 as in the optimiser's objective, so that the
-undiscounted return of a successful episode is 100 - J), +/-100 at the end. Optional shaping:
+undiscounted return of a successful episode is 100 - J); +100 at success, -(100 + w_early (1 - t/T)) at failure (an early
+failure is never cheaper than surviving). Optional shaping:
   "margin"  : -w_dist * d_min (closest approach of the hook line to B's tip after the release, at failure)
   "energy"  : potential-based swing-energy term while on A (lets a policy discover pumping)
   "dual"    : Lagrangian penalty  -scale * sum_k lambda_k * violation_k  with the constraint prices lambda_k taken
@@ -49,7 +50,7 @@ class PlanarCliffEnv(gym.Env):
     metadata = {"render_modes": []}
 
     def __init__(self, T=20.0, m=66.0, phi0=None, body_kw=None, control_dt=0.02, sub_dt=0.002, hold_time=2.0,
-                 shaping="none", prices=None, price_scale=10.0, U_target=1.2, U_cap=2.0, w_U=10.0, w_E=1.0, w_time=0.0,
+                 shaping="none", prices=None, price_scale=3.0, U_target=1.2, U_cap=2.0, w_U=10.0, w_E=1.0, w_time=0.0, w_early=40.0,
                  w_dist=20.0, w_energy=20.0, eps=0.20, K_att=40000.0, D_att=1500.0, hook_tol=0.025,
                  catch_box=(0.03, -0.005, 0.05), seed=0, T_set=None, m_set=None, body_set=None, joint_stop_k=15.0,
                  stop_damp=0.01, ramp_att=0.01, obs_body=True, cache_dir=None):
@@ -62,7 +63,7 @@ class PlanarCliffEnv(gym.Env):
         self.shaping = shaping
         self.prices = dict(DEFAULT_PRICES); self.prices.update(prices or {})
         self.price_scale, self.U_target, self.U_cap = price_scale, U_target, U_cap
-        self.w_U, self.w_E, self.w_time, self.w_dist, self.w_energy = w_U, w_E, w_time, w_dist, w_energy
+        self.w_U, self.w_E, self.w_time, self.w_dist, self.w_energy, self.w_early = w_U, w_E, w_time, w_dist, w_energy, w_early
         self.K_att, self.D_att, self.hook_tol, self.catch_box = K_att, D_att, hook_tol, catch_box
         self.joint_stop_k, self.ramp_att, self.stop_damp = joint_stop_k, ramp_att, stop_damp
         self.obs_body = obs_body
@@ -311,7 +312,8 @@ class PlanarCliffEnv(gym.Env):
             for k_, v in (("cap", max(0.0, self.U - self.U_target)), ("cone", cone_exc), ("joint_speed", qd_exc), ("joint_range", jr_max), ("wall", wall_pen)):
                 self.viol_acc[k_] += v
         if term or trunc:
-            r += 100.0 if success else -100.0
+            # failure penalty grows for early failures so that no running cost can be escaped by "dying quickly"
+            r += 100.0 if success else -(100.0 + self.w_early * (1.0 - min((self.t - self.t0) / self.T, 1.0)))
             if ("margin" in self.shaping or "dual" in self.shaping) and not success and self.released:
                 dm = self.d_min if np.isfinite(self.d_min) else 3.0
                 w = self.w_dist if "margin" in self.shaping else self.price_scale * self.prices["catch"]
