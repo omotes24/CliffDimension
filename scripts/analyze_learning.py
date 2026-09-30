@@ -114,7 +114,7 @@ def dfl_results(dfl_dir, out):
     NAMES = {"BC": "行動模倣（BC）", "DFL": "双対場 MPC（$V$ 終端，0.3\\,s）", "DFL-H40": "双対場 MPC（$V$ 終端，0.8\\,s）",
              "DFL-tau": "双対場 MPC（$V$＋$\\tau$ 進行，0.3\\,s）", "DFL-tau-H40": "双対場 MPC（$V$＋$\\tau$ 進行，0.8\\,s）",
              "DFL-tau2": "双対場 MPC（$V$＋$\\tau$ 進行，初期制約緩和）", "DFL-tau3": "双対場 MPC（$V$＋$\\tau$ 進行，計画の PD 追従）",
-             "DFL-noSob": "双対場 MPC（値のみ）", "ORACLE": "オラクル MPC"}
+             "DFL-noSob": "双対場 MPC（値のみ）", "ORACLE": "オラクル MPC", "ORACLE-noFR": "オラクル MPC（離手直前の再計画なし）"}
     REASON = {"slipped off A": "A で滑り", "hit wall": "壁に接触", "grip capacity exceeded": "容量超過", "missed B": "B を逃す",
               "hit B's face": "B 前面に衝突", "no release": "離手せず", "lost hook": "フック喪失", "held B": "成功"}
     with open(os.path.join("paper", "tab_dfl_closedloop.tex"), "w") as f:

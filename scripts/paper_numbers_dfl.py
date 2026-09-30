@@ -79,7 +79,7 @@ def main():
         c = pd.read_csv(cl)
         NAMES = {"BC": "行動模倣", "DFL": "双対場 MPC（$V$ 終端，0.3\\,s）", "DFL-H40": "双対場 MPC（$V$ 終端，0.8\\,s）", "DFL-tau": "双対場 MPC（$V$＋$\\tau$ 進行，0.3\\,s）",
                  "DFL-tau-H40": "双対場 MPC（$V$＋$\\tau$ 進行，0.8\\,s）", "DFL-tau2": "双対場 MPC（$V$＋$\\tau$ 進行，初期節点緩和）", "DFL-tau3": "双対場 MPC（$V$＋$\\tau$ 進行，計画の PD 追従）",
-                 "DFL-noSob": "双対場 MPC（値のみ）", "ORACLE": "オラクル MPC"}
+                 "DFL-noSob": "双対場 MPC（値のみ）", "ORACLE": "オラクル MPC", "ORACLE-noFR": "オラクル MPC（離手直前の再計画なし）"}
         REASON = {"slipped off A": "A での滑り", "hit wall": "壁への接触", "grip capacity exceeded": "容量超過", "missed B": "B を逃す",
                   "hit B's face": "B 前面への衝突", "no release": "離手せず", "lost hook": "フック喪失"}
         def fam(mask, label):
@@ -90,7 +90,7 @@ def main():
             suc = int(round((g["success"] * g["n"]).sum()))
             return f"{label}は {n} エピソード中，離手 {rel}，捕捉 {cat}，保持成功 {suc}"
         parts = [x for x in (fam(c["ctrl"] == "BC", "行動模倣"), fam(c["ctrl"].str.startswith("DFL"), "双対場 MPC（全変種の合計）"),
-                             fam(c["ctrl"] == "ORACLE", "オラクル MPC")) if x]
+                             fam(c["ctrl"].str.startswith("ORACLE"), "オラクル MPC（再計画変種の合計）")) if x]
         M["closedloopSummary"] = "，".join(parts) + "であった．"
     # ---- executor decomposition (replay table) --------------------------------------------------------------
     rts = [f for f in (os.path.join("results", "figs", "replay_table.csv"), os.path.join("results", "figs", "replay_table_comp.csv")) if os.path.exists(f)]

@@ -1,0 +1,12 @@
+\begin{tabular}{llrrrrrr}
+\toprule
+モデル & 分割 & $n$ & $R^2(V)$ & $R^2(\tau)$ & $\rho_S(\bm p)$ & 符号一致$(\bm p)$ & $R^2(\bm u)$ \\
+\midrule
+DFL(Sobolev) & train & 24810 & 0.96 & 0.99 & 0.89 & 0.91 & 0.96 \\
+DFL(value-only) & train & 24810 & 0.97 & 1.00 & 0.45 & 0.63 & 0.96 \\
+DFL(Sobolev) & val & 3944 & 0.73 & 0.95 & 0.73 & 0.82 & 0.69 \\
+DFL(value-only) & val & 3944 & 0.71 & 0.96 & 0.41 & 0.64 & 0.69 \\
+DFL(Sobolev) & holdout & 5218 & 0.84 & 0.97 & 0.85 & 0.87 & 0.84 \\
+DFL(value-only) & holdout & 5218 & 0.90 & 0.99 & 0.46 & 0.65 & 0.84 \\
+\bottomrule
+\end{tabular}
