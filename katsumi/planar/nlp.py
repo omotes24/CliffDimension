@@ -88,6 +88,10 @@ class ReducedParams:
     robust_shared_flight: bool = True # same open-loop flight torques for all scenarios
     robust_nsub: int = 2              # HS intervals between consecutive scenario release knots
     N_H_scen: int = 40                # hold intervals of the non-nominal scenarios
+    # ---- from-state (cost-to-go) solves ------------------------------------------------------------
+    from_state: bool = False          # start the swing at time t0 from the given state x0 (no wait phase); the
+                                      # multipliers of the initial condition give the costate dJ*/dx0
+    x0: tuple = (0.0,) * 10           # initial swing state (th, thd) when from_state
 
 
 def smax(a, b, delta):
@@ -289,10 +293,19 @@ class PlanarNLP:
             assert np.allclose(np.diff(deltas), np.diff(deltas)[0]), "robust_deltas must be evenly spaced"
         self.K, self.deltas, self.dw = K, deltas, dw
 
-        t0 = self.phi0 * T
+        # start time and initial swing state as parameters: their multipliers give dJ*/dt0 (= -Hamiltonian) and the
+        # costate dJ*/dx0 at the start of the swing (envelope theorem)
+        self.par_t0 = opti.parameter()
+        self.par_x0 = opti.parameter(2 * NTH)
+        self.par_values["t0"] = self.phi0 * T
+        self.par_values["x0"] = np.array(p.x0 if p.from_state else np.zeros(2 * NTH), float)
+        t0 = self.par_t0
         d_w = opti.variable()
         d_s = opti.variable()
-        self._con(d_w >= 0, "duration")
+        if p.from_state:
+            self._con(d_w == 0, "duration")
+        else:
+            self._con(d_w >= 0, "duration")
         self._bounded(p.d_s_bounds[0], d_s, p.d_s_bounds[1], "duration")
         self._con(d_w + d_s + dw <= p.release_deadline_factor * T, "duration")
         U_peak = opti.variable()
@@ -355,7 +368,7 @@ class PlanarNLP:
 
         d_sa = d_s - dw                      # shared swing before the earliest release
         XS, US, UmS, RS = self._hs_phase("S", p.N_S, d_sa, t_s0, 2 * NTH, NTH, NTAU, 2, resS, pathS, effS, U_S)
-        self._con(XS[:, 0] == 0, "init")
+        self._con(XS[:, 0] - self.par_x0 == 0, "init")     # (expression form keeps the parameter inside g for dJ/dx0)
         # release segment (robust): shared pinned swing of fixed length 2 dw; knots = scenario releases
         if K > 1:
             N_b = p.robust_nsub * (K - 1)
@@ -565,6 +578,7 @@ class PlanarNLP:
         opti.set_initial(self.U_peak, 0.9)
         t0 = self.phi0 * T
         t_l = t0 + d_w + d_s
+        x0 = np.array(p.x0, float) if p.from_state else np.zeros(2 * NTH)
         # swing: growing oscillation ending with the body ahead (+x) and moving +x
         N = p.N_S
         s_ = np.linspace(0, 1, N + 1)
@@ -574,6 +588,7 @@ class PlanarNLP:
         thd = np.gradient(th, d_s / N)
         gain = np.array([[0.8], [1.0], [1.0], [1.2], [1.3]])
         XS = np.vstack([np.tile(th, (NTH, 1)) * gain, np.tile(thd, (NTH, 1)) * gain])
+        XS += x0[:, None] * (1 - s_)[None, :]                     # from-state: blend the given start into the guess
         opti.set_initial(self.vars["S_X"], XS)
         opti.set_initial(self.vars["S_U"], 0.0)
         if "Sb_X" in self.vars:
@@ -700,6 +715,8 @@ class PlanarNLP:
                 "ipopt.max_cpu_time": max_cpu_time, "ipopt.sb": "yes"}
         for k, v in self.par.items():
             self.opti.set_value(v, self.par_values[k])
+        self.opti.set_value(self.par_t0, self.par_values["t0"])
+        self.opti.set_value(self.par_x0, self.par_values["x0"])
         self.opti.solver("ipopt", opts)
         try:
             sol = self.opti.solve()
@@ -753,6 +770,12 @@ class PlanarNLP:
             sens[name] = (gradp * val).tolist()          # dJ/d ln p  (= p dJ/dp)
         rep["dJ_dlnp"] = sens
         rep["w_U"] = self.p.w_U
+        # costate at the start of the swing and the time sensitivity (dJ*/dt0 = -H along the optimal trajectory)
+        g = sol.value(ca.jacobian(L, self.par_x0))
+        rep["costate_x0"] = (g.toarray() if hasattr(g, "toarray") else np.array(g)).ravel().tolist()
+        g = sol.value(ca.jacobian(L, self.par_t0))
+        rep["dJ_dt0"] = float(np.array(g).ravel()[0])
+        rep["J"] = float(sol.value(opti.f))
         return rep
 
     def _compliant_loads(self, v, sfx=""):
@@ -831,6 +854,8 @@ class PlanarNLP:
         v["d_c"] = self.p.d_c if self.p.catch_model == "compliant" else 0.0
         v["T"], v["phi0"], v["m"] = self.T, self.phi0, self.body.m
         v["params"] = asdict(self.p)
+        v["x0"] = np.array(self.par_values["x0"], float)
+        v["J"] = float(sol.value(self.opti.f))
         t0 = self.phi0 * self.T
         v["t0"] = t0
         v["t_s0"] = t0 + v["d_w"]

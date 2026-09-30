@@ -14,3 +14,4 @@ results/cache/
 *.fls
 *.synctex.gz
 .DS_Store
+results/v3/
