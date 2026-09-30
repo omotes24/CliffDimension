@@ -384,3 +384,21 @@ def prices_from_duals(dual_json, default=None):
     if n:
         out.update({k: v / n for k, v in acc.items()}); out["cap"] = 1.0
     return out
+
+
+def prices_from_rows(rows_csv, default=None):
+    """Constraint prices from a dual-field dataset table (scripts/dual_field_data.py): mean multiplier mass per
+    inequality category over the converged from-state solves, normalised by the capacity (epigraph) multipliers."""
+    import pandas as pd
+    d = pd.read_csv(rows_csv)
+    d = d[d["ok"] == 1]
+    cap_cols = [c for c in d.columns if c.startswith("cap_")]
+    cap = d[cap_cols].sum(1).replace(0, np.nan)
+
+    def m(cols):
+        cols = [c for c in cols if c in d.columns]
+        return float((d[cols].sum(1) / cap).mean()) if cols else 0.0
+    out = dict(default or DEFAULT_PRICES)
+    out.update(cap=1.0, cone=m(["lam_cone_A", "lam_cone_B", "lam_cone_C", "lam_cone_impact"]), joint_speed=m(["lam_joint_speed"]),
+               joint_range=m(["lam_joint_range"]), wall=m(["lam_wall"]), catch=m(["lam_catch_geom", "lam_catch_vel", "lam_approach", "lam_hook"]))
+    return out

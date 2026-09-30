@@ -1,0 +1,305 @@
+"""Dual-field learning (DFL) on the planar Cliff-Dimension task.
+
+The physics oracle (trajectory optimisation) labels swing states (x, t; body) with the DUAL of the task:
+    V*(x, t)          optimal cost-to-go (optimiser objective)
+    p*(x, t) = dV*/dx costate (multipliers of the initial condition; envelope theorem)
+    dV*/dt
+    U*(x, t)          required grip capacity from here
+    tau*(x, t)        optimal remaining swing time (time-to-release)
+    lambda_k          multiplier mass of every constraint category (prices)
+A dual-field network V_theta(x, t, body) is trained with a Sobolev loss (value + costate); the controller is then
+obtained WITHOUT policy learning, pointwise, from Pontryagin's minimum principle:
+    u(x,t) = argmin_u  l(x,u) + p_theta(x,t)^T f(x,u,t)   s.t. torque bounds, grip cone, |R| <= U_theta f_cap,
+                                                              joint-range look-ahead, torque-rate limit
+using the known rigid-body dynamics (control-affine). The release fires when tau_theta <= dt/2.
+Baselines: behaviour cloning of the oracle torques (primal) with the same release timer.
+"""
+from __future__ import annotations
+
+import json
+import os
+import pickle
+
+import numpy as np
+import torch
+import torch.nn as nn
+
+from .. import device
+from ..planar.anthro import G, make_body
+from ..planar.model import PlanarChain, NTH, NQ, NTAU
+from ..planar.fastsim import rel_bounds
+
+A_REL = np.array([[1, -1, 0, 0, 0], [0, -1, 1, 0, 0], [0, 0, -1, 1, 0], [0, 0, 0, -1, 1]], float)   # rel = A th
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# features
+# ---------------------------------------------------------------------------------------------------------------
+def body_feats(T, m, stature=1.75, cap_scale=1.0):
+    return np.array([T / 20.0 - 1.0, m / 66.0 - 1.0, stature / 1.75 - 1.0, cap_scale - 1.0], float)
+
+
+def make_features(x, t, T, m, stature=1.75, cap_scale=1.0):
+    """x: (..., 10) swing state, t: (...,) absolute time. Returns (..., 16) features (raw units; standardised in the net)."""
+    x = np.atleast_2d(np.asarray(x, float)); t = np.atleast_1d(np.asarray(t, float))
+    ph = (t % T) / T
+    tf = np.stack([np.sin(2 * np.pi * ph), np.cos(2 * np.pi * ph)], -1)
+    bf = np.broadcast_to(body_feats(T, m, stature, cap_scale), (x.shape[0], 4))
+    return np.concatenate([x, tf, bf], -1)
+
+
+def load_rows(csv_path):
+    import pandas as pd
+    d = pd.read_csv(csv_path)
+    d = d[d["ok"] == 1].copy()
+    X = d[[f"x{i}" for i in range(2 * NTH)]].values
+    F = np.stack([make_features(X[i], d["t0"].values[i], d["T"].values[i], d["m"].values[i], d["stature"].values[i], d["cap_scale"].values[i])[0]
+                  for i in range(len(d))])
+    P = d[[f"p{i}" for i in range(2 * NTH)]].values
+    Y = dict(J=d["J"].values, U=d["U"].values, tau=d["d_s"].values, u=d[[f"u{i}" for i in range(4)]].values, p=P,
+             dJdt=d["dJ_dt0"].values)
+    return d, F, Y
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# networks
+# ---------------------------------------------------------------------------------------------------------------
+class MLP(nn.Module):
+    def __init__(self, n_in, n_out, width=256, depth=3, act=nn.SiLU):
+        super().__init__()
+        layers = []; d = n_in
+        for _ in range(depth):
+            layers += [nn.Linear(d, width), act()]; d = width
+        layers += [nn.Linear(d, n_out)]
+        self.net = nn.Sequential(*layers)
+
+    def forward(self, z):
+        return self.net(z)
+
+
+class DualFieldNet(nn.Module):
+    """z (16 features) -> (V, U, tau). p = dV/dx by autograd (in raw state units)."""
+
+    def __init__(self, mu, sd, y_mu, y_sd, width=256, depth=3):
+        super().__init__()
+        self.register_buffer("mu", torch.tensor(mu, dtype=torch.float32)); self.register_buffer("sd", torch.tensor(sd, dtype=torch.float32))
+        self.register_buffer("y_mu", torch.tensor(y_mu, dtype=torch.float32)); self.register_buffer("y_sd", torch.tensor(y_sd, dtype=torch.float32))
+        self.body = MLP(mu.shape[0], 3, width, depth)
+
+    def forward(self, z):
+        out = self.body((z - self.mu) / self.sd) * self.y_sd + self.y_mu
+        return out[:, 0], out[:, 1], out[:, 2]            # V, U, tau
+
+    def value_and_costate(self, z):
+        z = z.clone().requires_grad_(True)
+        V, U, tau = self.forward(z)
+        p = torch.autograd.grad(V.sum(), z, create_graph=True)[0][:, :2 * NTH]
+        return V, U, tau, p
+
+
+class BCNet(nn.Module):
+    def __init__(self, mu, sd, width=256, depth=3):
+        super().__init__()
+        self.register_buffer("mu", torch.tensor(mu, dtype=torch.float32)); self.register_buffer("sd", torch.tensor(sd, dtype=torch.float32))
+        self.body = MLP(mu.shape[0], NTAU, width, depth)
+
+    def forward(self, z):
+        return torch.tanh(self.body((z - self.mu) / self.sd))
+
+
+def train_dual_field(F, Y, idx_tr, idx_va, epochs=4000, lr=2e-3, alpha=1.0, width=256, depth=3, seed=0, verbose=True, log_every=500):
+    """Sobolev training: value + costate (+ U, tau heads). alpha = 0 gives the value-only ablation."""
+    torch.manual_seed(seed)
+    mu, sd = F[idx_tr].mean(0), F[idx_tr].std(0) + 1e-6
+    ymat = np.stack([Y["J"], Y["U"], Y["tau"]], 1)
+    y_mu, y_sd = ymat[idx_tr].mean(0), ymat[idx_tr].std(0) + 1e-6
+    net = DualFieldNet(mu, sd, y_mu, y_sd, width, depth)
+    Ft = torch.tensor(F, dtype=torch.float32); yt = torch.tensor(ymat, dtype=torch.float32); pt = torch.tensor(Y["p"], dtype=torch.float32)
+    p_sd = torch.tensor(Y["p"][idx_tr].std(0) + 1e-6, dtype=torch.float32)
+    opt = torch.optim.Adam(net.parameters(), lr=lr)
+    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, epochs)
+    tr = torch.tensor(idx_tr); va = torch.tensor(idx_va)
+    hist = []
+    for ep in range(epochs):
+        net.train()
+        V, U, tau, p = net.value_and_costate(Ft[tr])
+        lv = ((V - yt[tr, 0]) / net.y_sd[0]).pow(2).mean(); lu = ((U - yt[tr, 1]) / net.y_sd[1]).pow(2).mean()
+        lt = ((tau - yt[tr, 2]) / net.y_sd[2]).pow(2).mean(); lp = ((p - pt[tr]) / p_sd).pow(2).mean()
+        loss = lv + lu + lt + alpha * lp
+        opt.zero_grad(); loss.backward(); opt.step(); sched.step()
+        if (ep % log_every == 0 or ep == epochs - 1):
+            net.eval()
+            Vv, Uv, tv, pv = net.value_and_costate(Ft[va])
+            r = dict(ep=ep, loss=float(loss), lv=float(lv), lu=float(lu), lt=float(lt), lp=float(lp),
+                     va_V=float(((Vv - yt[va, 0]) / net.y_sd[0]).pow(2).mean()), va_U=float(((Uv - yt[va, 1]) / net.y_sd[1]).pow(2).mean()),
+                     va_tau=float(((tv - yt[va, 2]) / net.y_sd[2]).pow(2).mean()), va_p=float(((pv - pt[va]) / p_sd).pow(2).mean()))
+            hist.append(r)
+            if verbose:
+                print(" ".join(f"{k}={v:.4g}" if isinstance(v, float) else f"{k}={v}" for k, v in r.items()), flush=True)
+    return net, hist
+
+
+def train_bc(F, Y, idx_tr, idx_va, epochs=4000, lr=2e-3, width=256, depth=3, seed=0, verbose=True, log_every=500):
+    torch.manual_seed(seed)
+    mu, sd = F[idx_tr].mean(0), F[idx_tr].std(0) + 1e-6
+    net = BCNet(mu, sd, width, depth)
+    Ft = torch.tensor(F, dtype=torch.float32); ut = torch.tensor(Y["u"], dtype=torch.float32)
+    opt = torch.optim.Adam(net.parameters(), lr=lr); sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, epochs)
+    tr = torch.tensor(idx_tr); va = torch.tensor(idx_va)
+    hist = []
+    for ep in range(epochs):
+        net.train()
+        loss = (net(Ft[tr]) - ut[tr]).pow(2).mean()
+        opt.zero_grad(); loss.backward(); opt.step(); sched.step()
+        if ep % log_every == 0 or ep == epochs - 1:
+            net.eval()
+            with torch.no_grad():
+                r = dict(ep=ep, loss=float(loss), va_u=float((net(Ft[va]) - ut[va]).pow(2).mean()))
+            hist.append(r)
+            if verbose:
+                print(" ".join(f"{k}={v:.4g}" if isinstance(v, float) else f"{k}={v}" for k, v in r.items()), flush=True)
+    return net, hist
+
+
+def r2(y, yhat):
+    y = np.asarray(y); yhat = np.asarray(yhat)
+    return 1 - ((y - yhat) ** 2).sum() / (((y - y.mean()) ** 2).sum() + 1e-12)
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# controllers
+# ---------------------------------------------------------------------------------------------------------------
+class SwingDynamics:
+    """Control-affine pinned-swing dynamics of the environment's chain: thdd = c + D u, hand force R = R0 + Ru u."""
+
+    def __init__(self, body, chain):
+        self.body, self.ch = body, chain
+        self.Bm = chain.B * body.tau_cap[None, :]           # 7 x 4 (torque per unit command)
+
+    def affine(self, th, thd, t, T, eps=0.20):
+        dv = device.device_state(t, T, eps)
+        q = np.concatenate([dv["pA"], th]); qd = np.concatenate([dv["vA"], thd])
+        M = np.array(self.ch.f_M(q)); h = np.array(self.ch.f_h(q, qd)).ravel()
+        aA = dv["aA"]
+        Mtt, Mth, Mht, Mhh = M[2:, 2:], M[2:, :2], M[:2, 2:], M[:2, :2]
+        Mtt_inv = np.linalg.inv(Mtt)
+        c = Mtt_inv @ (-h[2:] - Mth @ aA)
+        D = Mtt_inv @ self.Bm[2:, :]
+        R0 = Mhh @ aA + Mht @ c + h[:2]
+        Ru = Mht @ D
+        return c, D, R0, Ru
+
+
+class PontryaginController:
+    """Swing controller from a dual field: pointwise constrained Hamiltonian minimisation (SLSQP, 4 variables)."""
+
+    def __init__(self, net, body, chain, T, control_dt=0.02, w_E=1.0, t_ref=1.0, u_rate=10.0, U_margin=1.0,
+                 eps=0.20, stature=1.75, cap_scale=1.0, release_slack=0.5, tau_min_release=0.0):
+        self.net, self.body, self.T, self.dt = net, body, T, control_dt
+        self.dyn = SwingDynamics(body, chain)
+        self.w_E, self.t_ref, self.u_rate, self.U_margin, self.eps = w_E, t_ref, u_rate, U_margin, eps
+        self.stature, self.cap_scale = stature, cap_scale
+        self.release_slack = release_slack
+        self.lo, self.hi = rel_bounds("neg")
+        self.u_prev = np.zeros(NTAU)
+        self.last = {}
+
+    def field(self, th, thd, t):
+        z = torch.tensor(make_features(np.concatenate([th, thd]), t, self.T, self.body.m, self.stature, self.cap_scale), dtype=torch.float32)
+        V, U, tau, p = self.net.value_and_costate(z)
+        return float(V[0]), float(U[0]), float(tau[0]), p[0].detach().numpy()
+
+    def act(self, th, thd, t):
+        from scipy.optimize import minimize
+        V, Uhat, tau, p = self.field(th, thd, t)
+        self.last = dict(V=V, U=Uhat, tau=tau)
+        release = tau <= self.release_slack * self.dt
+        c, D, R0, Ru = self.dyn.affine(th, thd, t, self.T, self.eps)
+        f_cap = self.body.f_cap
+        p_thd = p[NTH:]
+        kE = self.w_E / self.t_ref
+        rel = A_REL @ th; reld = A_REL @ thd
+        mu_out, mu_in = self.body.mu_out, self.body.mu_in
+        Ucap = max(self.U_margin * Uhat, np.linalg.norm(R0) / f_cap + 0.05, 0.6)
+
+        def H(u):
+            R = R0 + Ru @ u
+            return kE * (0.25 * u @ u + R @ R / f_cap ** 2) + p_thd @ (D @ u)
+
+        def dH(u):
+            R = R0 + Ru @ u
+            return kE * (0.5 * u + 2 * Ru.T @ R / f_cap ** 2) + D.T @ p_thd
+
+        dt = self.dt
+        cons = [
+            dict(type="ineq", fun=lambda u: (R0 + Ru @ u)[1] / f_cap),                                   # Ry >= 0
+            dict(type="ineq", fun=lambda u: ((R0 + Ru @ u)[0] + mu_out * (R0 + Ru @ u)[1]) / f_cap),    # cone
+            dict(type="ineq", fun=lambda u: (mu_in * (R0 + Ru @ u)[1] - (R0 + Ru @ u)[0]) / f_cap),
+            dict(type="ineq", fun=lambda u: Ucap ** 2 - ((R0 + Ru @ u) @ (R0 + Ru @ u)) / f_cap ** 2),  # capacity
+            dict(type="ineq", fun=lambda u: (self.hi - 0.01) - (rel + reld * dt + 0.5 * (A_REL @ (c + D @ u)) * dt ** 2)),
+            dict(type="ineq", fun=lambda u: (rel + reld * dt + 0.5 * (A_REL @ (c + D @ u)) * dt ** 2) - (self.lo + 0.01)),
+            dict(type="ineq", fun=lambda u: self.u_rate * dt - (u - self.u_prev)),
+            dict(type="ineq", fun=lambda u: self.u_rate * dt + (u - self.u_prev)),
+        ]
+        u0 = np.clip(self.u_prev, -1, 1)
+        res = minimize(H, u0, jac=dH, bounds=[(-1, 1)] * NTAU, constraints=cons, method="SLSQP", options=dict(maxiter=60, ftol=1e-8))
+        u = np.clip(res.x, -1, 1) if res.success or np.isfinite(res.fun) else u0
+        # keep the rate limit even if SLSQP returned an infeasible point
+        u = np.clip(u, self.u_prev - self.u_rate * dt, self.u_prev + self.u_rate * dt)
+        self.u_prev = u
+        return u, release
+
+    def __call__(self, env):
+        th, thd, t = env.th, env.thd, env.t
+        u, release = self.act(th, thd, t)
+        a = np.zeros(NTAU + 1); a[:NTAU] = u; a[NTAU] = 1.0 if release else -1.0
+        return a
+
+    def reset(self):
+        self.u_prev = np.zeros(NTAU)
+
+
+class BCController:
+    """Behaviour-cloned swing torques (primal) with the same release timer (tau head of the dual net)."""
+
+    def __init__(self, bc_net, timer_net, body, T, control_dt=0.02, u_rate=10.0, stature=1.75, cap_scale=1.0, release_slack=0.5):
+        self.bc, self.timer, self.body, self.T, self.dt = bc_net, timer_net, body, T, control_dt
+        self.u_rate, self.stature, self.cap_scale, self.release_slack = u_rate, stature, cap_scale, release_slack
+        self.u_prev = np.zeros(NTAU)
+
+    def act(self, th, thd, t):
+        z = torch.tensor(make_features(np.concatenate([th, thd]), t, self.T, self.body.m, self.stature, self.cap_scale), dtype=torch.float32)
+        with torch.no_grad():
+            u = self.bc(z)[0].numpy()
+            _, _, tau = self.timer(z)
+        u = np.clip(u, self.u_prev - self.u_rate * self.dt, self.u_prev + self.u_rate * self.dt)
+        self.u_prev = u
+        return u, float(tau[0]) <= self.release_slack * self.dt
+
+    def __call__(self, env):
+        u, release = self.act(env.th, env.thd, env.t)
+        a = np.zeros(NTAU + 1); a[:NTAU] = u; a[NTAU] = 1.0 if release else -1.0
+        return a
+
+    def reset(self):
+        self.u_prev = np.zeros(NTAU)
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# evaluation
+# ---------------------------------------------------------------------------------------------------------------
+def run_episode(env, controller, start, max_steps=2000):
+    """start: dict for env.reset(options=...). Returns env.result plus the controller's last field values."""
+    obs, info = env.reset(options=start)
+    controller.reset()
+    done = False; k = 0; U_swing = 0.0
+    while not done and k < max_steps:
+        a = controller(env.env if hasattr(env, "env") else env)
+        obs, r, term, trunc, inf = env.step(a)
+        if env.mode == "A":
+            U_swing = max(U_swing, env.U)
+        done = term or trunc; k += 1
+    res = dict(env.result or dict(success=False, reason="max_steps", U_peak=env.U_peak, t=env.t - env.t0))
+    res["U_swing"] = U_swing
+    res.update({f"field_{k_}": v for k_, v in getattr(controller, "last", {}).items()})
+    return res
