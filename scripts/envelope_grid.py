@@ -78,6 +78,11 @@ def warm_job(args):
     return f, _finish(new, r, kind)
 
 
+def unreachable(r):
+    """A failed case whose flight could not reach B by more than 5 cm: no point in re-solving it."""
+    return (not r.get("ok")) and np.isfinite(r.get("catch_gap", np.nan)) and r.get("catch_gap", 0.0) > 0.05
+
+
 def better(new, old, tol):
     if not new.get("ok"):
         return False
@@ -108,6 +113,8 @@ def continuation_pass(cond, sols, grid, tag, direction, tol, log):
     prev = sols[order[0]]
     for ph in order[1:] + [order[0]]:
         r = sols[ph]
+        if unreachable(r):
+            continue
         if not prev.get("ok"):
             prev = r if r.get("ok") else prev
             continue
@@ -157,6 +164,8 @@ def main():
         for c in conds:
             s = load_cond(a.grid, a.tag, *c)
             for ph, r in s.items():
+                if unreachable(r):
+                    continue
                 for (d_s, amp) in COLD_GUESSES[:a.cold]:
                     jobs.append((sol_path(a.grid, a.tag, c[0], c[1], ph), r, d_s, amp))
         print(f"multi-start: {len(jobs)} cold solves", flush=True)

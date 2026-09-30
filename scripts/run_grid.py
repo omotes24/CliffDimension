@@ -19,7 +19,7 @@ FIELDS = ["T", "m", "phi_l", "ok", "status", "iters", "solve_s", "U_peak", "req_
           "d_s", "d_f", "phi_c", "x_catch", "h_release", "v0x", "v0y", "vrel_x", "vrel_y", "vrel_norm",
           "impulse_norm", "U_catch", "U_swing", "U_hold", "direction",
           "res_S_p95", "res_F_p95", "res_H_p95", "res_S_max", "res_F_max", "res_H_max",
-          "ver_S_pos", "ver_F_hand", "ver_H_pos", "cold_start", "param_tag"]
+          "ver_S_pos", "ver_F_hand", "ver_H_pos", "cold_start", "param_tag", "catch_gap"]
 
 
 def hs_residuals(r, body):
@@ -42,6 +42,7 @@ def solve_case(T, m, phi_l, prev, params_kw, tag, outdir, d_s_guesses=None, alt_
     best = None
     tried = []
     t0 = time.time()
+    infeasible_hits = 0
     for pw in [x for x in (prev, alt_prev) if x is not None]:
         nlp = PlanarNLP(body, T, phi_l, p)
         nlp.set_initial(prev=pw)
@@ -51,8 +52,12 @@ def solve_case(T, m, phi_l, prev, params_kw, tag, outdir, d_s_guesses=None, alt_
         if r["ok"]:
             best = r
             break
+        if r["status"] == "Infeasible_Problem_Detected":
+            infeasible_hits += 1
     if best is None:
         guesses = [(d, 0.6) for d in d_s_guesses] if d_s_guesses else list(COLD_GUESSES)
+        if infeasible_hits:          # fast fail: a clearly unreachable release phase gets one more (cold) attempt only
+            guesses = guesses[:1]
         for d_s, amp in guesses:
             nlp = PlanarNLP(body, T, phi_l, p)
             nlp.set_initial(d_w=max(0.0, T - d_s), d_s=d_s, swing_amp=amp)
@@ -64,7 +69,8 @@ def solve_case(T, m, phi_l, prev, params_kw, tag, outdir, d_s_guesses=None, alt_
                     best = r
                 break
     if best is None:  # keep the least-infeasible attempt for diagnostics
-        best = min(tried, key=lambda x: x.get("U_peak", 9))
+        best = min(tried, key=lambda x: (x.get("catch_gap", 9.0) if np.isfinite(x.get("catch_gap", 9.0)) else 9.0, x.get("U_peak", 9)))
+        best["n_attempts"] = len(tried)
     best["solve_s"] = time.time() - t0
     best["param_tag"] = tag
     best["body_kw"] = body_kw
@@ -77,7 +83,7 @@ def row_from(r, body):
     row.update(T=r["T"], m=r["m"], phi_l=round(r["phi_l"], 4), ok=int(r["ok"]), status=r["status"], iters=r["iters"],
                solve_s=round(r["solve_s"], 1), U_peak=r["U_peak"], req_cap_N=r["U_peak"] * body.f_cap,
                req_cap_BW=r["U_peak"] * body.f_cap / (body.m * G), effort=r["effort"], d_s=r["d_s"], d_f=r["d_f"],
-               phi_c=r["phi_c"], cold_start=r.get("cold_start", ""), param_tag=r.get("param_tag", ""))
+               phi_c=r["phi_c"], cold_start=r.get("cold_start", ""), param_tag=r.get("param_tag", ""), catch_gap=r.get("catch_gap", ""))
     try:
         mtr = rs.metrics()
         row.update(x_catch=mtr["x_catch"], h_release=mtr["h_release"], v0x=mtr["v0"][0], v0y=mtr["v0"][1],

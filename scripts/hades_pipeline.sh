@@ -115,7 +115,20 @@ wait
 # ---------------------------------------------------------------- 4. spatial (twisting, two-hand) model ------
 step "4. spatial model: strategies x 8 phases (T=20, m=66)"
 mkdir -p results/spatial
-PH8="0 0.125 0.25 0.375 0.5 0.625 0.75 0.875"
+# release phases for the spatial sweep: the feasible ones of the planar grid at T=20, m=66 (every second phase),
+# falling back to a fixed list
+PH8=$($PY - <<'PYEOF'
+import glob, pandas as pd
+fs = glob.glob("results/grid/rows_ref_T20_m66*.csv")
+try:
+    d = pd.concat([pd.read_csv(f) for f in fs]); d = d[d.ok == 1].sort_values("phi_l")
+    ph = sorted(set(round(p, 4) for p in d.phi_l))[::2]
+    print(" ".join(f"{p:g}" for p in ph) if len(ph) >= 2 else "0 0.125 0.25 0.375 0.5 0.625 0.75 0.875")
+except Exception:
+    print("0 0.125 0.25 0.375 0.5 0.625 0.75 0.875")
+PYEOF
+)
+echo "spatial phases: $PH8"
 run3d() { $PY scripts/run_grid3d.py --T 20 --m 66 --phis $PH8 --grip $1 --release $2 --catch $3 --tag $4 --out results/spatial \
           --init results/grid --init3d results/spatial --workers 8 --maxit 1500 --max-cpu 20000 > logs/spatial_$4.log 2>&1; }
 run3d 0.39 none none wide_sim &

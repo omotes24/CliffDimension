@@ -67,7 +67,7 @@ class ReducedParams:
     t_ref: float = 1.0
     w_E: float = 1.0
     w_U: float = 10.0
-    U_max: float = 2.5                # upper bound on U_peak (2.5 -> required capacity up to 2.5 x f_cap is explored)
+    U_max: float = 6.0                # upper bound on U_peak (large, so that "needs superhuman grip" and "unreachable" are distinct)
     fixed_release_phase: float | None = None   # if set: release exactly at device phase phi_l in [0,1) (t_l = (phi_l + 1) T)
     wait_in_cost: bool = True
     w_smooth: float = 1e-3
@@ -838,6 +838,12 @@ class PlanarNLP:
         v["phi_c"] = (v["t_c"] % self.T) / self.T
         v["T_convention"] = "period"
         v["catch_model"] = self.p.catch_model
+        # reach diagnostic: distance between the hook line and B's tip at the end of the flight (0 when feasible)
+        try:
+            dvc = device.device_state(v["t_c"], self.T, self.p.eps)
+            v["catch_gap"] = float(np.linalg.norm(np.array(v["F_X"])[0:2, -1] - dvc["pB"]))
+        except Exception:
+            v["catch_gap"] = float("nan")
         if self.p.catch_model == "compliant":
             v.update(self._compliant_loads(v, self.nom["sfx"] if self.K > 1 else ""))
         if self.K > 1:
