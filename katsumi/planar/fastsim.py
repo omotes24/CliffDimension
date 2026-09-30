@@ -46,13 +46,16 @@ def _rel(th):
 
 class FastSim:
     def __init__(self, body, chain, sub_dt=0.002, n_sub=10, eps=0.20, K_att=40000.0, D_att=1500.0,
-                 joint_stop_k=15.0, ramp_att=0.01, stop_damp=0.01, cache_dir=None, verbose=False, hook_cap_B=0.1):
+                 joint_stop_k=15.0, ramp_att=0.01, stop_damp=0.01, cache_dir=None, verbose=False, hook_cap_B=0.1, k_wall=1e5, d_wall=2e3):
         """hook_cap_B: finger-hook capacity on B (fraction of f_cap): the hooked fingers resist a pull away from the
-        wall of up to hook_cap_B * f_cap on top of the friction/hook cone mu_out * F_y (as `hook_cap` on A)."""
+        wall of up to hook_cap_B * f_cap on top of the friction/hook cone mu_out * F_y (as `hook_cap` on A).
+        k_wall, d_wall: while hooked on B the body may brace against B's wall panel: a spring-damper contact
+        (N/m, N s/m) at the clearance points pushes penetrating points back out (k_wall = 0 disables the contact)."""
         self.body, self.chain = body, chain
         self.sub_dt, self.n_sub, self.eps = float(sub_dt), int(n_sub), float(eps)
         self.K_att, self.D_att, self.joint_stop_k, self.ramp_att = float(K_att), float(D_att), float(joint_stop_k), float(ramp_att)
         self.stop_damp = float(stop_damp); self.hook_cap_B = float(hook_cap_B)
+        self.k_wall, self.d_wall = float(k_wall), float(d_wall)
         self.cache_dir = cache_dir or os.environ.get("KATSUMI_FASTSIM_CACHE",
                                                      os.path.join(os.path.expanduser("~"), ".cache", "katsumi_fastsim"))
         os.makedirs(self.cache_dir, exist_ok=True)
@@ -78,7 +81,7 @@ class FastSim:
         b = self.body
         parts = [b.m, b.lengths, b.masses, b.coms, b.inertias, b.tips, b.clearance, b.forearm_points, b.forearm_clearance,
                  b.tau_cap, b.f_cap, b.mu_out, b.mu_in, self.sub_dt, self.n_sub, self.eps, self.K_att, self.D_att,
-                 self.joint_stop_k, self.ramp_att, self.stop_damp, self.hook_cap_B, REL_LO_NEG, REL_HI_NEG, device.D_LEDGE,
+                 self.joint_stop_k, self.ramp_att, self.stop_damp, self.hook_cap_B, self.k_wall, self.d_wall, REL_LO_NEG, REL_HI_NEG, device.D_LEDGE,
                  device.WALL_BOTTOM_OFFSET, ca.__version__, "v6"]
         s = "|".join(np.array2string(np.atleast_1d(np.asarray(p, float)), precision=10) if not isinstance(p, str) else p
                      for p in parts)
@@ -168,11 +171,39 @@ class FastSim:
         xC = ca.SX.sym("xC", 2 * NQ + 1)
         hook_tol = ca.SX.sym("hook_tol")
 
+        qs_ = ca.SX.sym("qs", NQ)
+        P_ = ca.horzcat(ch.f_tips(qs_), ch.f_forearm(qs_))
+        n_pts = P_.shape[1]
+        f_ptsJ = ca.Function("ptsJ", [qs_], [P_] + [ca.jacobian(P_[:, i], qs_) for i in range(n_pts)])
+        clr_ = np.concatenate([b.clearance, b.forearm_clearance])
+
+        def wall_contact_B(q, qd, dv):
+            """Generalised force of the spring-damper contact of the body's clearance points with B's wall panel
+            (the panel exists below the ledge; the contact plane is the wall minus the point's clearance)."""
+            outs = f_ptsJ(q)
+            pts = outs[0]
+            gen = ca.SX.zeros(NQ)
+            for i in range(n_pts):
+                x_, y_ = pts[0, i], pts[1, i]
+                pen = ca.fmax(x_ - (dv["x"] + device.D_LEDGE - clr_[i]), 0.0)
+                below = ca.if_else(y_ < -device.WALL_BOTTOM_OFFSET, 1.0, 0.0)
+                Jp = outs[1 + i]
+                vx = (Jp @ qd)[0]
+                Fx = -(self.k_wall * pen + self.d_wall * ca.fmax(vx, 0.0) * ca.if_else(pen > 0, 1.0, 0.0)) * below
+                gen = gen + Jp.T @ ca.vertcat(Fx, 0.0)
+            return gen
+
         def fC_rhs(tt, x):
             q, qd, o = x[:NQ], x[NQ:2 * NQ], x[2 * NQ]
-            Fa, _, _ = self._hand_force_B(q, qd, dev(tt), o)
+            dvv_ = dev(tt)
+            Fa, _, _ = self._hand_force_B(q, qd, dvv_, o)
             tq, _ = self._limit_torque(q[2:], qd[2:], loP, hiP)
-            return ca.vertcat(qd, ch.f_qdd_free(q, qd, tau * tc + tq, Fa), 0.0)
+            if self.k_wall > 0:
+                rhs = ca.DM(ch.B) @ (tau * tc + tq) - ch.f_h(q, qd) + ca.vertcat(Fa, ca.SX.zeros(NTH)) + wall_contact_B(q, qd, dvv_)
+                qdd = ca.solve(ch.f_M(q), rhs)
+            else:
+                qdd = ch.f_qdd_free(q, qd, tau * tc + tq, Fa)
+            return ca.vertcat(qd, qdd, 0.0)
 
         xn = self._rk4(fC_rhs, xC, t, dt)
         dv = dev(t + dt)

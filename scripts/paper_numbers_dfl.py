@@ -25,10 +25,14 @@ def main():
         d = pd.read_csv(rows_csv)
         ok = d[d["ok"] == 1]
         M["dflNsolve"] = str(len(d)); M["dflNok"] = str(len(ok)); M["dflNref"] = str(d["ref"].nunique())
+        V_std = None
         try:
             from katsumi.learn.dual_field import load_dataset
-            dd, _, _ = load_dataset(a.data)
+            dd, _, Y = load_dataset(a.data)
             M["dflNrows"] = str(len(dd))
+            V_std = float(np.std(Y["J"])); M["valueStd"] = f"{V_std:.2f}"
+            rate = float((dd["effort"] / dd["d_s"]).median())          # effort accrued per second along the references
+            M["valueChangeH"] = f"{0.3 * rate:.2f}"; M["valueChangeHlong"] = f"{0.8 * rate:.2f}"
         except Exception:
             M["dflNrows"] = str(len(ok))
         el = -ok["sens_tau_cap"] / ok["J"]                    # elasticity d ln J / d ln tau_cap (negative -> report magnitude)
@@ -65,6 +69,10 @@ def main():
         M["fitVval"] = f"{get('DFL(Sobolev)', 'val', 'r2_V'):.2f}"; M["fitTauval"] = f"{get('DFL(Sobolev)', 'val', 'r2_tau'):.2f}"
         M["fitUval"] = f"{get('DFL(Sobolev)', 'val', 'r2_u'):.2f}"
         M["fitNtrain"] = str(f["n"]["train"]); M["fitNval"] = str(f["n"]["val"]); M["fitNhold"] = str(f["n"]["holdout"])
+        if V_std is not None:
+            M["valueRmseHold"] = f"{np.sqrt(max(1 - get('DFL(Sobolev)', 'holdout', 'r2_V'), 0)) * V_std:.2f}"
+            M["valueRmseVal"] = f"{np.sqrt(max(1 - get('DFL(Sobolev)', 'val', 'r2_V'), 0)) * V_std:.2f}"
+        M["tauRmseHold"] = f"{get('DFL(Sobolev)', 'holdout', 'rmse_tau'):.2f}"; M["tauRmseVal"] = f"{get('DFL(Sobolev)', 'val', 'rmse_tau'):.2f}"
     # ---- closed loop ----------------------------------------------------------------------------------------
     cl = os.path.join("results", "figs", "dfl_closedloop.csv")
     if os.path.exists(cl):

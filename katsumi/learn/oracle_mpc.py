@@ -21,15 +21,18 @@ def _rel(th):
 
 class OracleMPC:
     def __init__(self, ref, body, T, replan_dt=0.5, kp=1.0, kd=0.1, max_cpu=240.0, tol=1e-4, N_min=30, verbose=False,
-                 d_s_min=0.05, release_slack=0.5, control_dt=0.02, mu_margin=0.75, cone_abs=0.03):
+                 d_s_min=0.05, release_slack=0.5, control_dt=0.02, mu_margin=0.75, cone_abs=0.03, final_replan=0.25):
         """mu_margin: the plans use a tightened hook/friction cone (mu_out * mu_margin) so that tracking errors do not
-        push the executed hand force out of the true cone (constraint tightening)."""
+        push the executed hand force out of the true cone (constraint tightening).
+        final_replan: one last re-plan when this much time remains before the planned release (the release state and
+        the flight are then planned from a state at most `final_replan` s old instead of `replan_dt` s)."""
         import copy
         self.ref, self.T = ref, float(T)
         self.body = copy.deepcopy(body); self.body.mu_out = body.mu_out * mu_margin
         self.cone_abs = cone_abs
         self.replan_dt, self.kp, self.kd, self.max_cpu, self.tol, self.N_min = replan_dt, kp, kd, max_cpu, tol, N_min
         self.verbose, self.d_s_min, self.release_slack, self.dt = verbose, d_s_min, release_slack, control_dt
+        self.final_replan = final_replan
         self.reset()
 
     def reset(self):
@@ -38,6 +41,7 @@ class OracleMPC:
         self.n_solve = 0; self.n_fail = 0; self.solve_s = 0.0
         self.last = {}
         self.u_prev = np.zeros(NTAU)
+        self.final_done = False
 
     # ------------------------------------------------------------------------------------------------
     def _solve(self, x, t):
@@ -84,7 +88,12 @@ class OracleMPC:
 
     def act(self, th, thd, t):
         x = np.concatenate([th, thd])
-        if self.plan is None or (t - self.t_plan >= self.replan_dt - 1e-9 and (self.plan["t_l"] - t) > self.replan_dt):
+        remaining = np.inf if self.plan is None else self.plan["t_l"] - t
+        regular = self.plan is None or (t - self.t_plan >= self.replan_dt - 1e-9 and remaining > self.replan_dt)
+        final = (not self.final_done) and self.plan is not None and remaining <= self.final_replan and remaining > 0.05
+        if regular or final:
+            if final:
+                self.final_done = True
             sol = self._solve(x, t)
             self.t_plan = t                                   # (retry after replan_dt even when the solve failed)
             if sol["ok"] or self.plan is None:

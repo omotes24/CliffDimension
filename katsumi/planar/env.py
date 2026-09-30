@@ -55,7 +55,7 @@ class PlanarCliffEnv(gym.Env):
                  w_dist=20.0, w_energy=20.0, eps=0.20, K_att=40000.0, D_att=1500.0, hook_tol=0.025,
                  catch_box=(0.03, -0.005, 0.05), seed=0, T_set=None, m_set=None, body_set=None, joint_stop_k=15.0,
                  stop_damp=0.01, ramp_att=0.01, obs_body=True, cache_dir=None, u_rate=10.0, release_thresh=0.8, hook_cap=0.1,
-                 hold="zoh", hook_cap_B=0.1):
+                 hold="zoh", hook_cap_B=0.1, k_wall=1e5, d_wall=2e3, wall_fail_C=0.10):
         """hold: 'zoh' applies the commanded torque for the whole control period (sampled data); 'foh' ramps the torque
         linearly from the previous command to the new one over the period (the optimiser's piecewise-linear controls;
         the command is the torque reached at the end of the period)."""
@@ -73,6 +73,7 @@ class PlanarCliffEnv(gym.Env):
         self.joint_stop_k, self.ramp_att, self.stop_damp = joint_stop_k, ramp_att, stop_damp
         self.u_rate, self.release_thresh, self.hook_cap = u_rate, release_thresh, hook_cap
         assert hold in ("zoh", "foh"); self.hold = hold; self.hook_cap_B = hook_cap_B
+        self.k_wall, self.d_wall, self.wall_fail_C = k_wall, d_wall, wall_fail_C      # bracing contact with B's wall while hooked
         self.obs_body = obs_body
         self.cache_dir = cache_dir
         self.rng = np.random.default_rng(seed)
@@ -90,7 +91,8 @@ class PlanarCliffEnv(gym.Env):
             body = make_body(float(m), **body_kw)
             chain = PlanarChain(body)
             sim = FastSim(body, chain, self.sub_dt, self.n_sub, self.eps, self.K_att, self.D_att, self.joint_stop_k,
-                          ramp_att=self.ramp_att, stop_damp=self.stop_damp, cache_dir=self.cache_dir, hook_cap_B=self.hook_cap_B)
+                          ramp_att=self.ramp_att, stop_damp=self.stop_damp, cache_dir=self.cache_dir, hook_cap_B=self.hook_cap_B,
+                          k_wall=self.k_wall, d_wall=self.d_wall)
             self._sims[key] = (body, chain, sim)
         self.body, self.ch, self.sim = self._sims[key]
         self.cur_body_kw = dict(body_kw)
@@ -296,7 +298,8 @@ class PlanarCliffEnv(gym.Env):
                 lost = (sep > 0.08) | (offs <= -self.hook_tol + 1e-9)        # hand away from the ledge / slid off the tip
                 if lost.any(): cands.append((int(np.argmax(lost)), "lost hook"))
                 if (Uarr > self.U_cap).any(): cands.append((int(np.argmax(Uarr > self.U_cap)), "grip capacity exceeded"))
-                if (wall > 0.02).any(): cands.append((int(np.argmax(wall > 0.02)), "hit wall"))
+                wf = self.wall_fail_C if self.k_wall > 0 else 0.02      # with the bracing contact only a deep penetration fails
+                if (wall > wf).any(): cands.append((int(np.argmax(wall > wf)), "hit wall"))
                 te = tt + self.sub_dt
                 held = te - self.t_catch >= self.hold_time
                 if held.any(): cands.append((int(np.argmax(held)), "held B"))

@@ -25,6 +25,7 @@
 \providecommand{\fitRhohold}{---}\providecommand{\fitSignhold}{---}\providecommand{\fitRhoval}{---}\providecommand{\fitSignval}{---}\providecommand{\fitRhoholdNoSob}{---}\providecommand{\fitSignholdNoSob}{---}\providecommand{\fitRhovalNoSob}{---}\providecommand{\fitSignvalNoSob}{---}\providecommand{\fitVval}{---}\providecommand{\fitTauval}{---}\providecommand{\fitUval}{---}\providecommand{\fitNtrain}{---}\providecommand{\fitNval}{---}\providecommand{\fitNhold}{---}
 \providecommand{\gridNsolved}{---}\providecommand{\gridNcases}{---}\providecommand{\winNfeasible}{---}
 \providecommand{\execRelZohTwenty}{---}\providecommand{\execRelHalfTwenty}{---}\providecommand{\execRelFour}{---}\providecommand{\execCatchFour}{---}\providecommand{\execHoldFour}{---}
+\providecommand{\valueRmseHold}{---}\providecommand{\valueRmseVal}{---}\providecommand{\valueStd}{---}\providecommand{\valueChangeH}{---}\providecommand{\valueChangeHlong}{---}\providecommand{\tauRmseHold}{---}\providecommand{\tauRmseVal}{---}
 \providecommand{\execRelFourComp}{---}\providecommand{\execCatchFourComp}{---}\providecommand{\execHoldFourComp}{---}\providecommand{\execErrFour}{---}\providecommand{\execErrTwenty}{---}
 
 \begin{document}
@@ -44,7 +45,9 @@
 価値・costate・価格の場を厳密オラクルの乗数から Sobolev 学習し，行動は既知の力学と短地平線の最適化から導き，
 身体パラメータへの転移は包絡線定理で与える．
 最適化器と同一物理のコンパイル環境上で，costate ラベルの有限差分検証，未知身体への汎化，
-行動模倣・強化学習との閉ループ比較を小規模に行った．
+行動模倣・強化学習との閉ループ比較を小規模に行い，閉ループ実行の成否を執行系（制御周期・トルク標本化・着地反射）と
+制御器に分解した：20\,ms の零次保持ではオラクル軌道自体が実行できず，2\,ms・区間中点標本化で初めて
+参照解の捕捉・保持が再現される．
 
 \section{はじめに}
 クリフディメンションは，上下に動く突起（クリフ A）に両手でぶら下がった状態から体を振って離手し，
@@ -61,7 +64,8 @@
 (i)~前腕干渉を含む修正モデルによる離手位相の実行可能窓と必要把持容量の $T$--$m$--体格マップ，
 その乗数による支配制約の同定と能力弾性，
 (ii)~双対場学習の定式化（オラクルの双対ラベル，Sobolev 学習，Pontryagin 制御と短地平線 MPC，包絡線定理による転移），
-(iii)~最適化器と同一物理の高速環境と，オラクル・行動模倣・強化学習の同一土俵での比較，である．
+(iii)~最適化器と同一物理の高速環境と，オラクル・行動模倣・強化学習の同一土俵での比較，
+および閉ループ失敗の執行系への分解（制御周期・標本化・活性制約上の最適解），である．
 
 \input{sec_related}
 
@@ -198,6 +202,9 @@ $\triangle$ は 2（両手 2600\,N，超人的）を超える解，$\times$ は�
 能力弾性（関節トルク）を同定した．
 さらに，その双対変数を学習の対象とする双対場学習を提案し，costate ラベルの厳密性，未知身体への汎化，
 Pontryagin 制御の条件の悪さと短地平線 MPC による解決，強化学習の疎報酬下での停滞を同一環境で示した．
+閉ループでは，最適解がすべての活性制約の上を通るため執行系の離散化（20\,ms 零次保持）だけでオラクル軌道が崩れること，
+2\,ms の執行系と着地反射で参照解の捕捉・保持が再現されること，学習した双対場 MPC が同じ執行系で
+オラクル・イン・ザ・ループ MPC とどこまで並ぶかを定量化した．
 コードと結果は \url{https://github.com/omotes24/CliffDimension} にある．
 
 \begin{thebibliography}{99}
