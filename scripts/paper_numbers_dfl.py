@@ -79,12 +79,12 @@ def main():
                          f"保持成功 {int(round(r.success * r.n))}（生存時間の中央値 {r.t_med:.1f}\\,s，主な失敗は{REASON.get(r.main_failure, r.main_failure)}）")
         M["closedloopSummary"] = "，".join(parts) + "であった．"
     # ---- executor decomposition (replay table) --------------------------------------------------------------
-    rt = os.path.join("results", "figs", "replay_table.csv")
-    if os.path.exists(rt):
-        t = pd.read_csv(rt)
+    rts = [f for f in (os.path.join("results", "figs", "replay_table.csv"), os.path.join("results", "figs", "replay_table_comp.csv")) if os.path.exists(f)]
+    if rts:
+        t = pd.concat([pd.read_csv(f) for f in rts], ignore_index=True)
         LEAD = {"zero": "区間始点", "half": "区間中点"}
         with open(os.path.join(a.out, "tab_exec.tex"), "w") as f:
-            f.write("\\begin{tabular}{rlrrrrrr}\n\\toprule\n制御周期 & 前饋サンプル & 捕捉モデル & $n$ & 離手 & 捕捉 & 保持 & 振り追従誤差 [rad] \\\\\n\\midrule\n")
+            f.write("\\begin{tabular}{rlrrrrrr}\n\\toprule\n制御周期 & 前饋トルクの標本点 & 参照解の捕捉モデル & $n$ & 離手 & 捕捉 & 保持（2\\,s） & 振り追従誤差の中央値 [rad] \\\\\n\\midrule\n")
             for (cdt, lead, cm), g in t[t["reach"] == t["reach"].min()].groupby(["control_dt", "lead", "catch_model"]):
                 f.write(f"{1000 * cdt:g}\\,ms & {LEAD.get(lead, lead)} & {'順応' if cm == 'compliant' else '剛体衝突'} & {len(g)} & {int(g['released'].sum())} & {int(g['caught'].sum())} & "
                         f"{int(g['success'].sum())} & {g['th_err'].median():.3f} \\\\\n")
@@ -93,11 +93,11 @@ def main():
             g = t[(t["control_dt"] == cdt) & (t["lead"] == lead) & (t["catch_model"] == cm) & (t["reach"] == t["reach"].min())]
             return f"{int(g[col].sum())}/{len(g)}" if len(g) else "---"
         M["execRelZohTwenty"] = cnt(0.02, "zero", "impact", "released"); M["execRelHalfTwenty"] = cnt(0.02, "half", "impact", "released")
-        M["execRelFour"] = cnt(0.004, "half", "impact", "released"); M["execCatchFour"] = cnt(0.004, "half", "impact", "caught")
-        M["execHoldFour"] = cnt(0.004, "half", "impact", "success")
-        M["execRelFourComp"] = cnt(0.004, "half", "compliant", "released"); M["execCatchFourComp"] = cnt(0.004, "half", "compliant", "caught")
-        M["execHoldFourComp"] = cnt(0.004, "half", "compliant", "success")
-        g4 = t[(t["control_dt"] == 0.004) & (t["lead"] == "half")]; g20 = t[(t["control_dt"] == 0.02) & (t["lead"] == "zero")]
+        M["execRelFour"] = cnt(0.002, "half", "impact", "released"); M["execCatchFour"] = cnt(0.002, "half", "impact", "caught")
+        M["execHoldFour"] = cnt(0.002, "half", "impact", "success")
+        M["execRelFourComp"] = cnt(0.002, "half", "compliant", "released"); M["execCatchFourComp"] = cnt(0.002, "half", "compliant", "caught")
+        M["execHoldFourComp"] = cnt(0.002, "half", "compliant", "success")
+        g4 = t[(t["control_dt"] == 0.002) & (t["lead"] == "half") & (t["catch_model"] == "impact")]; g20 = t[(t["control_dt"] == 0.02) & (t["lead"] == "zero") & (t["catch_model"] == "impact")]
         if len(g4): M["execErrFour"] = f"{g4['th_err'].median():.3f}"
         if len(g20): M["execErrTwenty"] = f"{g20['th_err'].median():.3f}"
     # ---- RL -----------------------------------------------------------------------------------------------

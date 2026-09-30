@@ -163,7 +163,7 @@ class SwingMPC:
         opti.minimize(J)
         opts = {"expand": False, "ipopt.print_level": 5 if self.verbose else 0, "print_time": 0, "ipopt.max_iter": self.max_iter,
                 "ipopt.tol": 1e-4, "ipopt.acceptable_tol": 1e-3, "ipopt.acceptable_iter": 5, "ipopt.mu_strategy": "adaptive",
-                "ipopt.linear_solver": "mumps", "ipopt.sb": "yes", "ipopt.max_cpu_time": 10.0, "ipopt.warm_start_init_point": "yes",
+                "ipopt.linear_solver": "mumps", "ipopt.sb": "yes", "ipopt.max_cpu_time": 30.0, "ipopt.warm_start_init_point": "yes",
                 "ipopt.warm_start_bound_push": 1e-6, "ipopt.warm_start_mult_bound_push": 1e-6, "ipopt.mu_init": 1e-3}
         opti.solver("ipopt", opts)
         self.opti = opti
@@ -178,6 +178,7 @@ class SwingMPC:
         self.lam_g = None
         self.plan_left = 0
         self.t_plan = -np.inf
+        self.t_last_try = -np.inf
 
     def field(self, x, t):
         z = torch.tensor(make_features(x, t, self.T, self.body.m, self.stature, self.cap_scale), dtype=torch.float32)
@@ -237,8 +238,14 @@ class SwingMPC:
             val = lambda e: opti.debug.value(e)
             ok = False; self.n_fail += 1
             stats = opti.debug.stats()
-        self.sol = {k: np.array(val(v)) for k, v in self.v.items()}
-        u = np.array([np.interp(0.5 * dt_env, self.dt * np.arange(self.H + 1), row) for row in self.sol["U"]])
+        if ok or self.sol is None:
+            self.sol = {k: np.array(val(v)) for k, v in self.v.items()}
+            self.t_plan = t
+            tt = self.dt * np.arange(self.H + 1); tc = 0.5 * dt_env
+        else:
+            # failed solve: keep executing the previous (feasible) plan, shifted in time, rather than the infeasible iterate
+            tt = (self.t_plan - t) + self.dt * np.arange(self.H + 1); tc = min(max(0.5 * dt_env, tt[0]), tt[-1])
+        u = np.array([np.interp(tc, tt, row) for row in self.sol["U"]])
         u = np.clip(np.clip(u, -1, 1), self.u_prev - self.u_rate * dt_env, self.u_prev + self.u_rate * dt_env)
         self.u_prev = u
         self.last = dict(V=V0, U=U0, tau=tau0, ok=ok, iters=stats.get("iter_count", -1), VH=float(val(self.VH_expr)), Ucap=Ucap,
@@ -250,9 +257,9 @@ class SwingMPC:
         the environment's control interval (zero-order-hold equivalent of the piecewise-linear plan; the environment
         may run at a finer control period than the plan)."""
         t = env.t; dt_env = env.control_dt
-        if self.sol is None or t - self.t_plan >= self.replan * self.dt - 1e-9:
+        if self.sol is None or t - self.t_last_try >= self.replan * self.dt - 1e-9:
+            self.t_last_try = t
             u, release = self.act(env.th, env.thd, t, dt_env)
-            self.t_plan = t
         else:
             tt = self.t_plan + self.dt * np.arange(self.H + 1)
             tc = min(max(t + 0.5 * dt_env, tt[0]), tt[-1])

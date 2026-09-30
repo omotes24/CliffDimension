@@ -26,13 +26,17 @@ def _rel(th):
 
 
 class LandingReflex:
-    def __init__(self, refs, kp=1.0, kd=0.1, reach_gain=1.0, kp_hold=None, kd_hold=None):
+    def __init__(self, refs, kp=1.0, kd=0.1, reach_gain=1.0, kp_hold=None, kd_hold=None, hold_mode="track"):
         """refs: list of oracle solution dicts (any bodies); the nearest mass is used for a given episode.
-        kp, kd: flight tracking gains; kp_hold, kd_hold: hold-phase gains (default: the flight gains)."""
+        kp, kd: flight tracking gains; kp_hold, kd_hold: hold-phase gains (default: the flight gains).
+        hold_mode: 'track' follows the reference hold trajectory in time since the catch; 'settle' servos the joints
+        to the reference's final hold pose (zero velocity target) so that the post-catch swing is damped rather
+        than tracked."""
         self.refs = [r for r in refs if r.get("ok")]
         assert self.refs, "no converged reference solutions"
         self.kp, self.kd, self.reach_gain = kp, kd, reach_gain
         self.kp_hold = kp if kp_hold is None else kp_hold; self.kd_hold = kd if kd_hold is None else kd_hold
+        self.hold_mode = hold_mode
         self.r = None
 
     @classmethod
@@ -88,6 +92,9 @@ class LandingReflex:
     def hold(self, env):
         r = self.r
         tau = env.t - env.t_catch
+        if self.hold_mode == "settle":
+            u = r["H_U"][:, -1]; th_ref = r["H_X"][:NTH, -1]; thd_ref = np.zeros(NTH)
+            return self._pd(u, th_ref, thd_ref, env, self.kp_hold, self.kd_hold)
         if self.tauC is not None and tau < self.tauC[-1]:
             u = self._interp(tau, self.tauC, r["C_U"])
             th_ref = self._interp(tau, self.tauC, r["C_X"][2:NQ]); thd_ref = self._interp(tau, self.tauC, r["C_X"][NQ + 2:])

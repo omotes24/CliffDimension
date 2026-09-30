@@ -17,10 +17,10 @@ from katsumi.planar.env import PlanarCliffEnv
 from katsumi.planar.model import NTH
 
 
-def replay_reflex(r, refs, control_dt, sub_dt, kp, kd, lead, reach, hook_cap_B, kp_hold, kd_hold):
+def replay_reflex(r, refs, control_dt, sub_dt, kp, kd, lead, reach, hook_cap_B, kp_hold, kd_hold, hold_mode="track"):
     """Swing by feed-forward + PD of the solution; flight / hold by the landing reflex of the closed-loop evaluation."""
     env = ReflexEnv(PlanarCliffEnv(T=r["T"], m=r["m"], body_kw=r.get("body_kw", {}) or {}, control_dt=control_dt, sub_dt=sub_dt, hook_cap_B=hook_cap_B),
-                    LandingReflex(refs, reach_gain=reach, kp_hold=kp_hold, kd_hold=kd_hold))
+                    LandingReflex(refs, reach_gain=reach, kp_hold=kp_hold, kd_hold=kd_hold, hold_mode=hold_mode))
     pol = OracleTracker(r, kp, kd, 0.0, lead=lead)
     env.reset(options=dict(t0=r["t_s0"], state=(np.zeros(NTH), np.zeros(NTH))))
     N = r["S_X"].shape[1] - 1; tS = r["t_s0"] + np.linspace(0, r["d_s"], N + 1)
