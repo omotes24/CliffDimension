@@ -92,6 +92,10 @@ class ReducedParams:
     from_state: bool = False          # start the swing at time t0 from the given state x0 (no wait phase); the
                                       # multipliers of the initial condition give the costate dJ*/dx0
     x0: tuple = (0.0,) * 10           # initial swing state (th, thd) when from_state
+    cone_abs: float = 0.0             # absolute margin inside the hook cone on A [f_cap units] (closed-loop plans)
+    u0: tuple | None = None           # command currently applied (closed-loop plans): the first command may differ from it
+                                      # by at most u_rate * u0_dt
+    u0_dt: float = 0.02
 
 
 def smax(a, b, delta):
@@ -174,12 +178,13 @@ class PlanarNLP:
         self._ge0(smax(hand[1], (xB - self.p.approach_clear) - hand[0], self.p.wall_smooth), "approach")
 
     def _grasp_cone(self, r, side, cat=None):
-        """r: normalised force on the athlete R / f_cap. side 'A': wall on -x; 'B': wall on +x."""
+        """r: normalised force on the athlete R / f_cap. side 'A': wall on -x; 'B': wall on +x.
+        p.cone_abs > 0 adds an absolute margin inside the hook limit on A (constraint tightening for closed-loop plans)."""
         mu_out, mu_in = self.par["mu_out"], self.par["mu_in"]
         cat = cat or ("cone_" + side)
         self._con(r[1] >= 0, cat)
         if side == "A":
-            self._con(r[0] >= -mu_out * r[1], cat)   # body swung to +x (away from A) -> R_x < 0, friction-limited
+            self._con(r[0] >= -mu_out * r[1] + self.p.cone_abs, cat)   # body swung to +x (away from A) -> R_x < 0, friction-limited
             self._con(r[0] <= mu_in * r[1], cat)
         else:
             self._con(r[0] <= mu_out * r[1], cat)    # body swung to -x (away from B) -> R_x > 0
@@ -375,6 +380,8 @@ class PlanarNLP:
         d_sa = d_s - dw                      # shared swing before the earliest release
         XS, US, UmS, RS = self._hs_phase("S", p.N_S, d_sa, t_s0, 2 * NTH, NTH, NTAU, 2, resS, pathS, effS, U_S)
         self._con(XS[:, 0] - self.par_x0 == 0, "init")     # (expression form keeps the parameter inside g for dJ/dx0)
+        if p.from_state and p.u0 is not None:
+            self._bounded(-p.u_rate * p.u0_dt, US[:, 0] - ca.DM(np.array(p.u0, float)), p.u_rate * p.u0_dt, "rate")
         # release segment (robust): shared pinned swing of fixed length 2 dw; knots = scenario releases
         if K > 1:
             N_b = p.robust_nsub * (K - 1)

@@ -43,14 +43,14 @@ def mlp_casadi(net, z):
 class SwingMPC:
     def __init__(self, net, body, chain, T, H=25, control_dt=0.02, eps=0.20, w_E=1.0, t_ref=1.0, u_rate=10.0, U_margin=1.0,
                  stature=1.75, cap_scale=1.0, release_slack=0.5, wall_smooth=0.01, w_smooth=1e-3, max_iter=80, verbose=False,
-                 terminal_weight=1.0, beta=2.0, replan=1, density=None, beta_d=1.0, mu_margin=0.9):
+                 terminal_weight=1.0, beta=2.0, replan=1, density=None, beta_d=1.0, mu_margin=0.75, cone_abs=0.03):
         """net: a DualFieldNet or a list of them (ensemble: terminal value = mean + beta * std, pessimistic where the
         members disagree, i.e. away from the oracle data)."""
         self.nets = list(net) if isinstance(net, (list, tuple)) else [net]
         self.net = self.nets[0]
         self.beta = beta
         self.replan = replan
-        self.density, self.beta_d, self.mu_margin = density, beta_d, mu_margin
+        self.density, self.beta_d, self.mu_margin, self.cone_abs = density, beta_d, mu_margin, cone_abs
         self.body, self.ch, self.T = body, chain, float(T)
         self.H, self.dt, self.eps = H, control_dt, eps
         self.w_E, self.t_ref, self.u_rate, self.U_margin = w_E, t_ref, u_rate, U_margin
@@ -83,7 +83,7 @@ class SwingMPC:
 
         def cone(r):
             opti.subject_to(r[1] >= 0)
-            opti.subject_to(r[0] >= -self.mu_margin * b.mu_out * r[1]); opti.subject_to(r[0] <= b.mu_in * r[1])
+            opti.subject_to(r[0] >= -self.mu_margin * b.mu_out * r[1] + self.cone_abs); opti.subject_to(r[0] <= b.mu_in * r[1])
 
         def eff(u, r):
             return 0.25 * ca.sumsqr(u) + ca.sumsqr(r)

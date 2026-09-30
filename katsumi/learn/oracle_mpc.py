@@ -21,12 +21,13 @@ def _rel(th):
 
 class OracleMPC:
     def __init__(self, ref, body, T, replan_dt=0.5, kp=1.0, kd=0.1, max_cpu=240.0, tol=1e-4, N_min=30, verbose=False,
-                 d_s_min=0.05, release_slack=0.5, control_dt=0.02, mu_margin=0.9):
+                 d_s_min=0.05, release_slack=0.5, control_dt=0.02, mu_margin=0.75, cone_abs=0.03):
         """mu_margin: the plans use a tightened hook/friction cone (mu_out * mu_margin) so that tracking errors do not
         push the executed hand force out of the true cone (constraint tightening)."""
         import copy
         self.ref, self.T = ref, float(T)
         self.body = copy.deepcopy(body); self.body.mu_out = body.mu_out * mu_margin
+        self.cone_abs = cone_abs
         self.replan_dt, self.kp, self.kd, self.max_cpu, self.tol, self.N_min = replan_dt, kp, kd, max_cpu, tol, N_min
         self.verbose, self.d_s_min, self.release_slack, self.dt = verbose, d_s_min, release_slack, control_dt
         self.reset()
@@ -36,12 +37,13 @@ class OracleMPC:
         self.t_plan = -np.inf
         self.n_solve = 0; self.n_fail = 0; self.solve_s = 0.0
         self.last = {}
+        self.u_prev = np.zeros(NTAU)
 
     # ------------------------------------------------------------------------------------------------
     def _solve(self, x, t):
         r = self.ref
         p_ref = dict(r["params"])
-        for q in ("fixed_release_phase", "wait_in_cost", "from_state", "x0", "N_S", "d_s_bounds"):
+        for q in ("fixed_release_phase", "wait_in_cost", "from_state", "x0", "N_S", "d_s_bounds", "cone_abs", "u0", "u0_dt"):
             p_ref.pop(q, None)
         # remaining time estimate for the mesh: previous plan or the reference (time to its release from a similar state)
         if self.plan is not None:
@@ -58,7 +60,7 @@ class OracleMPC:
             prev = dict(r); prev["tS"] = tS
         N_S = int(np.clip(round(150 * rem_est / 5.7) + 10, self.N_min, 150))
         p = ReducedParams(fixed_release_phase=None, wait_in_cost=False, from_state=True, x0=tuple(x), N_S=N_S,
-                          d_s_bounds=(self.d_s_min, self.T), **p_ref)
+                          d_s_bounds=(self.d_s_min, self.T), cone_abs=self.cone_abs, u0=tuple(self.u_prev), u0_dt=self.dt, **p_ref)
         nlp = PlanarNLP(self.body, self.T, t / self.T, p)
         warm = dict(prev)
         for key in ("S_X", "S_A", "S_U", "S_R", "S_Am", "S_Um", "S_Rm"):
@@ -93,6 +95,8 @@ class OracleMPC:
         u = np.array([np.interp(tc, tt, row) for row in pl["S_U"]])
         th_ref = np.array([np.interp(tc, tt, row) for row in pl["S_X"][:NTH]]); thd_ref = np.array([np.interp(tc, tt, row) for row in pl["S_X"][NTH:]])
         u = np.clip(u + self.kp * (_rel(th_ref) - _rel(th)) + self.kd * (_rel(thd_ref) - _rel(thd)), -1, 1)
+        u = np.clip(u, self.u_prev - 10.0 * self.dt, self.u_prev + 10.0 * self.dt)      # the environment's activation-rate limit
+        self.u_prev = u
         release = (self.plan["t_l"] - t) <= self.release_slack * self.dt
         self.last = dict(tau=self.plan["t_l"] - t, U=pl["U_peak"], ok=self.plan["ok"])
         return u, release
