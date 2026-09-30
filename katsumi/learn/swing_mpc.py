@@ -43,7 +43,8 @@ def mlp_casadi(net, z):
 class SwingMPC:
     def __init__(self, net, body, chain, T, H=25, control_dt=0.02, eps=0.20, w_E=1.0, t_ref=1.0, u_rate=10.0, U_margin=1.0,
                  stature=1.75, cap_scale=1.0, release_slack=0.5, wall_smooth=0.01, w_smooth=1e-3, max_iter=80, verbose=False,
-                 terminal_weight=1.0, beta=2.0, replan=1, density=None, beta_d=1.0, mu_margin=0.75, cone_abs=0.03, w_tau=0.0):
+                 terminal_weight=1.0, beta=2.0, replan=1, density=None, beta_d=1.0, mu_margin=0.75, cone_abs=0.03, w_tau=0.0, hessian="exact",
+                 max_cpu=30.0):
         """net: a DualFieldNet or a list of them (ensemble: terminal value = mean + beta * std, pessimistic where the
         members disagree, i.e. away from the oracle data).
         w_tau > 0 adds a progress term on the time-to-release field: (tau(x_H, t_H) - (tau(x_0, t_0) - H dt))^2, i.e.
@@ -54,6 +55,7 @@ class SwingMPC:
         self.beta = beta
         self.replan = replan
         self.density, self.beta_d, self.mu_margin, self.cone_abs, self.w_tau = density, beta_d, mu_margin, cone_abs, w_tau
+        self.hessian, self.max_cpu = hessian, max_cpu
         self.body, self.ch, self.T = body, chain, float(T)
         self.H, self.dt, self.eps = H, control_dt, eps
         self.w_E, self.t_ref, self.u_rate, self.U_margin = w_E, t_ref, u_rate, U_margin
@@ -169,8 +171,10 @@ class SwingMPC:
         opti.minimize(J)
         opts = {"expand": False, "ipopt.print_level": 5 if self.verbose else 0, "print_time": 0, "ipopt.max_iter": self.max_iter,
                 "ipopt.tol": 1e-4, "ipopt.acceptable_tol": 1e-3, "ipopt.acceptable_iter": 5, "ipopt.mu_strategy": "adaptive",
-                "ipopt.linear_solver": "mumps", "ipopt.sb": "yes", "ipopt.max_cpu_time": 30.0, "ipopt.warm_start_init_point": "yes",
+                "ipopt.linear_solver": "mumps", "ipopt.sb": "yes", "ipopt.max_cpu_time": self.max_cpu, "ipopt.warm_start_init_point": "yes",
                 "ipopt.warm_start_bound_push": 1e-6, "ipopt.warm_start_mult_bound_push": 1e-6, "ipopt.mu_init": 1e-3}
+        if self.hessian == "lbfgs":
+            opts["ipopt.hessian_approximation"] = "limited-memory"
         opti.solver("ipopt", opts)
         self.opti = opti
         self.v = dict(X=X, A=A, Am=Am, U=U, R=R, Rm=Rm)
