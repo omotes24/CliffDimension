@@ -57,7 +57,13 @@ class FastSim:
         self.key = self._key()
         self.lib = os.path.join(self.cache_dir, f"fastsim_{self.key}.so")
         if not os.path.exists(self.lib):
-            self._build_and_compile(verbose)
+            # several processes (vectorised environments) may start at once: build under a lock, publish atomically
+            import fcntl
+            with open(self.lib + ".lock", "w") as lk:
+                fcntl.flock(lk, fcntl.LOCK_EX)
+                if not os.path.exists(self.lib):
+                    self._build_and_compile(verbose)
+                fcntl.flock(lk, fcntl.LOCK_UN)
         n = self.n_sub
         self.fA1 = ca.external("A1", self.lib); self.fF1 = ca.external("F1", self.lib); self.fC1 = ca.external("C1", self.lib)
         self.fA = ca.external(f"A1_acc{n}", self.lib) if n > 1 else self.fA1
@@ -187,15 +193,18 @@ class FastSim:
         funcs = [A1, F1, C1, aux]
         if n > 1:
             funcs += [A1.mapaccum(n), F1.mapaccum(n), C1.mapaccum(n)]      # exported as <name>_acc<n>
-        cg = ca.CodeGenerator(f"fastsim_{self.key}", dict(with_header=False, casadi_real="double", casadi_int="long long int"))
+        tmpname = f"fastsim_{self.key}_p{os.getpid()}"
+        cg = ca.CodeGenerator(tmpname, dict(with_header=False, casadi_real="double", casadi_int="long long int"))
         for f in funcs:
             cg.add(f)
         src = cg.generate(self.cache_dir + os.sep)
         cc = os.environ.get("CC", "gcc")
-        cmd = [cc, "-O1", "-fPIC", "-shared", "-o", self.lib, src, "-lm"]
+        tmplib = os.path.join(self.cache_dir, tmpname + ".so")
+        cmd = [cc, "-O1", "-fPIC", "-shared", "-o", tmplib, src, "-lm"]
         if verbose:
             print("compiling", " ".join(cmd), file=sys.stderr, flush=True)
         subprocess.run(cmd, check=True)
+        os.replace(tmplib, self.lib)                      # atomic publish
         try:
             os.remove(src)
         except OSError:

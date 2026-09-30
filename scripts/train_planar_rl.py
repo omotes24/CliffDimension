@@ -94,10 +94,10 @@ def main():
     if a.algo == "ppo":
         model = PPO("MlpPolicy", venv, n_steps=512, batch_size=2048, n_epochs=10, learning_rate=3e-4, gamma=0.995, gae_lambda=0.97,
                     ent_coef=0.003, clip_range=0.2, policy_kwargs=dict(net_arch=[256, 256], log_std_init=a.log_std_init), verbose=1,
-                    seed=a.seed, device=a.device, tensorboard_log=a.out)
+                    seed=a.seed, device=a.device)
     else:
         model = SAC("MlpPolicy", venv, learning_rate=3e-4, buffer_size=1_000_000, batch_size=512, gamma=0.995, train_freq=1,
-                    gradient_steps=1, policy_kwargs=dict(net_arch=[256, 256]), verbose=1, seed=a.seed, device=a.device, tensorboard_log=a.out)
+                    gradient_steps=1, policy_kwargs=dict(net_arch=[256, 256]), verbose=1, seed=a.seed, device=a.device)
     cb = CheckpointCallback(save_freq=max(200_000 // a.n_envs, 1), save_path=a.out, name_prefix="model")
     model.learn(total_timesteps=a.steps, callback=cb, log_interval=10)
     model.save(os.path.join(a.out, "final"))
