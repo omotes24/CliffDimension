@@ -1,4 +1,4 @@
-# CliffDimension — Katsumi
+# CliffDimension
 
 SASUKE *Cliff Dimension* backward jump (moving cliff A → moving cliff B, 3 cm ledges):
 physics, trajectory optimisation, and a 3-D MuJoCo environment for learning-based comparisons.
