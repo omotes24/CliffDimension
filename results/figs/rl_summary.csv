@@ -1,0 +1,9 @@
+run,episodes,steps,success_all,success_last2000,n_success,U_peak_success,released_last2000,reasons_last2000
+dual+energy_rsi,11376,2500290,0.0,0.0,0,,0.0205,"{""no release"": 1193, ""hit wall"": 520, ""slipped off A"": 225, ""grip capacity exceeded"": 53}"
+dual+energy,7302,2997400,0.0,0.0,0,,0.0175,"{""no release"": 1775, ""hit wall"": 195, ""grip capacity exceeded"": 20, ""slipped off A"": 7}"
+dual+margin+energy,7205,2996113,0.0,0.0,0,,0.0295,"{""no release"": 1879, ""hit wall"": 90, ""grip capacity exceeded"": 13, ""slipped off A"": 11}"
+energy_rsi,16389,2484908,0.0,0.0,0,,0.5275,"{""no release"": 670, ""missed B"": 647, ""hit wall"": 530, ""slipped off A"": 102}"
+energy,6462,2997722,0.0,0.0,0,,0.0125,"{""no release"": 1844, ""hit wall"": 123, ""missed B"": 19, ""grip capacity exceeded"": 11}"
+margin+energy,6588,2996497,0.0,0.0,0,,0.0145,"{""no release"": 1507, ""hit wall"": 461, ""missed B"": 26, ""grip capacity exceeded"": 5}"
+none_rsi,13852,2486813,0.0,0.0,0,,0.019,"{""no release"": 922, ""slipped off A"": 506, ""hit wall"": 445, ""grip capacity exceeded"": 114}"
+none,6514,2997255,0.0,0.0,0,,0.0185,"{""no release"": 1941, ""missed B"": 33, ""grip capacity exceeded"": 14, ""slipped off A"": 8}"

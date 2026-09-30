@@ -15,3 +15,9 @@ results/cache/
 *.synctex.gz
 .DS_Store
 results/v3/
+results/hades_sync*/
+results/dfl_test/
+results/compliant_local/
+results/dual_field/
+results/dual_field_partial/
+logs/
