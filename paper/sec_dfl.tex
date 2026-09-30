@@ -1,0 +1,59 @@
+% ---------------------------------------------------------------------------------------------------------
+% 提案：双対場学習（Dual Field Learning）
+% ---------------------------------------------------------------------------------------------------------
+\section{提案：双対場学習}
+\label{sec:dfl}
+\subsection{動機：主変数ではなく双対変数を学ぶ}
+世界モデル~\cite{ha2018,hafner2020}は状態遷移 $s'=f(s,a)$（主変数）を学習し，方策はその上で探索する．
+しかし本課題のように成否が硬い物理制約（把持容量・摩擦錐・可動域・壁）で決まる運動では，
+学習に必要なのは「次に何が起こるか」ではなく「ここから先，どの物理法則がどれだけ効いてくるか」である．
+軌道最適化の KKT 条件はまさにこの情報を与える．最適解の随伴状態（costate）$\bm p=\partial V^*/\partial\bm x$ は
+「状態を少し変えたとき到達可能な最良の結果がどれだけ変わるか」，各制約のラグランジュ乗数 $\lambda_k$ は
+「その制約を少し緩めたとき結果がどれだけ改善するか（影の価格）」であり，包絡線定理により
+\begin{equation}
+\frac{\partial V^*}{\partial\bm\theta}=\frac{\partial\mathcal L}{\partial\bm\theta}
+=\frac{\partial\ell}{\partial\bm\theta}+\sum_k\lambda_k\frac{\partial g_k}{\partial\bm\theta}
+\label{eq:envelope}
+\end{equation}
+が身体・装置パラメータ $\bm\theta$（体重，身長，筋力，摩擦係数，周期）に対しても成り立つ．
+本稿はこの\textbf{双対場}（value・costate・価格の場）を学習対象とすることを提案する．
+主変数の学習（方策の模倣，状態遷移モデル）と異なり，双対場は
+(i)~密である（成功／失敗ではなく，全状態で微分可能なスカラーとベクトル），
+(ii)~行動に直接変換できる（Pontryagin の最小原理），
+(iii)~パラメータへの転移則を自ら含む（式~\eqref{eq:envelope}），
+という 3 つの性質をもつ．
+
+\subsection{オラクルによる双対ラベル}
+第~\ref{sec:opt}節の多相軌道最適化を，任意の振り状態 $\bm x_0=(\bm\theta,\dot{\bm\theta})$，時刻 $t_0$，身体 $\bm\theta_b$ から解く
+「残り最適化問題」に拡張した（待機相なし，離手時刻自由）．初期条件 $\bm X_0-\bm x_0=\bm 0$ の乗数から
+costate $\bm p^*(\bm x_0,t_0)=\partial J^*/\partial\bm x_0$ を，時刻パラメータの乗数から $\partial J^*/\partial t_0$ を得る．
+一つの解は，価値 $V^*=J^*$，必要把持容量 $U^*$，最適離手までの残り時間 $\tau^*$，costate $\bm p^*$，
+制約種別ごとの乗数量 $\Lambda_k=\sum|\lambda|$（摩擦錐・可動域・関節速度・壁・捕捉幾何），
+容量エピグラフの相別乗数（$\sum=w_U$）を同時に与える．
+有限差分との比較では $\bm p^*$ は \costateFD\% で一致した．
+参照軌道に沿った状態（15 節点おき）と，可動域・壁の内側で摂動した状態（角度 $\sigma=0.06\ell$\,rad，角速度 $0.4\ell$\,rad/s，
+$\ell\in\{1,2\}$）から，\dflNsolve 個の残り最適化問題を \dflNref 本の参照軌道（$T\in\{16,\dots,19\}$\,s，$m\in\{60,\dots,75\}$\,kg）について解いた．
+
+\subsection{Sobolev 学習と Pontryagin 制御器}
+双対場ネットワーク $V_\vartheta(\bm x,\phi,\bm\theta_b)\to(V,U,\tau)$ を，値と勾配の両方を合わせる Sobolev 損失
+\begin{equation}
+\mathcal L=\bigl\|V_\vartheta-V^*\bigr\|^2+\bigl\|U_\vartheta-U^*\bigr\|^2+\bigl\|\tau_\vartheta-\tau^*\bigr\|^2
++\alpha\bigl\|\nabla_{\bm x}V_\vartheta-\bm p^*\bigr\|^2
+\end{equation}
+で学習する（各項は学習データの分散で正規化，$\alpha=1$；$\alpha=0$ が値のみの消去実験）．
+制御器は\textbf{方策ネットワークを学習しない}．剛体力学は既知（制御アフィン $\ddot{\bm\theta}=\bm c(\bm x,t)+\bm D(\bm x,t)\bm u$，
+手先反力 $\bm R=\bm R_0+\bm R_u\bm u$）なので，各制御周期で Hamiltonian
+\begin{equation}
+H(\bm u)=\frac{w_E}{t_{\mathrm{ref}}}\Bigl(\tfrac14\|\bm u\|^2+\frac{\|\bm R(\bm u)\|^2}{F_{\mathrm{cap}}^2}\Bigr)
++\bm p_{\dot\theta}(\bm x,t)^\top\bigl(\bm c+\bm D\bm u\bigr)
+\end{equation}
+を，トルク上限，摩擦・引っ掛かり錐，容量 $\|\bm R(\bm u)\|\le U_\vartheta F_{\mathrm{cap}}$，可動域の 1 ステップ先読み，
+トルク変化率の制約下で最小化する（4 変数の逐次二次計画，1\,ms 程度）．
+離手は $\tau_\vartheta\le\Delta t/2$ で発火する．すなわち「価値の勾配 $\times$ 既知の力学」から行動が
+点ごとに導かれ，学習されたのは双対場だけである．
+比較対象は同じデータからオラクルのトルクを回帰する行動模倣（BC；離手タイマは共通）である．
+
+\subsection{密な報酬としての価格}
+双対場の副産物として，制約種別ごとの価格 $\bar\Lambda_k$（容量乗数で正規化）は強化学習の
+整形報酬 $r_{\mathrm{dual}}=-\kappa\sum_k\bar\Lambda_k\,\mathrm{viol}_k$ を与える．成功／失敗の疎報酬と異なり，
+どの物理法則をどれだけ破ったかが，オラクルが与える交換比率で毎ステップ返る．

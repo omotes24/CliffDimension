@@ -15,7 +15,8 @@ face, slip on A (grip outside the cone for 30 ms), grip capacity exceeded, hook 
 the ledge whenever the demanded force leaves the friction/hook cone and lose the edge beyond `hook_tol`), body
 through a wall.
 
-Reward (plan Sec. 10.2): -w_U dU_peak - w_E dE - w_time dt per step, +/-100 at the end. Optional shaping:
+Reward: -w_U dU_peak - w_E dE - w_time dt per step (w_U = 10, w_E = 1 as in the optimiser's objective, so that the
+undiscounted return of a successful episode is 100 - J), +/-100 at the end. Optional shaping:
   "margin"  : -w_dist * d_min (closest approach of the hook line to B's tip after the release, at failure)
   "energy"  : potential-based swing-energy term while on A (lets a policy discover pumping)
   "dual"    : Lagrangian penalty  -scale * sum_k lambda_k * violation_k  with the constraint prices lambda_k taken
@@ -48,7 +49,7 @@ class PlanarCliffEnv(gym.Env):
     metadata = {"render_modes": []}
 
     def __init__(self, T=20.0, m=66.0, phi0=None, body_kw=None, control_dt=0.02, sub_dt=0.002, hold_time=2.0,
-                 shaping="none", prices=None, price_scale=10.0, U_target=1.2, U_cap=2.0, w_U=3.0, w_E=3.0, w_time=0.01,
+                 shaping="none", prices=None, price_scale=10.0, U_target=1.2, U_cap=2.0, w_U=10.0, w_E=1.0, w_time=0.0,
                  w_dist=20.0, w_energy=20.0, eps=0.20, K_att=40000.0, D_att=1500.0, hook_tol=0.025,
                  catch_box=(0.03, -0.005, 0.05), seed=0, T_set=None, m_set=None, body_set=None, joint_stop_k=15.0,
                  stop_damp=0.01, ramp_att=0.01, obs_body=True, cache_dir=None):

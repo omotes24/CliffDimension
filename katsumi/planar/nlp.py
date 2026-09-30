@@ -244,7 +244,8 @@ class PlanarNLP:
             xm = 0.5 * (X[:, k] + X[:, k + 1]) + dt / 8 * (F[k] - F[k + 1])
             fm = ca.vertcat(xm[na:], Am[:, k])
             self._con(residual(tm, xm, Am[:, k], Um[:, k], Rm[:, k]) == 0, "dyn")
-            self._con(X[:, k + 1] - X[:, k] - dt / 6 * (F[k] + 4 * fm + F[k + 1]) == 0, "dyn")
+            dk = self._con(X[:, k + 1] - X[:, k] - dt / 6 * (F[k] + 4 * fm + F[k + 1]) == 0, "dyn")
+            self.defects.setdefault(name, []).append(dk)          # multipliers ~ costate along the phase
             em = effort(tm, xm, Am[:, k], Um[:, k], Rm[:, k])
             eff += dt / 6 * (E[k] + 4 * em + E[k + 1])
             path(tm, xm, Am[:, k], Um[:, k], Rm[:, k], False)
@@ -270,6 +271,7 @@ class PlanarNLP:
         opti = ca.Opti()
         self.opti = opti
         self.vars = {}
+        self.defects = {}
         self.cons = []
         self.cap_cons = []
         self.effort_terms = []
@@ -776,6 +778,13 @@ class PlanarNLP:
         g = sol.value(ca.jacobian(L, self.par_t0))
         rep["dJ_dt0"] = float(np.array(g).ravel()[0])
         rep["J"] = float(sol.value(opti.f))
+        # multipliers of the state-continuity defects: -nu_k approximates the costate p(t_k) along each phase
+        rep["defect_mult"] = {}
+        for name, cons in self.defects.items():
+            try:
+                rep["defect_mult"][name] = np.stack([np.array(sol.value(opti.dual(c))).ravel() for c in cons], 1)
+            except Exception:
+                pass
         return rep
 
     def _compliant_loads(self, v, sfx=""):
