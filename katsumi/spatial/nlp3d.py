@@ -487,11 +487,14 @@ class SpatialNLP:
         chp = PlanarChain(body_planar)
         b = self.body
 
-        def map_state(q_p, psi):
-            P = chp.points(q_p)                          # 2 x 6: hand, elbow, shoulder, hip, knee, ankle
+        def map_state(q_p, psi, s_twist=None):
+            P = chp.points(q_p)                          # 2 x 6: hand, elbow, shoulder, hip, knee, ansi
             th = q_p[2:]
             S0 = np.array([P[0, 2], 0.0, P[1, 2]])
-            theta = th[2] if np.cos(psi) < 0 else -th[2]
+            if s_twist is None:
+                theta = th[2] if np.cos(psi) < 0 else -th[2]
+            else:                                        # continuous pitch guess while the yaw turns (flight)
+                theta = th[2] * np.cos(np.pi * s_twist)
             Rtr = np.array(ca.DM(ca.vertcat(ca.horzcat(np.cos(psi), -np.sin(psi), 0), ca.horzcat(np.sin(psi), np.cos(psi), 0), ca.horzcat(0, 0, 1))))
             Rtr = Rtr @ np.array([[np.cos(theta), 0, np.sin(theta)], [0, 1, 0], [-np.sin(theta), 0, np.cos(theta)]])
             d_ua = np.array([-np.sin(th[1]), 0.0, np.cos(th[1])])       # shoulder -> elbow
@@ -512,13 +515,15 @@ class SpatialNLP:
             q[6:9] = [alpha, 0.0, gamma]; q[9:12] = [alpha, 0.0, gamma]; q[12] = chi; q[13] = kappa
             return q
 
-        def phase_guess(Xp, dur, psi_fun, hand_of_t):
+        def phase_guess(Xp, dur, psi_fun, hand_of_t, twist=False):
             """Xp: planar state columns (q_p or (th, thd) with hand from device); returns X (28 x N+1)."""
             N = Xp.shape[1] - 1
             Q = np.zeros((NQ, N + 1))
             for k in range(N + 1):
-                Q[:, k] = map_state(hand_of_t(k), psi_fun(k / N))
+                Q[:, k] = map_state(hand_of_t(k), psi_fun(k / N), (k / N) if twist else None)
             Qd = np.gradient(Q, dur / N, axis=1) if N > 0 else np.zeros_like(Q)
+            Qd[6:] = np.clip(Qd[6:], -0.8 * b.qd_max, 0.8 * b.qd_max)
+            Qd[3:6] = np.clip(Qd[3:6], -0.8 * p.trunk_rate_max, 0.8 * p.trunk_rate_max)
             return np.vstack([Q, Qd])
 
         eps = sol["params"]["eps"]
@@ -530,6 +535,7 @@ class SpatialNLP:
             return np.concatenate([dv["pA"], XSp[:NTH, k]])
         XS = phase_guess(XSp, d_s, lambda s: np.pi, handS)
         XS = self._resample(XS, p.N_S + 1)
+        XS[NQ:, 0] = 0.0                                             # starts at rest
         opti.set_initial(self.vars["S_X"], XS)
         opti.set_initial(self.vars["S_U"], self._resample(np.vstack([sol["S_U"][1], sol["S_U"][1] * 0, sol["S_U"][0],
                                                                        sol["S_U"][1], sol["S_U"][1] * 0, sol["S_U"][0],
@@ -541,7 +547,8 @@ class SpatialNLP:
         # flight: twist from pi to pi + twist_dir * pi
         XFp = sol["F_X"]; d_f = sol["d_f"]; NFp = XFp.shape[1] - 1
         psi_end = np.pi + twist_dir * np.pi
-        XF = phase_guess(XFp, d_f, lambda s: np.pi + twist_dir * np.pi * s, lambda k: XFp[:, k][:7])
+        smooth = lambda s: 3 * s ** 2 - 2 * s ** 3                    # zero yaw rate at release and catch
+        XF = phase_guess(XFp, d_f, lambda s: np.pi + twist_dir * np.pi * smooth(s), lambda k: XFp[:, k][:7], twist=True)
         XF = self._resample(XF, p.N_F + 1)
         opti.set_initial(self.vars["F_X"], XF)
         opti.set_initial(self.vars["F_U"], 0.0)

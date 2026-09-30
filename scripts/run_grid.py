@@ -106,8 +106,16 @@ def worker(args):
                 body = make_body(m, **dict(params_kw).get("body_kw", {}))
             else:
                 p0 = prev
-                if init_grid:   # warm start from a saved solution of the same condition (e.g. the nominal grid)
+                if init_grid:   # warm start from a saved solution of the same condition (or the nearest mass)
                     cands = [f for f in os.listdir(init_grid) if f.endswith(f"_T{T:g}_m{m:g}_phi{phi_l:.3f}.pkl")]
+                    if not cands:
+                        import re as _re
+                        pool_ = []
+                        for f in os.listdir(init_grid):
+                            mm = _re.search(rf"_T{T:g}_m([0-9.]+)_phi{phi_l:.3f}\.pkl$", f)
+                            if mm:
+                                pool_.append((abs(float(mm.group(1)) - m), f))
+                        cands = [sorted(pool_)[0][1]] if pool_ else []
                     if cands:
                         p0 = pickle.load(open(os.path.join(init_grid, sorted(cands)[0]), "rb"))
                 r, body = solve_case(T, m, phi_l, p0, dict(params_kw), tag, outdir)
