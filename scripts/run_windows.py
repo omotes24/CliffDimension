@@ -24,8 +24,10 @@ def analyse(pkl, deltas, modes=("plan", "hang")):
     out = dict(T=r["T"], m=r["m"], phi_l=r["phi_l"], U_star=r["U_peak"], file=os.path.basename(pkl))
     for mode in modes:
         win = release_window(body, r, deltas=deltas, cap_margins=MARGINS, hold_mode=mode)
-        caught = [d for d, v in win.items() if v["caught"]]
-        out[f"{mode}_catch_window_s"] = (max(caught) - min(caught) + (deltas[1] - deltas[0])) if caught else 0.0
+        caught = sorted(d for d, v in win.items() if v["caught"])
+        step = float(np.min(np.diff(deltas))) if len(deltas) > 1 else 0.0
+        out[f"{mode}_catch_window_s"] = (caught[-1] - caught[0] + step) if caught else 0.0
+        out[f"{mode}_n_caught"] = len(caught)
         out[f"{mode}_catch_deltas"] = caught
         for c in MARGINS:
             out[f"{mode}_W_{c}"] = window_width(win, c)
@@ -49,7 +51,10 @@ def main():
     ap.add_argument("--tag", default="ref")
     ap.add_argument("--out", default="results/windows")
     ap.add_argument("--best-only", action="store_true", help="only the minimum-U* phase of each (T, m)")
-    ap.add_argument("--fine", type=float, default=0.03, help="half-width of the fine (5 ms) region around 0")
+    ap.add_argument("--fine", type=float, default=0.03, help="half-width of the fine region around 0 [s]")
+    ap.add_argument("--dt-fine", type=float, default=0.005, help="step inside the fine region [s]")
+    ap.add_argument("--coarse", type=float, default=0.20, help="half-width of the coarse (10 ms) region [s]")
+    ap.add_argument("--suffix", default="", help="suffix for the output file names (e.g. _fine)")
     ap.add_argument("--workers", type=int, default=1)
     ap.add_argument("--resume", action="store_true", help="keep rows already in the output JSON")
     a = ap.parse_args()
@@ -62,9 +67,10 @@ def main():
     if a.best_only:
         idx = df.groupby(["T", "m"])["U_peak"].idxmin()
         df = df.loc[idx]
-    deltas = np.unique(np.round(np.concatenate([np.arange(-0.20, 0.2001, 0.01), np.arange(-a.fine, a.fine + 1e-9, 0.005)]), 3))
+    deltas = np.unique(np.round(np.concatenate([np.arange(-a.coarse, a.coarse + 1e-9, 0.01),
+                                                np.arange(-a.fine, a.fine + 1e-9, a.dt_fine)]), 4))
     rows = []
-    jpath = os.path.join(a.out, f"windows_{a.tag}.json")
+    jpath = os.path.join(a.out, f"windows_{a.tag}{a.suffix}.json")
     if a.resume and os.path.exists(jpath):
         rows = json.load(open(jpath))
     done = {(w["T"], w["m"], round(w["phi_l"], 4)) for w in rows}
@@ -91,7 +97,7 @@ def main():
     rows.sort(key=lambda w: (w["T"], w["m"]))
     json.dump(rows, open(jpath, "w"), indent=1, default=float)
     summ = pd.DataFrame([{k: v for k, v in r.items() if not k.endswith("detail") and not k.endswith("deltas")} for r in rows])
-    summ.to_csv(os.path.join(a.out, f"windows_{a.tag}.csv"), index=False)
+    summ.to_csv(os.path.join(a.out, f"windows_{a.tag}{a.suffix}.csv"), index=False)
     print(summ)
 
 

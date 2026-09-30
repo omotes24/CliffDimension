@@ -356,11 +356,16 @@ def window_width(win: dict, margin: float, deltas=None):
     ok = [win[d]["success"][margin] for d in ds]
     if not any(ok):
         return 0.0
-    # longest connected run
-    best = 0
-    run = 0
-    for o in ok:
-        run = run + 1 if o else 0
-        best = max(best, run)
-    step = ds[1] - ds[0] if len(ds) > 1 else 0.01
-    return best * step
+    # longest connected run (measured in time, so a non-uniform delta grid is handled correctly)
+    best = 0.0
+    start = None
+    for i, o in enumerate(ok):
+        if o and start is None:
+            start = i
+        if (not o or i == len(ok) - 1) and start is not None:
+            end = i if o else i - 1
+            step_l = (ds[start] - ds[start - 1]) if start > 0 else (ds[1] - ds[0] if len(ds) > 1 else 0.01)
+            step_r = (ds[end + 1] - ds[end]) if end + 1 < len(ds) else step_l
+            best = max(best, ds[end] - ds[start] + 0.5 * (step_l + step_r))
+            start = None
+    return best
