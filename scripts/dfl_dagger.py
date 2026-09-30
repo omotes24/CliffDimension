@@ -15,13 +15,29 @@ import torch
 from katsumi.planar.env import PlanarCliffEnv
 from katsumi.planar.model import NTH
 from katsumi.learn.dual_field import DualFieldNet, PontryaginController, make_features
+from katsumi.learn.swing_mpc import SwingMPC
 from katsumi.learn.reflex import LandingReflex, ReflexEnv
 
 
-def load_field(path):
+def load_ensemble(path):
     ck = torch.load(path, weights_only=False)
-    net = DualFieldNet(ck["mu"].numpy(), ck["sd"].numpy(), ck["y_mu"].numpy(), ck["y_sd"].numpy())
-    net.load_state_dict(ck["dfl"]); net.eval()
+    sds = ck.get("ens") or [ck["dfl"]]
+    nets = []
+    for sd in sds:
+        lin = [k for k in sd if k.endswith(".weight")]
+        width = sd[lin[0]].shape[0]; depth = len(lin) - 1
+        n_ = DualFieldNet(ck["mu"].numpy(), ck["sd"].numpy(), ck["y_mu"].numpy(), ck["y_sd"].numpy(), width=width, depth=depth)
+        n_.load_state_dict(sd); n_.eval(); nets.append(n_)
+    return nets
+
+
+def load_field(path, key="dfl"):
+    ck = torch.load(path, weights_only=False)
+    sd = ck[key]
+    lin = [k for k in sd if k.endswith(".weight")]
+    width = sd[lin[0]].shape[0]; depth = len(lin) - 1
+    net = DualFieldNet(ck["mu"].numpy(), ck["sd"].numpy(), ck["y_mu"].numpy(), ck["y_sd"].numpy(), width=width, depth=depth)
+    net.load_state_dict(sd); net.eval()
     return net
 
 
@@ -35,9 +51,11 @@ def main():
     ap.add_argument("--noise", type=float, default=0.0, help="exploration noise on the torques")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--max-states", type=int, default=400)
+    ap.add_argument("--H", type=int, default=25)
+    ap.add_argument("--beta", type=float, default=2.0)
     a = ap.parse_args()
     rng = np.random.default_rng(a.seed)
-    net = load_field(a.models)
+    nets = load_ensemble(a.models)
     refs = [f for f in sorted(glob.glob(a.refs)) if pickle.load(open(f, "rb")).get("ok")]
     reflex = LandingReflex([pickle.load(open(f, "rb")) for f in refs])
     jobs = []
@@ -49,7 +67,7 @@ def main():
         T, m = r["T"], r["m"]
         body_kw = r.get("body_kw", {}) or {}
         env = ReflexEnv(PlanarCliffEnv(T=T, m=m, body_kw=body_kw), reflex)
-        ctrl = PontryaginController(net, env.env.body, env.env.ch, T, stature=body_kw.get("stature", 1.75), cap_scale=body_kw.get("cap_scale", 1.0))
+        ctrl = SwingMPC(nets, env.env.body, env.env.ch, T, H=a.H, stature=body_kw.get("stature", 1.75), cap_scale=body_kw.get("cap_scale", 1.0), beta=a.beta)
         N = r["S_X"].shape[1] - 1
         tS = r["t_s0"] + np.linspace(0, r["d_s"], N + 1)
         rem_ref = r["d_s"] - (tS - r["t_s0"])

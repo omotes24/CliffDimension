@@ -18,7 +18,7 @@ from katsumi.planar.env import PlanarCliffEnv
 from katsumi.planar.anthro import make_body
 from katsumi.planar.model import PlanarChain, NTH
 from katsumi.learn.dual_field import (load_rows, load_dataset, train_dual_field, train_bc, r2, PontryaginController, BCController, run_episode,
-                                      make_features)
+                                      make_features, DualFieldNet, BCNet)
 from katsumi.learn.reflex import LandingReflex, ReflexEnv
 from katsumi.learn.swing_mpc import SwingMPC
 
@@ -50,49 +50,77 @@ def report_fit(net, bc, F, Y, idx, name):
     return out
 
 
-def eval_controllers(nets, refs, d, out_dir, episodes_per_ref=6, seed=0, control_dt=0.02, holdout_m=None, controller="mpc", H_mpc=25):
+def _load_models(path):
+    ck = torch.load(path, weights_only=False)
+
+    def mk(sd):
+        lin = [k for k in sd if k.endswith(".weight")]
+        n_ = DualFieldNet(ck["mu"].numpy(), ck["sd"].numpy(), ck["y_mu"].numpy(), ck["y_sd"].numpy(), width=sd[lin[0]].shape[0], depth=len(lin) - 1)
+        n_.load_state_dict(sd); n_.eval(); return n_
+    ens = [mk(sd) for sd in (ck.get("ens") or [ck["dfl"]])]
+    net0 = mk(ck["dfl0"])
+    lin = [k for k in ck["bc"] if k.endswith(".weight")]
+    bc = BCNet(ck["mu"].numpy(), ck["sd"].numpy(), width=ck["bc"][lin[0]].shape[0], depth=len(lin) - 1); bc.load_state_dict(ck["bc"]); bc.eval()
+    return ens, net0, bc
+
+
+def eval_task(args):
+    """One (reference, start, controller) episode; models are loaded from disk in the worker."""
+    f, st, kind, name, models_path, refs, control_dt, controller, H_mpc, beta, holdout_m = args
+    torch.set_num_threads(1)
+    ens, net0, bc = _load_models(models_path)
+    r = pickle.load(open(f, "rb"))
+    T, m = r["T"], r["m"]
+    body_kw = r.get("body_kw", {}) or {}
+    reflex = LandingReflex([pickle.load(open(g, "rb")) for g in refs])
+    env = ReflexEnv(PlanarCliffEnv(T=T, m=m, body_kw=body_kw, control_dt=control_dt), reflex)
+    body, chain = env.env.body, env.env.ch
+    st_, cs_ = body_kw.get("stature", 1.75), body_kw.get("cap_scale", 1.0)
+    if name == "BC":
+        c = BCController(bc, ens[0], body, T, control_dt=control_dt, stature=st_, cap_scale=cs_)
+    else:
+        net = ens if name == "DFL" else net0
+        if controller == "mpc":
+            c = SwingMPC(net, body, chain, T, H=H_mpc, control_dt=control_dt, stature=st_, cap_scale=cs_, beta=beta)
+        else:
+            c = PontryaginController(net[0] if isinstance(net, list) else net, body, chain, T, control_dt=control_dt, stature=st_, cap_scale=cs_)
+    t1 = time.time()
+    res = run_episode(env, c, dict(st))
+    rel_err = (res["release_time"] + (st["t0"] - r["t_s0"]) - r["d_s"]) if res.get("release_time") is not None else None
+    row = dict(ref=os.path.basename(f), T=T, m=m, group="holdout" if m == holdout_m else "train", start=kind, ctrl=name,
+               success=int(res["success"]), reason=res["reason"], U_peak=res["U_peak"], U_swing=res["U_swing"], U_star=r["U_peak"],
+               release_err=rel_err, t=res["t"], wall_s=round(time.time() - t1, 1), mpc_fail=getattr(c, "n_fail", 0))
+    print(f"[{os.path.basename(f)[8:-4]} {kind:14s} {name:10s}] {res['reason']:26s} U={res['U_peak']:.3f} (U*={r['U_peak']:.3f}) "
+          f"rel_err={rel_err if rel_err is None else round(rel_err, 3)} t={res['t']:.2f} {time.time() - t1:.0f}s", flush=True)
+    return row
+
+
+def eval_controllers(models_path, refs, out_dir, episodes_per_ref=6, seed=0, control_dt=0.02, holdout_m=None, controller="mpc", H_mpc=25,
+                     beta=2.0, workers=8, ctrl_names=("DFL", "DFL-noSob", "BC")):
     rng = np.random.default_rng(seed)
-    rows = []
-    reflex = LandingReflex([pickle.load(open(f, "rb")) for f in refs])
+    tasks = []
     for f in refs:
         r = pickle.load(open(f, "rb"))
         if not r.get("ok") or r["U_peak"] > 2.5:
             continue
-        T, m = r["T"], r["m"]
-        body_kw = r.get("body_kw", {}) or {}
-        env = ReflexEnv(PlanarCliffEnv(T=T, m=m, body_kw=body_kw, control_dt=control_dt), reflex)
-        body, chain = env.env.body, env.env.ch
         N = r["S_X"].shape[1] - 1
         tS = r["t_s0"] + np.linspace(0, r["d_s"], N + 1)
-        starts = [dict(t0=r["t_s0"], state=(np.zeros(NTH), np.zeros(NTH)), kind="rest")]
+        starts = [(dict(t0=r["t_s0"], state=(np.zeros(NTH), np.zeros(NTH))), "rest")]
         for j in range(episodes_per_ref - 1):
             k = int(rng.integers(int(0.1 * N), int(0.8 * N)))
             x = r["S_X"][:, k] + np.concatenate([rng.normal(0, 0.03, NTH), rng.normal(0, 0.2, NTH)])
-            starts.append(dict(t0=float(tS[k]), state=(x[:NTH], x[NTH:]), kind=f"perturbed_k{k}"))
-        ctrls = {}
-        for name, (net, bc) in nets.items():
-            st_, cs_ = body_kw.get("stature", 1.75), body_kw.get("cap_scale", 1.0)
-            if bc is None:
-                if controller == "mpc":
-                    ctrls[name] = SwingMPC(net, body, chain, T, H=H_mpc, control_dt=control_dt, stature=st_, cap_scale=cs_)
-                else:
-                    ctrls[name] = PontryaginController(net, body, chain, T, control_dt=control_dt, stature=st_, cap_scale=cs_)
-            else:
-                ctrls[name] = BCController(bc, net, body, T, control_dt=control_dt, stature=st_, cap_scale=cs_)
-        for st in starts:
-            kind = st.pop("kind")
-            for name, c in ctrls.items():
-                t1 = time.time()
-                res = run_episode(env, c, dict(st))
-                rel_err = (res["release_time"] + (st["t0"] - r["t_s0"]) - r["d_s"]) if res.get("release_time") is not None else None
-                rows.append(dict(ref=os.path.basename(f), T=T, m=m, group="holdout" if m == holdout_m else "train", start=kind, ctrl=name,
-                                 success=int(res["success"]), reason=res["reason"], U_peak=res["U_peak"], U_swing=res["U_swing"],
-                                 U_star=r["U_peak"], release_err=rel_err, t=res["t"], wall_s=round(time.time() - t1, 1)))
-                print(f"[{os.path.basename(f)[8:-4]} {kind:14s} {name:10s}] {res['reason']:26s} U={res['U_peak']:.3f} (U*={r['U_peak']:.3f}) "
-                      f"rel_err={rel_err if rel_err is None else round(rel_err, 3)} {time.time() - t1:.1f}s", flush=True)
-            st["kind"] = kind
-        import pandas as pd
-        pd.DataFrame(rows).to_csv(os.path.join(out_dir, "episodes.csv"), index=False)
+            starts.append((dict(t0=float(tS[k]), state=(x[:NTH], x[NTH:])), f"perturbed_k{k}"))
+        for st, kind in starts:
+            for name in ctrl_names:
+                tasks.append((f, st, kind, name, models_path, refs, control_dt, controller, H_mpc, beta, holdout_m))
+    import multiprocessing as mp
+    rows = []
+    ctx = mp.get_context("forkserver")
+    with ctx.Pool(workers) as pool:
+        for row in pool.imap_unordered(eval_task, tasks):
+            rows.append(row)
+            import pandas as pd
+            pd.DataFrame(rows).to_csv(os.path.join(out_dir, "episodes.csv"), index=False)
     return rows
 
 
@@ -108,6 +136,11 @@ def main():
     ap.add_argument("--lr", type=float, default=2e-3)
     ap.add_argument("--controller", default="mpc", choices=["mpc", "pmp"], help="dual-field controller for the closed loop")
     ap.add_argument("--H", type=int, default=25, help="MPC horizon (control periods)")
+    ap.add_argument("--ensemble", type=int, default=4, help="number of Sobolev fields (terminal value = mean + beta std)")
+    ap.add_argument("--beta", type=float, default=2.0)
+    ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--ctrls", default="DFL,BC", help="controllers to evaluate (DFL, DFL-noSob, BC)")
+    ap.add_argument("--eval-only", default=None, help="models.pt to evaluate (skip training)")
     ap.add_argument("--episodes", type=int, default=6, help="episodes per reference solution (1 rest start + perturbed starts)")
     ap.add_argument("--eval-refs", default=None, help="glob of references used for the closed-loop evaluation (default: all)")
     ap.add_argument("--seed", type=int, default=0)
@@ -115,15 +148,29 @@ def main():
     ap.add_argument("--no-dense", action="store_true", help="point labels only (no trajectory labels from the defect multipliers)")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
+    if a.eval_only:
+        refs = sorted(glob.glob(a.eval_refs or a.refs))
+        rows = eval_controllers(a.eval_only, refs, a.out, episodes_per_ref=a.episodes, seed=a.seed, holdout_m=a.holdout_m,
+                                controller=a.controller, H_mpc=a.H, beta=a.beta, workers=a.workers, ctrl_names=tuple(a.ctrls.split(",")))
+        import pandas as pd
+        df = pd.DataFrame(rows)
+        summ = df.groupby(["group", "ctrl"]).agg(n=("success", "size"), success=("success", "mean"), U_peak=("U_peak", "median"),
+                                                U_star=("U_star", "median")).reset_index()
+        print(summ.to_string(index=False)); summ.to_csv(os.path.join(a.out, "summary.csv"), index=False)
+        return
     d, F, Y = load_dataset(a.data, dense=not a.no_dense)
     tr, va, te = split(d, a.holdout_m, a.seed)
     print(f"rows: train {len(tr)} val {len(va)} holdout(m={a.holdout_m:g}) {len(te)}  (dense rows: {int(d['dense'].sum())})", flush=True)
     t0 = time.time()
-    kw = dict(epochs=a.epochs, seed=a.seed, log_every=1000, width=a.width, depth=a.depth, lr=a.lr)
-    net, h1 = train_dual_field(F, Y, tr, va, alpha=1.0, **kw)
-    print(f"DFL trained {time.time() - t0:.0f}s", flush=True)
-    net0, h2 = train_dual_field(F, Y, tr, va, alpha=0.0, **kw)
-    bc, h3 = train_bc(F, Y, tr, va, **kw)
+    kw = dict(epochs=a.epochs, log_every=1000, width=a.width, depth=a.depth, lr=a.lr)
+    ens = []
+    for j in range(a.ensemble):
+        n_, h1 = train_dual_field(F, Y, tr, va, alpha=1.0, seed=a.seed + j, **kw)
+        ens.append(n_)
+        print(f"DFL member {j} trained {time.time() - t0:.0f}s", flush=True)
+    net = ens[0]
+    net0, h2 = train_dual_field(F, Y, tr, va, alpha=0.0, seed=a.seed, **kw)
+    bc, h3 = train_bc(F, Y, tr, va, seed=a.seed, **kw)
     fits = []
     for name, idx in (("train", tr), ("val", va), ("holdout", te)):
         if len(idx) == 0:
@@ -134,13 +181,13 @@ def main():
         print(json.dumps(f1), "\n", json.dumps(f0), flush=True)
     json.dump(dict(fits=fits, hist_sobolev=h1, hist_value=h2, hist_bc=h3, n=dict(train=len(tr), val=len(va), holdout=len(te))),
               open(os.path.join(a.out, "fit.json"), "w"), indent=1)
-    torch.save(dict(dfl=net.state_dict(), dfl0=net0.state_dict(), bc=bc.state_dict(), mu=net.mu, sd=net.sd, y_mu=net.y_mu, y_sd=net.y_sd),
-               os.path.join(a.out, "models.pt"))
+    torch.save(dict(dfl=net.state_dict(), dfl0=net0.state_dict(), bc=bc.state_dict(), mu=net.mu, sd=net.sd, y_mu=net.y_mu, y_sd=net.y_sd,
+                    ens=[n_.state_dict() for n_ in ens]), os.path.join(a.out, "models.pt"))
     if a.no_eval:
         return
     refs = sorted(glob.glob(a.eval_refs or a.refs))
-    nets = {"DFL": (net, None), "DFL-noSob": (net0, None), "BC": (net, bc)}
-    rows = eval_controllers(nets, refs, d, a.out, episodes_per_ref=a.episodes, seed=a.seed, holdout_m=a.holdout_m, controller=a.controller, H_mpc=a.H)
+    rows = eval_controllers(os.path.join(a.out, "models.pt"), refs, a.out, episodes_per_ref=a.episodes, seed=a.seed, holdout_m=a.holdout_m,
+                            controller=a.controller, H_mpc=a.H, beta=a.beta, workers=a.workers, ctrl_names=tuple(a.ctrls.split(",")))
     import pandas as pd
     df = pd.DataFrame(rows)
     summ = df.groupby(["group", "ctrl"]).agg(n=("success", "size"), success=("success", "mean"), U_peak=("U_peak", "median"),

@@ -43,8 +43,13 @@ def mlp_casadi(net, z):
 class SwingMPC:
     def __init__(self, net, body, chain, T, H=25, control_dt=0.02, eps=0.20, w_E=1.0, t_ref=1.0, u_rate=10.0, U_margin=1.0,
                  stature=1.75, cap_scale=1.0, release_slack=0.5, wall_smooth=0.01, w_smooth=1e-3, max_iter=80, verbose=False,
-                 terminal_weight=1.0):
-        self.net, self.body, self.ch, self.T = net, body, chain, float(T)
+                 terminal_weight=1.0, beta=2.0):
+        """net: a DualFieldNet or a list of them (ensemble: terminal value = mean + beta * std, pessimistic where the
+        members disagree, i.e. away from the oracle data)."""
+        self.nets = list(net) if isinstance(net, (list, tuple)) else [net]
+        self.net = self.nets[0]
+        self.beta = beta
+        self.body, self.ch, self.T = body, chain, float(T)
         self.H, self.dt, self.eps = H, control_dt, eps
         self.w_E, self.t_ref, self.u_rate, self.U_margin = w_E, t_ref, u_rate, U_margin
         self.stature, self.cap_scale, self.release_slack = stature, cap_scale, release_slack
@@ -123,8 +128,17 @@ class SwingMPC:
         tH = t0 + H * dt
         ph = ca.fmod(tH, T) / T
         zf = ca.vertcat(X[:, H], ca.sin(2 * np.pi * ph), ca.cos(2 * np.pi * ph), ca.DM(body_feats(T, b.m, self.stature, self.cap_scale)))
-        mu = ca.DM(self.net.mu.numpy().astype(float)); sd = ca.DM(self.net.sd.numpy().astype(float))
-        VH, UH, tauH = mlp_casadi(self.net, (zf - mu) / sd)
+        Vs = []
+        for n_ in self.nets:
+            mu = ca.DM(n_.mu.numpy().astype(float)); sd = ca.DM(n_.sd.numpy().astype(float))
+            V_, _, _ = mlp_casadi(n_, (zf - mu) / sd)
+            Vs.append(V_)
+        Vmean = sum(Vs) / len(Vs)
+        if len(Vs) > 1:
+            Vvar = sum((V_ - Vmean) ** 2 for V_ in Vs) / len(Vs)
+            VH = Vmean + self.beta * ca.sqrt(Vvar + 1e-6)
+        else:
+            VH = Vmean
         J += self.terminal_weight * VH
         self.VH_expr = VH
         opti.minimize(J)
@@ -147,8 +161,9 @@ class SwingMPC:
     def field(self, x, t):
         z = torch.tensor(make_features(x, t, self.T, self.body.m, self.stature, self.cap_scale), dtype=torch.float32)
         with torch.no_grad():
-            V, U, tau = self.net(z)
-        return float(V[0]), float(U[0]), float(tau[0])
+            outs = [n_(z) for n_ in self.nets]
+        V = np.mean([float(o[0][0]) for o in outs]); U = np.mean([float(o[1][0]) for o in outs]); tau = np.mean([float(o[2][0]) for o in outs])
+        return V, U, tau
 
     def _guess(self, x, t):
         """Initial guess: shift the previous solution or hold the state (static accelerations from the dynamics)."""
