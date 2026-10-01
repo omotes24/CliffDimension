@@ -212,10 +212,11 @@ def solve_variant(ref, overrides=None, body_kw=None, fn=None, max_cpu=1800.0, ma
 
 
 def solve_from_state(ref, x0, t0, u0=None, u0_dt=0.002, overrides=None, warm_k=None, fn=None, max_cpu=600.0, max_iter=2000,
-                     tol=1e-4, N_min=30, verbose=False):
+                     tol=1e-4, N_min=30, verbose=False, acceptable_tol=1e-3, warm=None):
     """Remaining-problem (cost-to-go) solve from the swing state x0 at absolute time t0 (free release time, no wait),
-    warm-started from the tail of the reference from knot warm_k (nearest knot when None). Returns the solution with
-    duals (costate dJ*/dx0, dJ*/dt0, multiplier categories)."""
+    warm-started from the tail of the reference from knot warm_k (nearest knot when None), or from `warm` (a from-state
+    solution on the same mesh, e.g. the base solve of a finite-difference pair). Returns the solution with duals
+    (costate dJ*/dx0, dJ*/dt0, multiplier categories)."""
     if fn and os.path.exists(fn):
         return pickle.load(open(fn, "rb"))
     r = ref
@@ -227,22 +228,26 @@ def solve_from_state(ref, x0, t0, u0=None, u0_dt=0.002, overrides=None, warm_k=N
     rem = max(r["d_s"] - (tS[warm_k] - r["t_s0"]), 0.3)
     kw = ref_params(r, drop=("fixed_release_phase", "wait_in_cost", "from_state", "x0", "N_S", "d_s_bounds", "u0", "u0_dt", "cone_abs"))
     kw.update(overrides or {})
-    N_S = int(np.clip(round(N * rem / r["d_s"]) + 10, N_min, 180))
+    N_S = int(np.clip(round(N * rem / r["d_s"]) + 10, N_min, 180)) if warm is None else warm["S_X"].shape[1] - 1
     p = ReducedParams(fixed_release_phase=None, wait_in_cost=False, from_state=True, x0=tuple(np.asarray(x0, float)), N_S=N_S,
                       d_s_bounds=(0.02, T), u0=(None if u0 is None else tuple(np.asarray(u0, float))), u0_dt=u0_dt, **kw)
     body_kw = r.get("body_kw", {}) or {}
     nlp = PlanarNLP(make_body(m, **body_kw), T, t0 / T, p)
-    prev = dict(r)
-    for key in ("S_X", "S_A", "S_U", "S_R", "S_Am", "S_Um", "S_Rm"):
-        if key in r:
-            prev[key] = r[key][:, warm_k:]
-    prev["d_s"] = rem; prev["d_w"] = 0.0
+    if warm is not None:
+        prev = dict(warm); prev["d_w"] = 0.0
+    else:
+        prev = dict(r)
+        for key in ("S_X", "S_A", "S_U", "S_R", "S_Am", "S_Um", "S_Rm"):
+            if key in r:
+                prev[key] = r[key][:, warm_k:]
+        prev["d_s"] = rem; prev["d_w"] = 0.0
     try:
         nlp.set_initial(prev=prev)
     except Exception:
         nlp.set_initial(d_w=0.0, d_s=rem)
     t1 = time.time()
-    out = nlp.solve(print_level=5 if verbose else 0, max_iter=max_iter, tol=tol, max_cpu_time=max_cpu, sensitivities=True)
+    out = nlp.solve(print_level=5 if verbose else 0, max_iter=max_iter, tol=tol, max_cpu_time=max_cpu, sensitivities=True,
+                    acceptable_tol=acceptable_tol)
     out["solve_s"] = time.time() - t1; out["t0_abs"] = float(t0); out["x0"] = np.asarray(x0, float).tolist(); out["u0"] = None if u0 is None else list(u0)
     out["body_kw"] = body_kw; out["overrides"] = dict(overrides or {})
     for key in list(out.keys()):

@@ -98,7 +98,9 @@ class ReducedParams:
     u0_dt: float = 0.02
     # ---- plan-side margins / variants (experiment suite) ------------------------------------------
     wall_margin: float = 0.0          # extra clearance of every body point to both walls [m]
-    joint_margin: float = 0.0         # joint ranges shrunk by this much at both ends [rad]
+    joint_margin: float = 0.0         # joint ranges shrunk by this much [rad] (closed-loop margin) ...
+    joint_margin_lo_mask: tuple = (0.0, 1.0, 1.0, 0.0)   # ... except at the straight-limb stops of elbow and knee (rel = 0),
+                                                         # which the hanging body rests on (rest start, hold)
     mu_scale: float = 1.0             # friction / hook coefficients scaled (cone shrink: < 1)
     cap_relax: tuple = ()             # e.g. (("H", 1.1),): phase capacity constraints relaxed to U <= factor * U_peak
     tau_scale: tuple = (1.0, 1.0, 1.0, 1.0)   # per-joint torque capacity scaling (elbow, shoulder, hip, knee)
@@ -156,7 +158,7 @@ class PlanarNLP:
         return dict(self.p.cap_relax).get(phase, 1.0)
 
     def _rel_bounds(self, facing):
-        lo = np.array(self.p.rel_lo_face_neg) + self.p.joint_margin
+        lo = np.array(self.p.rel_lo_face_neg) + self.p.joint_margin * np.array(self.p.joint_margin_lo_mask)
         hi = np.array(self.p.rel_hi_face_neg) - self.p.joint_margin
         if facing == "neg":
             return lo, hi
@@ -737,9 +739,11 @@ class PlanarNLP:
         opti.set_initial(self.U_peak, prev["U_peak"])
 
     # ------------------------------------------------------------------ solve ----------
-    def solve(self, max_iter=3000, print_level=0, tol=1e-5, max_cpu_time=1200.0, sensitivities=False):
+    def solve(self, max_iter=3000, print_level=0, tol=1e-5, max_cpu_time=1200.0, sensitivities=False, acceptable_tol=1e-3):
+        """acceptable_tol: IPOPT stops early at this level after 10 acceptable iterations (1e-3 by default); the
+        finite-difference checks of the multipliers pass a tight value so that re-solves are not cut short."""
         opts = {"expand": True, "ipopt.max_iter": max_iter, "ipopt.print_level": print_level, "print_time": 0,
-                "ipopt.tol": tol, "ipopt.acceptable_tol": 1e-3, "ipopt.acceptable_iter": 10,
+                "ipopt.tol": tol, "ipopt.acceptable_tol": acceptable_tol, "ipopt.acceptable_iter": 10,
                 "ipopt.acceptable_constr_viol_tol": 1e-6,
                 "ipopt.mu_strategy": "adaptive", "ipopt.linear_solver": "mumps",
                 "ipopt.max_cpu_time": max_cpu_time, "ipopt.sb": "yes"}

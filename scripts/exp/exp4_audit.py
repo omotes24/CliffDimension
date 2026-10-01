@@ -4,6 +4,9 @@
      problem (value, release time, first action) change? plus the past-peak-load check z_t vs the remaining U*.
 4.2  finite-difference check of the costate at 12 states x 3 directions x 3 step sizes (central differences in normalised
      coordinates), with active-set / branch-switch bookkeeping.
+4.2t the same check with tight IPOPT tolerances (tol 1e-8, no early "acceptable" exit) and the +-eps re-solves warm-started
+     from the base solve of the state, so that both stay on the base solution branch; a repeated base solve gives the
+     re-solve noise floor. (4.2 with the default tolerances is dominated by re-solve noise of order 1e-2 in J.)
 4.3  numerical test of the network gradient (autograd in raw coordinates vs finite differences of the de-standardised
      forward pass; the Sobolev target p is the raw dJ/dx).
 4.4  trajectory labels vs independent re-solves at 30 points (value-to-go, U*, tau, costate from defect multipliers).
@@ -80,6 +83,53 @@ def task_fd(t):
     return row
 
 
+# ---------------------------------------------------------------- 4.2t ------------------------------------------------
+TIGHT = dict(tol=1e-8, acceptable_tol=1e-7, max_iter=4000)
+
+
+def task_fd_base(t):
+    """Tight base solve at a state and a repeated solve warm-started from it (noise floor of the re-solves)."""
+    ref = load_ref(t["ref"]); x, t0, _ = ref_state(ref, t["k"])
+    d = os.path.join(t["out"], "fd_tight")
+    base = solve_from_state(ref, x, t0, warm_k=t["k"], fn=os.path.join(d, f"k{t['k']:03d}_base.pkl"), max_cpu=t["max_cpu"], **TIGHT)
+    row = dict(task_key=t["task_key"], k=t["k"], t_in=t0 - ref["t_s0"], ok=int(bool(base.get("ok"))), status=base.get("status"), J0=base.get("J"), d_s0=base.get("d_s"),
+               solve_s=base.get("solve_s"))
+    if base.get("ok"):
+        rep = solve_from_state(ref, x, t0, warm=base, fn=os.path.join(d, f"k{t['k']:03d}_repeat.pkl"), max_cpu=t["max_cpu"], **TIGHT)
+        row.update(rep_ok=int(bool(rep.get("ok"))), rep_status=rep.get("status"), J_rep=rep.get("J"), noise=abs(rep["J"] - base["J"]) if rep.get("ok") else np.nan,
+                   d_s_rep=rep.get("d_s"), p_rep_cos=float(np.dot(rep["duals"]["costate_x0"], base["duals"]["costate_x0"]) /
+                                                         (np.linalg.norm(rep["duals"]["costate_x0"]) * np.linalg.norm(base["duals"]["costate_x0"]) + 1e-12)) if rep.get("ok") else np.nan)
+    return row
+
+
+def task_fd_tight(t):
+    ref = load_ref(t["ref"]); x, t0, _ = ref_state(ref, t["k"])
+    d_ = os.path.join(t["out"], "fd_tight"); bfn = os.path.join(d_, f"k{t['k']:03d}_base.pkl")
+    if not os.path.exists(bfn):
+        return dict(task_key=t["task_key"], k=t["k"], ok=0, status="no base")
+    base = pickle.load(open(bfn, "rb"))
+    if not base.get("ok"):
+        return dict(task_key=t["task_key"], k=t["k"], ok=0, status="base failed")
+    d = np.array(t["dir"]); sc = np.array(t["scales"]); eps = t["eps"]
+    dx = eps * sc * d
+    sp = solve_from_state(ref, x + dx, t0, warm=base, fn=os.path.join(d_, f"{t['task_key']}_p.pkl"), max_cpu=t["max_cpu"], **TIGHT)
+    sm = solve_from_state(ref, x - dx, t0, warm=base, fn=os.path.join(d_, f"{t['task_key']}_m.pkl"), max_cpu=t["max_cpu"], **TIGHT)
+    p = np.array(base["duals"]["costate_x0"])
+    row = dict(task_key=t["task_key"], k=t["k"], t_in=t0 - ref["t_s0"], dir=t["dir_name"], eps=eps, ok=int(bool(sp.get("ok") and sm.get("ok"))),
+               status_p=sp.get("status"), status_m=sm.get("status"), J0=base["J"], Jp=sp.get("J"), Jm=sm.get("J"), d_s0=base["d_s"], d_sp=sp.get("d_s"), d_sm=sm.get("d_s"))
+    if row["ok"]:
+        D_fd = (sp["J"] - sm["J"]) / (2 * eps); D_dual = float(p @ (sc * d))
+        # second-order consistency: the average of the one-sided slopes vs the central one, and the costates at +-eps
+        pp = np.array(sp["duals"]["costate_x0"]); pm = np.array(sm["duals"]["costate_x0"])
+        def active(s):
+            return {c for c, v in (s["duals"].get("categories") or {}).items() if v.get("abs_sum", 0) > 1e-5}
+        row.update(D_fd=D_fd, D_dual=D_dual, D_dual_avg=float(0.5 * (pp + pm) @ (sc * d)), abs_err=abs(D_fd - D_dual),
+                   rel_err=abs(D_fd - D_dual) / max(abs(D_fd), abs(D_dual), 1e-9), sign_ok=int(np.sign(D_fd) == np.sign(D_dual)),
+                   D_fwd=(sp["J"] - base["J"]) / eps, D_bwd=(base["J"] - sm["J"]) / eps, curvature=(sp["J"] - 2 * base["J"] + sm["J"]) / eps ** 2,
+                   active_set_changed=int(active(sp) != active(sm) or active(sp) != active(base)), dd_s=abs(sp["d_s"] - sm["d_s"]))
+    return row
+
+
 # ---------------------------------------------------------------- 4.3 -------------------------------------------------
 def net_gradient_test(models_path, data_dir, n=200, seed=0):
     import torch
@@ -144,7 +194,8 @@ def main():
     ap.add_argument("--models", default="results/dfl/it0/models.pt"); ap.add_argument("--out", default="results/suite/exp4")
     ap.add_argument("--ref", default=None, help="reference for 4.1 / 4.2 (default: T18 m66 phi 0.25)")
     ap.add_argument("--workers", type=int, default=12); ap.add_argument("--max-cpu", type=float, default=900.0)
-    ap.add_argument("--parts", default="1,2,3,4"); ap.add_argument("--n-states", type=int, default=NSTATE)
+    ap.add_argument("--parts", default="1,2,3,4", help="comma list of 1, 2, 2t, 3, 4"); ap.add_argument("--n-states", type=int, default=NSTATE)
+    ap.add_argument("--max-cpu-tight", type=float, default=3000.0)
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     ref = a.ref or os.path.join(a.grid, "sol_ref_T18_m66_phi0.250.pkl")
@@ -174,6 +225,30 @@ def main():
                         smooth_branch_only=dict(n=int(((ok["branch_switch"] == 0) & (ok["active_set_changed"] == 0)).sum()),
                                                 rel_err_median=float(ok[(ok["branch_switch"] == 0) & (ok["active_set_changed"] == 0)]["rel_err"].median())))
             save_json(summ, os.path.join(a.out, "fd_summary.json")); print(json.dumps(summ, indent=1))
+    if "2t" in parts:
+        sc = state_scales(a.data); rng = np.random.default_rng(0)
+        dirs = {"theta1": np.eye(2 * NTH)[0], "thetad1": np.eye(2 * NTH)[NTH]}
+        rd = rng.normal(size=2 * NTH); dirs["random"] = rd / np.linalg.norm(rd)
+        tasks = [dict(task_key=f"base_k{k:03d}", ref=ref, k=k, out=a.out, max_cpu=a.max_cpu_tight) for k in knots]
+        db = pool_map(task_fd_base, tasks, a.workers, os.path.join(a.out, "fd_tight_base.csv"), "exp4.2t-base")
+        tasks = [dict(task_key=f"fdt_k{k:03d}_{dn}_{eps:g}", ref=ref, k=k, dir=d.tolist(), dir_name=dn, eps=eps, scales=sc.tolist(), out=a.out, max_cpu=a.max_cpu_tight)
+                 for k in knots for dn, d in dirs.items() for eps in (1e-3, 3e-3, 1e-2)]
+        dt_ = pool_map(task_fd_tight, tasks, a.workers, os.path.join(a.out, "fd_check_tight.csv"), "exp4.2t")
+        if len(dt_) and "rel_err" in dt_:
+            ok = dt_[dt_["ok"] == 1].merge(db[["k", "noise"]], on="k", how="left")
+            ok["fd_noise"] = np.sqrt(2) * ok["noise"] / (2 * ok["eps"])           # standard error of D_fd from the re-solve noise
+            ok["resolvable"] = (ok["D_dual"].abs() > 3 * ok["fd_noise"]).astype(int)
+            res = ok[ok["resolvable"] == 1]; smooth = ok[ok["active_set_changed"] == 0]
+            slope = float(np.polyfit(ok["D_dual"], ok["D_fd"], 1)[0]) if len(ok) > 2 else np.nan
+            summ = dict(n=int(len(ok)), noise_floor_J_median=float(db["noise"].median()), noise_floor_J_max=float(db["noise"].max()),
+                        base_ok=int(db["ok"].sum()), rel_err_median=float(ok["rel_err"].median()), rel_err_p90=float(ok["rel_err"].quantile(0.9)),
+                        sign_agreement=float(ok["sign_ok"].mean()), corr=float(np.corrcoef(ok["D_dual"], ok["D_fd"])[0, 1]) if len(ok) > 2 else np.nan, slope_fd_on_dual=slope,
+                        resolvable=dict(n=int(len(res)), rel_err_median=float(res["rel_err"].median()) if len(res) else None, sign_agreement=float(res["sign_ok"].mean()) if len(res) else None),
+                        same_active_set=dict(n=int(len(smooth)), rel_err_median=float(smooth["rel_err"].median()) if len(smooth) else None),
+                        by_eps={f"{e:g}": dict(median=float(g["rel_err"].median()), sign=float(g["sign_ok"].mean())) for e, g in ok.groupby("eps")},
+                        by_dir={dn: float(g["rel_err"].median()) for dn, g in ok.groupby("dir")})
+            ok.to_csv(os.path.join(a.out, "fd_check_tight_merged.csv"), index=False)
+            save_json(summ, os.path.join(a.out, "fd_tight_summary.json")); print(json.dumps(summ, indent=1))
     if "3" in parts and os.path.exists(a.models):
         res = net_gradient_test(a.models, a.data); save_json(res, os.path.join(a.out, "net_gradient_test.json")); print(json.dumps(res, indent=1)[:1500])
     if "4" in parts:

@@ -58,6 +58,8 @@ def main():
     ap.add_argument("--models", nargs="+", default=["compliant", "impact"])
     ap.add_argument("--workers", type=int, default=12); ap.add_argument("--max-cpu", type=float, default=2400.0)
     ap.add_argument("--variants", default=None, help="comma list of variants (default: all)"); ap.add_argument("--n-seeds", type=int, default=None)
+    ap.add_argument("--redo", default=None, help="comma list of variants whose failed plans are discarded and re-solved")
+    ap.add_argument("--max-cpu-robust", type=float, default=None, help="CPU limit for the scenario (robust) variants")
     a = ap.parse_args()
     variants = a.variants.split(",") if a.variants else list(VARIANTS)
     if a.n_seeds is not None:
@@ -67,8 +69,19 @@ def main():
     refs = []
     if "compliant" in a.models: refs += find_refs(a.comp, [18.0], a.m, a.phi, tag="comp")
     if "impact" in a.models: refs += find_refs(a.grid, [18.0], a.m, a.phi, tag="ref")
-    tasks = [dict(task_key=f"{os.path.basename(f)}_{v}", ref=f, variant=v, out=a.out, max_cpu=a.max_cpu) for f in refs for v in variants]
-    ds = pool_map(solve_task, tasks, a.workers, os.path.join(a.out, "plans.csv"), "exp3-plans")
+    pf = os.path.join(a.out, "plans.csv")
+    if a.redo and os.path.exists(pf):
+        # failed plans of these variants (e.g. after a fix of the constraint definition) are dropped with their cached pickle
+        redo = set(a.redo.split(",")); old = pd.read_csv(pf)
+        bad = old["variant"].isin(redo) & (old["ok"] != True)
+        for f in old.loc[bad, "plan_file"].dropna():
+            if os.path.exists(f):
+                os.remove(f)
+        old[~bad].to_csv(pf, index=False); print(f"[exp3] re-solving {int(bad.sum())} failed plans of {sorted(redo)}", flush=True)
+    def cpu(v):
+        return max(a.max_cpu, a.max_cpu_robust) if (a.max_cpu_robust and "robust_deltas" in VARIANTS[v]) else a.max_cpu
+    tasks = [dict(task_key=f"{os.path.basename(f)}_{v}", ref=f, variant=v, out=a.out, max_cpu=cpu(v)) for f in refs for v in variants]
+    ds = pool_map(solve_task, tasks, a.workers, pf, "exp3-plans")
     plans = ds[ds["ok"] == True] if "ok" in ds else ds
     tasks = []
     for pr in plans.itertuples():
