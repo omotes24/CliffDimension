@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from katsumi.exp.common import load_ref, solve_from_state, ref_state, ENV_KW
+from katsumi.exp.common import load_ref, solve_from_state, ref_state, ENV_KW, F_MAX_HEADLINE
 from katsumi.exp.util import pool_map, save_json
 from katsumi.planar.env import PlanarCliffEnv
 from katsumi.planar.model import NTH, NTAU
@@ -46,7 +46,8 @@ def make_offsets(rng, H, n):
     """Smooth random torque offsets: sum of two sinusoids per joint with amplitudes 0.1 - 0.3, zero at t = 0."""
     offs = [lambda tau: np.zeros(NTAU)]
     for _ in range(n - 1):
-        a1 = rng.uniform(0.1, 0.3, NTAU) * rng.choice([-1, 1], NTAU); a2 = rng.uniform(0.0, 0.15, NTAU) * rng.choice([-1, 1], NTAU)
+        sc = min(1.0, H / 0.8)                                       # shorter horizons tolerate smaller offsets
+        a1 = sc * rng.uniform(0.05, 0.2, NTAU) * rng.choice([-1, 1], NTAU); a2 = sc * rng.uniform(0.0, 0.1, NTAU) * rng.choice([-1, 1], NTAU)
         w1 = np.pi / H; w2 = 2 * np.pi / H * rng.uniform(0.8, 1.5)
         offs.append(lambda tau, a1=a1, a2=a2, w1=w1, w2=w2: a1 * np.sin(w1 * tau) + a2 * np.sin(w2 * tau))
     return offs
@@ -63,10 +64,10 @@ def task(t):
     rng = np.random.default_rng(t["seed"])
     for H in HORIZONS:
         offs = make_offsets(rng, H, N_CAND); tries = 0; i = 0
-        while i < N_CAND and tries < 4 * N_CAND:
+        while i < N_CAND and tries < 10 * N_CAND:
             ok, xH, cost, Umax = simulate(ref, oracle, x, t0, H, offs[i])
             tries += 1
-            if not ok:
+            if not ok or Umax > F_MAX_HEADLINE:                 # infeasible at the actual capacity
                 if i == 0:
                     rows.append(dict(task_key=f"{t['task_key']}_H{H}_c{i}", state=tag, H=H, cand=i, feasible=0)); i += 1
                 else:
