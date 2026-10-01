@@ -62,6 +62,20 @@ def body_task(t):
     return met
 
 
+def closedloop_task(t):
+    """SMPC on a new body; with wrong=True the controller is conditioned on a 10 % different stature / capability."""
+    import copy
+    from exp6_compare import build_controller
+    from katsumi.exp.trials import controller_trial
+    r_ = load_ref(t["ref"]); r_c = copy.deepcopy(r_)
+    if t["wrong"]:
+        r_c["body_kw"] = {k: v * 1.1 for k, v in (r_c.get("body_kw", {}) or {}).items()}     # the controller's belief only
+    c = build_controller("SMPC", r_c, t["models_file"], [r_])
+    row = controller_trial(c, r_, start="rest", sig_th=(0 if t["seed"] == 0 else 0.01), sig_thd=(0 if t["seed"] == 0 else 0.1), seed=t["seed"], reflex_refs=[r_], label="SMPC")
+    row.update(task_key=t["task_key"], body=os.path.basename(t["ref"]), wrong_condition=int(t["wrong"]))
+    return row
+
+
 def envelope_task(t):
     ref = load_ref(t["ref"])
     base = solve_variant(ref, fn=os.path.join(t["out"], "env", "base.pkl"), max_cpu=t["max_cpu"])
@@ -91,8 +105,9 @@ def main():
             md = os.path.join(a.out, f"models_split_{name}")
             tr = [f for f in refs_all if allow(f)]
             json.dump(tr, open(os.path.join(a.out, f"train_refs_{name}.json"), "w"))
-            run([PY, "scripts/exp/train_fields.py", "--data", a.data, "--out", md, "--seeds", "0", "1", "--epochs", str(a.epochs), "--holdout-m", "-1",
-                 "--train-refs", os.path.join(a.out, f"train_refs_{name}.json")], log)
+            if len(glob.glob(os.path.join(md, "models_seed*.pt"))) < 2:
+                run([PY, "scripts/exp/train_fields.py", "--data", a.data, "--out", md, "--seeds", "0", "1", "--epochs", str(a.epochs), "--holdout-m", "-1",
+                     "--train-refs", os.path.join(a.out, f"train_refs_{name}.json")], log)
             fc = fit_by_condition(md, a.data)
             if len(fc):
                 fc["train"] = [allow(f"sol_ref_T{T:g}_m{m:g}_phi0.250.pkl") for T, m in zip(fc["T"], fc["m"])]
@@ -109,7 +124,7 @@ def main():
         # oracle labels along the new references (stride 15, levels 0 / 1) -> extra data set
         okf = [f for f in db[db["ok"] == True]["fn"]] if "ok" in db else []
         dd = os.path.join(a.out, "bodies_data")
-        if okf:
+        if okf and not os.path.exists(os.path.join(dd, "rows.csv")):
             run([PY, "scripts/dual_field_data.py", "--refs", *okf, "--out", dd, "--stride", "15", "--levels", "0", "1", "--reps", "1", "--workers", str(a.workers), "--max-cpu", "600"], log)
         # interpolation design: train on stature {1.65, 1.75(base data), 1.85} and cap {0.9, 1.0, 1.1}; test the rest
         if os.path.exists(os.path.join(dd, "rows.csv")):
@@ -122,36 +137,27 @@ def main():
             tr = sorted(set(refs_all) | {r_ for r_ in set(db2["ref"]) if allowed(r_)})
             json.dump(tr, open(os.path.join(a.out, "train_refs_bodies.json"), "w"))
             md = os.path.join(a.out, "models_bodies")
-            run([PY, "scripts/exp/train_fields.py", "--data", a.data, "--extra", dd, "--out", md, "--seeds", "0", "1", "--epochs", str(a.epochs), "--holdout-m", "-1",
-                 "--train-refs", os.path.join(a.out, "train_refs_bodies.json")], log)
+            if len(glob.glob(os.path.join(md, "models_seed*.pt"))) < 2:
+                run([PY, "scripts/exp/train_fields.py", "--data", a.data, "--extra", dd, "--out", md, "--seeds", "0", "1", "--epochs", str(a.epochs), "--holdout-m", "-1",
+                     "--train-refs", os.path.join(a.out, "train_refs_bodies.json")], log)
             fc = fit_by_condition(md, a.data, [dd])
             if len(fc):
                 fc.to_csv(os.path.join(a.out, "fit_by_condition_bodies.csv"), index=False)
                 print(fc.groupby(["model", "stature", "cap_scale"])[["r2_V", "rmse_tau", "rho_p"]].mean().round(3).to_string()[:4000])
             # closed loop on the new bodies: correct conditioning vs wrong conditioning (model error), SMPC only, 3 perturbations
-            try:
-                from exp6_compare import build_controller, MPC_KW
-                from katsumi.exp.trials import controller_trial
-                mf = sorted(glob.glob(os.path.join(md, "models_seed*.pt")))
-                rows = []
-                for f in okf:
-                    r_ = load_ref(f)
-                    for wrong in (False, True):
-                        import copy
-                        r_c = copy.deepcopy(r_)
-                        if wrong:   # the controller believes a 10 % different capability / stature
-                            bk = dict(r_c.get("body_kw", {}) or {})
-                            bk = {k: v * 1.1 for k, v in bk.items()}
-                            r_c["body_kw"] = bk                       # only the controller's belief (the environment uses r_)
-                        for s in range(3):
-                            c = build_controller("SMPC", r_c, mf[0], [r_])
-                            row = controller_trial(c, r_, start="rest", sig_th=(0 if s == 0 else 0.01), sig_thd=(0 if s == 0 else 0.1), seed=s, reflex_refs=[r_], label="SMPC")
-                            row.update(body=os.path.basename(f), wrong_condition=int(wrong)); rows.append(row)
-                            pd.DataFrame(rows).to_csv(os.path.join(a.out, "closedloop_bodies.csv"), index=False)
-                if rows:
-                    print(pd.DataFrame(rows).groupby(["wrong_condition"])[[f"succ_{lv:g}" for lv in F_MAX_LEVELS] + ["released", "caught"]].mean().round(3).to_string())
-            except Exception as e:
-                print("closed loop on new bodies skipped:", repr(e))
+            mf = sorted(glob.glob(os.path.join(md, "models_seed*.pt")))
+            cf = os.path.join(a.out, "closedloop_bodies.csv")
+            if os.path.exists(cf):                                  # rows of the earlier sequential run: give them task keys
+                old = pd.read_csv(cf)
+                if "task_key" not in old.columns and len(old):
+                    old["task_key"] = [f"{b}_w{int(w)}_s{int(sd)}" for b, w, sd in zip(old["body"], old["wrong_condition"], old["seed"])]
+                    old.to_csv(cf, index=False)
+            if mf and okf:
+                tasks = [dict(task_key=f"{os.path.basename(f)}_w{int(wrong)}_s{sd}", ref=f, wrong=wrong, seed=sd, models_file=mf[0])
+                         for f in okf for wrong in (False, True) for sd in range(3)]
+                dc = pool_map(closedloop_task, tasks, a.workers, cf, "exp8-closedloop")
+                if len(dc):
+                    print(dc.groupby(["wrong_condition"])[[f"succ_{lv:g}" for lv in F_MAX_LEVELS] + ["released", "caught"]].mean().round(3).to_string())
     # ---- 8c: envelope transfer -----------------------------------------------------------------------------------
     if "c" in parts:
         ref = os.path.join(a.grid, "sol_ref_T18_m66_phi0.250.pkl")

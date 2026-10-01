@@ -25,8 +25,10 @@ from katsumi.exp.util import pool_map, bootstrap_ci
 MPC_KW = dict(H=15, control_dt=0.02, replan=2, beta=2.0, beta_d=1.0, w_tau=20.0, kp_track=1.0, kd_track=0.1, U_cap_max=F_MAX_HEADLINE, max_cpu=30.0)
 
 
-def build_controller(name, r, models_file, reflex_refs):
+def build_controller(name, r, models_file, reflex_refs, mpc_kw=None):
+    """mpc_kw: overrides of MPC_KW (e.g. the horizon ablation H = 40 -> 0.8 s)."""
     import torch; torch.set_num_threads(1)
+    MPC_KW = {**globals()["MPC_KW"], **(mpc_kw or {})}
     from katsumi.learn.dual_field import load_models, BCController
     from katsumi.learn.swing_mpc import SwingMPC
     from katsumi.learn.oracle_mpc import OracleMPC
@@ -57,7 +59,7 @@ def task(t):
         row = replay_trial(r, start=t["start"], sig_th=t["sig_th"], sig_thd=t["sig_thd"], seed=t["seed"], knot=t.get("knot"), reflex_refs=reflex_refs)
         row["ctrl"] = "REPLAY"
     else:
-        c = build_controller(t["method"], r, t.get("models_file"), reflex_refs)
+        c = build_controller(t["method"], r, t.get("models_file"), reflex_refs, mpc_kw=t.get("mpc_kw"))
         row = controller_trial(c, r, start=t["start"], sig_th=t["sig_th"], sig_thd=t["sig_thd"], seed=t["seed"], knot=t.get("knot"), reflex_refs=reflex_refs, label=t["method"])
     row.update(task_key=t["task_key"], method=t["method"], learn_seed=t.get("learn_seed", -1), group=t["group"], models_file=os.path.basename(t.get("models_file") or ""))
     return row
@@ -103,6 +105,8 @@ def main():
     ap.add_argument("--methods", default="REPLAY,BC,TRACK,VMPC,SMPC,ORACLE,ORACLE+")
     ap.add_argument("--recovery-knots", type=int, default=5)
     ap.add_argument("--summary-only", action="store_true")
+    ap.add_argument("--mpc-H", type=int, default=None, help="MPC horizon in plan steps of 20 ms (default 15 = 0.3 s)")
+    ap.add_argument("--mpc-max-cpu", type=float, default=None); ap.add_argument("--learn-seeds", type=int, default=None, help="use only the first n learning seeds")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     out_csv = os.path.join(a.out, "trials.csv")
@@ -110,7 +114,8 @@ def main():
         summarise(pd.read_csv(out_csv), a.out); return
     refs = [os.path.join(a.grid, f"sol_ref_T{T:g}_m{m:g}_phi{a.phi:.3f}.pkl") for T in a.T for m in a.m]
     refs = [f for f in refs if os.path.exists(f)]
-    model_files = sorted(glob.glob(os.path.join(a.models, "models_seed*.pt")))
+    model_files = sorted(glob.glob(os.path.join(a.models, "models_seed*.pt")))[:a.learn_seeds]
+    mpc_kw = {k: v for k, v in (("H", a.mpc_H), ("max_cpu", a.mpc_max_cpu)) if v is not None}
     reflex_refs = refs                                     # the shared reflex knows the stored references (nearest body is used)
     methods = a.methods.split(",")
     tasks = []
@@ -134,6 +139,8 @@ def main():
                                   seed=100 + j, models_file=mf, learn_seed=(0 if mf else -1), group="recovery"))
     # cheap methods first, then the heavy ones
     order = {"REPLAY": 0, "BC": 1, "TRACK": 2, "VMPC": 3, "SMPC": 3, "ORACLE": 4, "ORACLE+": 4}
+    for t in tasks:
+        t["mpc_kw"] = mpc_kw
     tasks.sort(key=lambda t: order[t["method"]])
     df = pool_map(task, tasks, a.workers, out_csv, "exp6")
     if len(df):
