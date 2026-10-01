@@ -21,3 +21,13 @@ results/compliant_local/
 results/dual_field/
 results/dual_field_partial/
 logs/
+results/grid/
+results/build/
+results/legacy/
+results/legacy_v2/
+results/sens/
+results/windows/
+results/search3d/
+results/compliant/
+results/dfl_exec_v1/
+results/dfl_exec_v2a/
