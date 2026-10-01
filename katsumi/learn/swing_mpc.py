@@ -44,7 +44,7 @@ class SwingMPC:
     def __init__(self, net, body, chain, T, H=25, control_dt=0.02, eps=0.20, w_E=1.0, t_ref=1.0, u_rate=10.0, U_margin=1.0,
                  stature=1.75, cap_scale=1.0, release_slack=0.5, wall_smooth=0.01, w_smooth=1e-3, max_iter=80, verbose=False,
                  terminal_weight=1.0, beta=2.0, replan=1, density=None, beta_d=1.0, mu_margin=0.75, cone_abs=0.03, w_tau=0.0, hessian="exact",
-                 max_cpu=30.0, kp_track=0.0, kd_track=0.0):
+                 max_cpu=30.0, kp_track=0.0, kd_track=0.0, timer_net=None, U_cap_max=2.0, track_ref=None, w_track=(1.0, 0.1)):
         """net: a DualFieldNet or a list of them (ensemble: terminal value = mean + beta * std, pessimistic where the
         members disagree, i.e. away from the oracle data).
         w_tau > 0 adds a progress term on the time-to-release field: (tau(x_H, t_H) - (tau(x_0, t_0) - H dt))^2, i.e.
@@ -57,6 +57,12 @@ class SwingMPC:
         self.density, self.beta_d, self.mu_margin, self.cone_abs, self.w_tau = density, beta_d, mu_margin, cone_abs, w_tau
         self.hessian, self.max_cpu = hessian, max_cpu
         self.kp_track, self.kd_track = kp_track, kd_track                # PD tracking of the plan between re-plans (as the oracle MPC)
+        self.timer_net = timer_net                                       # shared tau / U predictor (ablations: only the value differs)
+        self.U_cap_max = U_cap_max                                       # the plan may never assume more than the actual capacity F_max / F_ref
+        self.track_ref, self.w_track = track_ref, w_track                # reference-tracking MPC (no learned value): follows the nearest reference
+        if track_ref is not None:
+            N_ = track_ref["S_X"].shape[1] - 1
+            self._tS = track_ref["t_s0"] + np.linspace(0, track_ref["d_s"], N_ + 1)
         self.body, self.ch, self.T = body, chain, float(T)
         self.H, self.dt, self.eps = H, control_dt, eps
         self.w_E, self.t_ref, self.u_rate, self.U_margin = w_E, t_ref, u_rate, U_margin
@@ -78,7 +84,8 @@ class SwingMPC:
         U = opti.variable(NTAU, H + 1); R = opti.variable(2, H + 1); Rm = opti.variable(2, H)
         x0 = opti.parameter(2 * NTH); t0 = opti.parameter(); u_prev = opti.parameter(NTAU); Ucap = opti.parameter()
         tau_goal = opti.parameter()                                   # tau(x0, t0) - H dt (progress target)
-        self.par = dict(x0=x0, t0=t0, u_prev=u_prev, Ucap=Ucap, tau_goal=tau_goal)
+        Xref = opti.parameter(2 * NTH, H + 1)                         # reference states at the plan times (tracking MPC)
+        self.par = dict(x0=x0, t0=t0, u_prev=u_prev, Ucap=Ucap, tau_goal=tau_goal, Xref=Xref)
         tau_cap = ca.DM(b.tau_cap); f_cap = b.f_cap; Bm = ca.DM(ch.B)
         clear = np.concatenate([[0.0], b.clearance, b.forearm_clearance])
 
@@ -134,42 +141,50 @@ class SwingMPC:
             opti.subject_to(ca.sumsqr(Rm[:, k]) <= Ucap ** 2)
             J += dt / 6 * (E[k] + 4 * eff(um, Rm[:, k]) + E[k + 1]) * self.w_E / self.t_ref
             J += self.w_smooth * ca.sumsqr(U[:, k + 1] - U[:, k])
-        # terminal: the dual field's value at (x_H, t_H)
-        tH = t0 + H * dt
-        ph = ca.fmod(tH, T) / T
-        zf = ca.vertcat(X[:, H], ca.sin(2 * np.pi * ph), ca.cos(2 * np.pi * ph), ca.DM(body_feats(T, b.m, self.stature, self.cap_scale)))
-        Vs = []; taus = []
-        for n_ in self.nets:
-            mu = ca.DM(n_.mu.numpy().astype(float)); sd = ca.DM(n_.sd.numpy().astype(float))
-            V_, _, tau_ = mlp_casadi(n_, (zf - mu) / sd)
-            Vs.append(V_); taus.append(tau_)
-        Vmean = sum(Vs) / len(Vs); tau_mean = sum(taus) / len(taus)
-        if len(Vs) > 1:
-            Vvar = sum((V_ - Vmean) ** 2 for V_ in Vs) / len(Vs)
-            VH = Vmean + self.beta * ca.sqrt(Vvar + 1e-6)
+        if self.track_ref is not None:
+            # reference-tracking MPC: quadratic tracking of the reference swing states over the horizon (no learned value)
+            Wq = ca.DM(np.concatenate([np.full(NTH, self.w_track[0]), np.full(NTH, self.w_track[1])]))
+            for k in range(1, H + 1):
+                e = X[:, k] - Xref[:, k]
+                J += ca.dot(Wq, e * e) * (dt if k < H else 1.0)
+            self.VH_expr = ca.DM(0.0); self.nll_expr = None
         else:
-            VH = Vmean
-        # out-of-distribution penalty: Gaussian-mixture density of the oracle data in the standardised feature space
-        self.nll_expr = None
-        if self.density is not None:
-            w, means, prec_chol, c0 = self.density
-            zs = (zf - ca.DM(self.net.mu.numpy().astype(float))) / ca.DM(self.net.sd.numpy().astype(float))
-            terms = []
-            for k in range(len(w)):
-                Lk = ca.DM(prec_chol[k])                               # z-space: (z - mu)^T P (z - mu) with P = L L^T
-                dz = Lk.T @ (zs - ca.DM(means[k]))
-                logdet = float(np.sum(np.log(np.diag(prec_chol[k]))))
-                terms.append(np.log(w[k]) + logdet - 0.5 * ca.sumsqr(dz))
-            tv = ca.vertcat(*terms)
-            mx = ca.mmax(tv)
-            logp = mx + ca.log(ca.sum1(ca.exp(tv - mx)))
-            nll = -logp
-            self.nll_expr = nll
-            VH = VH + self.beta_d * ca.fmax(nll - c0, 0.0) ** 2 / 10.0
-        J += self.terminal_weight * VH
-        if self.w_tau > 0:
-            J += self.w_tau * (tau_mean - tau_goal) ** 2
-        self.VH_expr = VH
+            # terminal: the dual field's value at (x_H, t_H)
+            tH = t0 + H * dt
+            ph = ca.fmod(tH, T) / T
+            zf = ca.vertcat(X[:, H], ca.sin(2 * np.pi * ph), ca.cos(2 * np.pi * ph), ca.DM(body_feats(T, b.m, self.stature, self.cap_scale)))
+            Vs = []; taus = []
+            for n_ in self.nets:
+                mu = ca.DM(n_.mu.numpy().astype(float)); sd = ca.DM(n_.sd.numpy().astype(float))
+                V_, _, tau_ = mlp_casadi(n_, (zf - mu) / sd)
+                Vs.append(V_); taus.append(tau_)
+            Vmean = sum(Vs) / len(Vs); tau_mean = sum(taus) / len(taus)
+            if len(Vs) > 1:
+                Vvar = sum((V_ - Vmean) ** 2 for V_ in Vs) / len(Vs)
+                VH = Vmean + self.beta * ca.sqrt(Vvar + 1e-6)
+            else:
+                VH = Vmean
+            # out-of-distribution penalty: Gaussian-mixture density of the oracle data in the standardised feature space
+            self.nll_expr = None
+            if self.density is not None:
+                w, means, prec_chol, c0 = self.density
+                zs = (zf - ca.DM(self.net.mu.numpy().astype(float))) / ca.DM(self.net.sd.numpy().astype(float))
+                terms = []
+                for k in range(len(w)):
+                    Lk = ca.DM(prec_chol[k])                               # z-space: (z - mu)^T P (z - mu) with P = L L^T
+                    dz = Lk.T @ (zs - ca.DM(means[k]))
+                    logdet = float(np.sum(np.log(np.diag(prec_chol[k]))))
+                    terms.append(np.log(w[k]) + logdet - 0.5 * ca.sumsqr(dz))
+                tv = ca.vertcat(*terms)
+                mx = ca.mmax(tv)
+                logp = mx + ca.log(ca.sum1(ca.exp(tv - mx)))
+                nll = -logp
+                self.nll_expr = nll
+                VH = VH + self.beta_d * ca.fmax(nll - c0, 0.0) ** 2 / 10.0
+            J += self.terminal_weight * VH
+            if self.w_tau > 0:
+                J += self.w_tau * (tau_mean - tau_goal) ** 2
+            self.VH_expr = VH
         opti.minimize(J)
         opts = {"expand": False, "ipopt.print_level": 5 if self.verbose else 0, "print_time": 0, "ipopt.max_iter": self.max_iter,
                 "ipopt.tol": 1e-4, "ipopt.acceptable_tol": 1e-3, "ipopt.acceptable_iter": 5, "ipopt.mu_strategy": "adaptive",
@@ -193,10 +208,14 @@ class SwingMPC:
         self.t_last_try = -np.inf
 
     def field(self, x, t):
+        if self.nets[0] is None and self.timer_net is None:          # tracking MPC without any learned predictor
+            return 0.0, self.U_cap_max, np.inf
         z = torch.tensor(make_features(x, t, self.T, self.body.m, self.stature, self.cap_scale), dtype=torch.float32)
         with torch.no_grad():
-            outs = [n_(z) for n_ in self.nets]
-        V = np.mean([float(o[0][0]) for o in outs]); U = np.mean([float(o[1][0]) for o in outs]); tau = np.mean([float(o[2][0]) for o in outs])
+            outs = [n_(z) for n_ in self.nets if n_ is not None] or [self.timer_net(z)]
+            V = np.mean([float(o[0][0]) for o in outs]); U = np.mean([float(o[1][0]) for o in outs]); tau = np.mean([float(o[2][0]) for o in outs])
+            if self.timer_net is not None:                # shared release timer / capacity predictor
+                o = self.timer_net(z); U = float(o[1][0]); tau = float(o[2][0])
         return V, U, tau
 
     def _guess(self, x, t):
@@ -224,14 +243,21 @@ class SwingMPC:
         dt_env = self.dt if dt_env is None else dt_env
         x = np.concatenate([th, thd])
         V0, U0, tau0 = self.field(x, t)
+        if self.track_ref is not None:                    # the tracking MPC releases at the reference's release time
+            tau0 = self.track_ref["t_l"] - t
         release = tau0 <= self.release_slack * dt_env
         dv = device.device_state(t, self.T, self.eps)
         q = np.concatenate([dv["pA"], th]); qd = np.concatenate([dv["vA"], thd])
         _, Rnow = self.ch.pinned(q, qd, self.u_prev * self.body.tau_cap, dv["aA"])
-        Ucap = max(self.U_margin * U0, np.linalg.norm(Rnow) / self.body.f_cap + 0.05, 0.6)
+        Ucap = min(max(self.U_margin * U0, np.linalg.norm(Rnow) / self.body.f_cap + 0.05, 0.6), self.U_cap_max)
         opti = self.opti
         opti.set_value(self.par["x0"], x); opti.set_value(self.par["t0"], t); opti.set_value(self.par["u_prev"], self.u_prev)
         opti.set_value(self.par["Ucap"], Ucap); opti.set_value(self.par["tau_goal"], tau0 - self.H * self.dt)
+        if self.track_ref is not None:
+            tt = np.clip(t + self.dt * np.arange(self.H + 1), self._tS[0], self._tS[-1])
+            opti.set_value(self.par["Xref"], np.array([np.interp(tt, self._tS, row) for row in self.track_ref["S_X"]]))
+        else:
+            opti.set_value(self.par["Xref"], np.zeros((2 * NTH, self.H + 1)))
         g = self._guess(x, t)
         for k, v in self.v.items():
             opti.set_initial(v, g[k])
@@ -288,6 +314,8 @@ class SwingMPC:
             u = np.clip(np.clip(u, -1, 1), self.u_prev - self.u_rate * dt_env, self.u_prev + self.u_rate * dt_env)
             self.u_prev = u
             _, _, tau0 = self.field(np.concatenate([env.th, env.thd]), t)
+            if self.track_ref is not None:
+                tau0 = self.track_ref["t_l"] - t
             release = tau0 <= self.release_slack * dt_env
         a = np.zeros(NTAU + 1); a[:NTAU] = u; a[NTAU] = 1.0 if release else -1.0
         return a

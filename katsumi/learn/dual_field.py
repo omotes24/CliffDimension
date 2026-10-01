@@ -68,6 +68,8 @@ def load_dataset(data_dir, dense=True, min_tau=0.05):
     import pandas as pd
     from .labels import dense_rows_from_dir
     d, F, Y = load_rows(os.path.join(data_dir, "rows.csv"))
+    if "src" not in d.columns:
+        d["src"] = "sol_" + d["tag"].astype(str) + ".pkl"
     if not dense:
         return d, F, Y
     rows = [r for r in dense_rows_from_dir(data_dir, min_tau=min_tau) if r["knot"] > 0]      # knot 0 = the point label
@@ -368,6 +370,29 @@ def fit_density(F, mu, sd, n_components=24, seed=0):
     from sklearn.mixture import GaussianMixture
     Z = (F - mu) / sd
     gm = GaussianMixture(n_components=n_components, covariance_type="full", reg_covar=1e-3, random_state=seed, max_iter=200).fit(Z)
-    nll = -gm.score_samples(Z)
+    # negative log-density WITHOUT the constant D/2 log(2 pi), i.e. in the convention of the symbolic (CasADi / numpy) evaluation
+    # used by the controllers: nll = -logsumexp_k [log w_k + sum log diag(L_k) - 0.5 |L_k^T (z - mu_k)|^2]
+    const = 0.5 * Z.shape[1] * np.log(2 * np.pi)
+    nll = -gm.score_samples(Z) - const
     return dict(w=gm.weights_.tolist(), means=gm.means_.tolist(), prec_chol=gm.precisions_cholesky_.tolist(), c0=float(np.quantile(nll, 0.95)),
-                nll_median=float(np.median(nll)))
+                nll_median=float(np.median(nll)), convention="no_2pi_constant")
+
+
+def load_models(path):
+    """Load a models.pt checkpoint: (ensemble of Sobolev nets, value-only net, BC net, GMM density tuple or None)."""
+    ck = torch.load(path, map_location="cpu", weights_only=False)
+
+    def mk(sd):
+        lin = [k for k in sd if k.endswith(".weight")]
+        n_ = DualFieldNet(ck["mu"].numpy(), ck["sd"].numpy(), ck["y_mu"].numpy(), ck["y_sd"].numpy(), width=sd[lin[0]].shape[0], depth=len(lin) - 1)
+        n_.load_state_dict(sd); n_.eval(); return n_
+    ens = [mk(sd) for sd in (ck.get("ens") or [ck["dfl"]])]
+    net0 = mk(ck["dfl0"]) if "dfl0" in ck else None
+    ens0 = [mk(sd) for sd in ck["ens0"]] if "ens0" in ck else ([net0] if net0 is not None else [])
+    dens = ck.get("density")
+    density = (np.array(dens["w"]), np.array(dens["means"]), np.array(dens["prec_chol"]), dens["c0"]) if dens else None
+    bc = None
+    if "bc" in ck:
+        lin = [k for k in ck["bc"] if k.endswith(".weight")]
+        bc = BCNet(ck["mu"].numpy(), ck["sd"].numpy(), width=ck["bc"][lin[0]].shape[0], depth=len(lin) - 1); bc.load_state_dict(ck["bc"]); bc.eval()
+    return dict(ens=ens, ens0=ens0, net0=net0, bc=bc, density=density, info=ck.get("info"))

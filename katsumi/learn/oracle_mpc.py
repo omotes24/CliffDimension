@@ -21,7 +21,8 @@ def _rel(th):
 
 class OracleMPC:
     def __init__(self, ref, body, T, replan_dt=0.5, kp=1.0, kd=0.1, max_cpu=240.0, tol=1e-4, N_min=30, verbose=False,
-                 d_s_min=0.05, release_slack=0.5, control_dt=0.02, mu_margin=0.75, cone_abs=0.03, final_replan=0.25):
+                 d_s_min=0.05, release_slack=0.5, control_dt=0.02, mu_margin=0.75, cone_abs=0.03, final_replan=0.25, hand_over_plan=True,
+                 U_cap_max=2.0):
         """mu_margin: the plans use a tightened hook/friction cone (mu_out * mu_margin) so that tracking errors do not
         push the executed hand force out of the true cone (constraint tightening).
         final_replan: one last re-plan when this much time remains before the planned release (the release state and
@@ -33,6 +34,8 @@ class OracleMPC:
         self.replan_dt, self.kp, self.kd, self.max_cpu, self.tol, self.N_min = replan_dt, kp, kd, max_cpu, tol, N_min
         self.verbose, self.d_s_min, self.release_slack, self.dt = verbose, d_s_min, release_slack, control_dt
         self.final_replan = final_replan
+        self.hand_over_plan = hand_over_plan            # give the landing reflex the plan's own flight / hold (else: shared reference reflex)
+        self.U_cap_max = U_cap_max                      # the plans never assume more than the actual capacity
         self.reset()
 
     def reset(self):
@@ -63,6 +66,7 @@ class OracleMPC:
             rem_est = max(r["d_s"] - (tS[k0] - r["t_s0"]), 0.3)
             prev = dict(r); prev["tS"] = tS
         N_S = int(np.clip(round(150 * rem_est / 5.7) + 10, self.N_min, 150))
+        p_ref["U_max"] = min(float(p_ref.get("U_max", 6.0)), self.U_cap_max)
         p = ReducedParams(fixed_release_phase=None, wait_in_cost=False, from_state=True, x0=tuple(x), N_S=N_S,
                           d_s_bounds=(self.d_s_min, self.T), cone_abs=self.cone_abs, u0=tuple(self.u_prev), u0_dt=self.dt, **p_ref)
         nlp = PlanarNLP(self.body, self.T, t / self.T, p)
@@ -114,7 +118,7 @@ class OracleMPC:
     def __call__(self, env):
         self.dt = env.control_dt
         u, release = self.act(env.th, env.thd, env.t)
-        if release and self.plan is not None and self.plan["ok"]:
+        if release and self.hand_over_plan and self.plan is not None and self.plan["ok"]:
             env.flight_plan = self.plan["sol"]                 # the landing reflex tracks the plan's own flight and hold
         a = np.zeros(NTAU + 1); a[:NTAU] = u; a[NTAU] = 1.0 if release else -1.0
         return a

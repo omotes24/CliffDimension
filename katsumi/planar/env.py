@@ -110,6 +110,13 @@ class PlanarCliffEnv(gym.Env):
         self.d_min = np.inf; self.cone_viol_time = 0.0; self.E_swing_prev = None; self.slip = 0.0
         self.viol_acc = dict(cap=0.0, cone=0.0, joint_speed=0.0, joint_range=0.0, wall=0.0)
         self.done = False; self.result = None
+        # diagnostics for the experiment suite: per-mode peak utilisation, first time U exceeds a set of thresholds,
+        # largest joint-range excess [rad] and wall penetration [m] over the episode, scheduled release time
+        self.U_peak_mode = dict(A=0.0, F=0.0, C=0.0)
+        self.U_levels = (1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5)
+        self.t_exceed = {}
+        self.jr_max_total = 0.0; self.wall_max_total = 0.0; self.catch_off = None
+        self.release_at = None
 
     def dev(self, t):
         return device.device_state(t, self.T, self.eps)
@@ -140,6 +147,18 @@ class PlanarCliffEnv(gym.Env):
             phi0 = float(self.rng.uniform(0, 1)) if phi0 is None else float(phi0)
             self.t0 = phi0 * T
         self.t = self.t0
+        mode0 = o.get("mode", "A")
+        if mode0 in ("F", "C"):
+            # start in free flight (after the release) or hooked on B (after the catch) from a full state (q, qd)
+            self.mode = mode0
+            self.q = np.array(o["q"], float).copy(); self.qd = np.array(o["qd"], float).copy()
+            self.th, self.thd = self.q[2:].copy(), self.qd[2:].copy()
+            self.released = True; self.t_release = float(o.get("t_release", self.t0))
+            if mode0 == "C":
+                self.t_catch = float(o.get("t_catch", self.t0)); self.off = float(o.get("off", 0.0))
+                self.catch_off = self.off
+            self.U = 0.0; self.U_peak = 0.0
+            return self._obs(), dict(T=T, m=m, phi0=phi0, body_kw=bk)
         if "state" in o:
             th, thd = o["state"]
             self.th, self.thd = np.array(th, float).copy(), np.array(thd, float).copy()
@@ -149,6 +168,11 @@ class PlanarCliffEnv(gym.Env):
         _, R = self.ch.pinned(self.q, self.qd, np.zeros(NTAU), dv["aA"])
         self.U = float(np.linalg.norm(R) / self.f_cap); self.U_peak = self.U
         return self._obs(), dict(T=T, m=m, phi0=phi0, body_kw=bk)
+
+    def schedule_release(self, t_abs):
+        """Release at the absolute time t_abs (quantised to the integration sub-step) instead of at the next control
+        step boundary: the swing is integrated up to t_abs within the control period, then the mode switches."""
+        self.release_at = None if t_abs is None else float(t_abs)
 
     # ------------------------------------------------------------------ helpers --------------
     @staticmethod
@@ -207,6 +231,20 @@ class PlanarCliffEnv(gym.Env):
             else:
                 tauM = np.tile(u[:, None], (1, k))
             if self.mode == "A":
+                k_rel = None
+                if self.release_at is not None and not self.released and self.release_at > self.t - 1e-12:
+                    k_rel = int(round((self.release_at - self.t) / self.sub_dt))
+                    if k_rel < k:                     # the scheduled release falls inside this control period
+                        k = max(k_rel, 0)
+                if k == 0:                            # release exactly now
+                    self.released = True; self.t_release = self.t; self.mode = "F"; self.release_at = None
+                    continue
+                tt = self.t + self.sub_dt * np.arange(k); TT = np.full(k, self.T)
+                if self.hold == "foh":
+                    i0 = self.n_sub - remaining
+                    tauM = u_from[:, None] + (u - u_from)[:, None] * ((np.arange(k) + i0 + 1.0) / self.n_sub)[None, :]
+                else:
+                    tauM = np.tile(u[:, None], (1, k))
                 f = self.sim.fA if k == self.n_sub else None
                 if f is not None:
                     X, R, jr, wall, GC, GV = [np.array(o) for o in f(np.concatenate([self.th, self.thd]), tt, TT, tauM)]
@@ -227,6 +265,7 @@ class PlanarCliffEnv(gym.Env):
                 if cands:
                     i_end, reason = min(cands); sub_term = True
                 self._commit(Uarr[:i_end + 1], u, exc[:i_end + 1], qde[:i_end + 1], jr[:i_end + 1], wall[:i_end + 1])
+                self._diag(Uarr[:i_end + 1], jr[:i_end + 1], wall[:i_end + 1], tt[:i_end + 1], "A")
                 cone_exc = max(cone_exc, float(exc[:i_end + 1].max())); qd_exc = max(qd_exc, float(qde[:i_end + 1].max()))
                 jr_max = max(jr_max, float(jr[:i_end + 1].max())); wall_pen = max(wall_pen, float(wall[:i_end + 1].max()))
                 self.th, self.thd = X[:NTH, i_end].copy(), X[NTH:, i_end].copy()
@@ -234,8 +273,14 @@ class PlanarCliffEnv(gym.Env):
                 dv = self.dev(self.t)
                 self.q = np.concatenate([dv["pA"], self.th]); self.qd = np.concatenate([dv["vA"], self.thd])
                 Gc, Gv = GC[:, i_end], GV[:, i_end]
-                term = sub_term
-                remaining = 0 if not sub_term else 0
+                if sub_term:
+                    term = True
+                    remaining = 0
+                elif k_rel is not None and k_rel <= k:
+                    remaining -= k                    # scheduled release reached: switch and continue the period in flight
+                    self.released = True; self.t_release = self.t; self.mode = "F"; self.release_at = None
+                else:
+                    remaining = 0
             elif self.mode == "F":
                 f = self.sim.fF if k == self.n_sub else None
                 if f is not None:
@@ -267,6 +312,7 @@ class PlanarCliffEnv(gym.Env):
                     i_end, ev = min(events)
                 self.d_min = min(self.d_min, float(d[:i_end + 1].min()))
                 self._commit(np.zeros(i_end + 1), u, np.zeros(i_end + 1), qde[:i_end + 1], jr[:i_end + 1], wall[:i_end + 1])
+                self._diag(np.zeros(i_end + 1), jr[:i_end + 1], wall[:i_end + 1], tt[:i_end + 1], "F")
                 qd_exc = max(qd_exc, float(qde[:i_end + 1].max()))
                 jr_max = max(jr_max, float(jr[:i_end + 1].max())); wall_pen = max(wall_pen, float(wall[:i_end + 1].max()))
                 self.q, self.qd = X[:NQ, i_end].copy(), X[NQ:, i_end].copy()
@@ -280,6 +326,7 @@ class PlanarCliffEnv(gym.Env):
                         self.off = float(device.D_LEDGE); self.q[0] = xB[i_end] + device.D_LEDGE
                     else:
                         self.off = float(np.clip(hx[i_end] - xB[i_end], -self.hook_tol, device.D_LEDGE))
+                    self.catch_off = self.off; self.catch_hand = (float(hx[i_end] - xB[i_end]), float(hy[i_end]))
                 elif ev is not None:
                     term, reason = True, ev
             else:  # C: hooked on B (attachment `off` is part of the integrated state; it slides when the cone is exceeded)
@@ -307,6 +354,7 @@ class PlanarCliffEnv(gym.Env):
                 if cands:
                     i_end, reason = min(cands); term = True
                 self._commit(Uarr[:i_end + 1], u, exc[:i_end + 1], qde[:i_end + 1], jr[:i_end + 1], wall[:i_end + 1])
+                self._diag(Uarr[:i_end + 1], jr[:i_end + 1], wall[:i_end + 1], tt[:i_end + 1], "C")
                 self.slip += float(slip[:i_end + 1].sum())
                 cone_exc = max(cone_exc, float(exc[:i_end + 1].max())); qd_exc = max(qd_exc, float(qde[:i_end + 1].max()))
                 jr_max = max(jr_max, float(jr[:i_end + 1].max())); wall_pen = max(wall_pen, float(wall[:i_end + 1].max()))
@@ -346,7 +394,10 @@ class PlanarCliffEnv(gym.Env):
                                d_min=self.d_min, release_time=(self.t_release - self.t0) if self.released else None,
                                catch_time=(self.t_catch - self.t0) if self.t_catch else None,
                                phi_release=((self.t_release % self.T) / self.T) if self.released else None,
-                               T=self.T, m=self.body.m, viol=dict(self.viol_acc), slip=self.slip, off=self.off)
+                               T=self.T, m=self.body.m, viol=dict(self.viol_acc), slip=self.slip, off=self.off,
+                               U_peak_A=self.U_peak_mode["A"], U_peak_C=self.U_peak_mode["C"], t_exceed=dict(self.t_exceed),
+                               jr_max=self.jr_max_total, wall_max=self.wall_max_total, catch_off=self.catch_off,
+                               catch_hand=getattr(self, "catch_hand", None), U_cap=self.U_cap)
         info = dict(success=success, reason=reason, U_peak=self.U_peak, E=self.E, mode=self.mode, d_min=self.d_min)
         return self._obs(), float(r), bool(term), bool(trunc), info
 
@@ -363,6 +414,21 @@ class PlanarCliffEnv(gym.Env):
             for j in range(n_out):
                 outs[j].append(res[j].reshape(-1, 1))
         return [np.hstack(o) for o in outs]
+
+    def _diag(self, Uarr, jr, wall, tt, mode):
+        """Episode diagnostics: per-mode peak utilisation, first exceedance time of each capacity level, max joint-range
+        excess and wall penetration (tt: absolute times of the sub-steps)."""
+        if len(Uarr):
+            self.U_peak_mode[mode] = max(self.U_peak_mode[mode], float(Uarr.max()))
+            for lv in self.U_levels:
+                if lv not in self.t_exceed:
+                    idx = np.nonzero(Uarr > lv)[0]
+                    if len(idx):
+                        self.t_exceed[lv] = float(tt[idx[0]] - self.t0)
+        if len(jr):
+            self.jr_max_total = max(self.jr_max_total, float(jr.max()))
+        if len(wall):
+            self.wall_max_total = max(self.wall_max_total, float(wall.max()))
 
     def _commit(self, Uarr, u, exc, qde, jr, wall):
         self.U = float(Uarr[-1]); self.U_peak = max(self.U_peak, float(Uarr.max()))

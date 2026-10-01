@@ -96,6 +96,12 @@ class ReducedParams:
     u0: tuple | None = None           # command currently applied (closed-loop plans): the first command may differ from it
                                       # by at most u_rate * u0_dt
     u0_dt: float = 0.02
+    # ---- plan-side margins / variants (experiment suite) ------------------------------------------
+    wall_margin: float = 0.0          # extra clearance of every body point to both walls [m]
+    joint_margin: float = 0.0         # joint ranges shrunk by this much at both ends [rad]
+    mu_scale: float = 1.0             # friction / hook coefficients scaled (cone shrink: < 1)
+    cap_relax: tuple = ()             # e.g. (("H", 1.1),): phase capacity constraints relaxed to U <= factor * U_peak
+    tau_scale: tuple = (1.0, 1.0, 1.0, 1.0)   # per-joint torque capacity scaling (elbow, shoulder, hip, knee)
 
 
 def smax(a, b, delta):
@@ -145,9 +151,13 @@ class PlanarNLP:
     def _dev(self, t):
         return device.device_ca(t, self.T, self.p.eps)
 
+    def _relax(self, phase):
+        """Capacity-constraint relaxation factor of a phase ('S', 'F', 'C', 'H', 'catch'); 1 unless set in cap_relax."""
+        return dict(self.p.cap_relax).get(phase, 1.0)
+
     def _rel_bounds(self, facing):
-        lo = np.array(self.p.rel_lo_face_neg)
-        hi = np.array(self.p.rel_hi_face_neg)
+        lo = np.array(self.p.rel_lo_face_neg) + self.p.joint_margin
+        hi = np.array(self.p.rel_hi_face_neg) - self.p.joint_margin
         if facing == "neg":
             return lo, hi
         if facing == "pos":
@@ -160,7 +170,7 @@ class PlanarNLP:
         pts = self.chain.f_tips(q)                # 2 x 5 clearance points
         hand = q[0:2]
         allP = ca.horzcat(hand, pts, self.chain.f_forearm(q))
-        clear = np.concatenate([[0.0], self.body.clearance, self.body.forearm_clearance])
+        clear = np.concatenate([[0.0], self.body.clearance, self.body.forearm_clearance]) + p.wall_margin
         h = dev["h"]
         xB = dev["x"]
         for i in range(allP.shape[1]):
@@ -243,7 +253,7 @@ class PlanarNLP:
             path(tk, X[:, k], A[:, k], U[:, k], Rv[:, k], True)
             self._first_knot = False
             if U_of is not None:
-                self._con(U_of(tk, X[:, k], A[:, k], U[:, k], Rv[:, k]) <= self.U_peak, "cap_" + name[0])
+                self._con(U_of(tk, X[:, k], A[:, k], U[:, k], Rv[:, k]) <= self._relax(name[0]) * self.U_peak, "cap_" + name[0])
         eff = 0
         smooth = 0
         for k in range(N):
@@ -257,7 +267,7 @@ class PlanarNLP:
             eff += dt / 6 * (E[k] + 4 * em + E[k + 1])
             path(tm, xm, Am[:, k], Um[:, k], Rm[:, k], False)
             if U_of is not None:
-                self._con(U_of(tm, xm, Am[:, k], Um[:, k], Rm[:, k]) <= self.U_peak, "cap_" + name[0])
+                self._con(U_of(tm, xm, Am[:, k], Um[:, k], Rm[:, k]) <= self._relax(name[0]) * self.U_peak, "cap_" + name[0])
             if U_shared is None:
                 smooth += ca.sumsqr(U[:, k + 1] - U[:, k])
         self.vars[name + "_X"] = X
@@ -287,8 +297,9 @@ class PlanarNLP:
         # capability parameters (values set in solve(); multipliers give their shadow prices)
         self.par = dict(tau_cap=opti.parameter(NTAU), mu_out=opti.parameter(), mu_in=opti.parameter(),
                         v_rel_max=opti.parameter(), v_away_max=opti.parameter(), qd_max=opti.parameter())
-        self.par_values = dict(tau_cap=np.array(b.tau_cap, float), mu_out=float(b.mu_out), mu_in=float(b.mu_in),
-                               v_rel_max=float(p.v_rel_max), v_away_max=float(p.v_away_max), qd_max=float(b.qd_max))
+        self.par_values = dict(tau_cap=np.array(b.tau_cap, float) * np.array(p.tau_scale, float), mu_out=float(b.mu_out) * p.mu_scale,
+                               mu_in=float(b.mu_in) * p.mu_scale, v_rel_max=float(p.v_rel_max), v_away_max=float(p.v_away_max),
+                               qd_max=float(b.qd_max))
         tau_cap = self.par["tau_cap"]
         f_cap = b.f_cap
 
@@ -565,7 +576,7 @@ class PlanarNLP:
             # catch load = impulse pulse superposed on the sustained tension right after the catch (Sec. 6.3 / 6.4)
             U_H0 = ca.sqrt(RH[0, 0] ** 2 + RH[1, 0] ** 2 + 1e-8)
             U_catch = U_imp + U_H0
-            self._con(U_catch <= U_peak, "cap_catch")
+            self._con(U_catch <= self._relax("catch") * U_peak, "cap_catch")
             scen_efforts.append(sum(eff_list))
             self.scen.append(dict(k=k, delta=deltas[k], nominal=nominal, d_f=d_f, t_l=t_lk, t_c=t_c, t_h0=t_h0,
                                   U_imp=U_imp, U_catch=U_catch, sfx=sfx))
