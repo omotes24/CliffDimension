@@ -4,3 +4,7 @@ casadi>=3.6
 mujoco>=3.1
 matplotlib
 pytest
+scikit-learn
+pandas
+torch
+gymnasium
