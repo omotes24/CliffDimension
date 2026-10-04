@@ -74,6 +74,8 @@ def main():
     ap.add_argument("--backup", default="results/grid_prepolish"); ap.add_argument("--workers", type=int, default=22)
     ap.add_argument("--passes", type=int, default=8); ap.add_argument("--tol", type=float, default=0.08)
     ap.add_argument("--max-cpu", type=float, default=900.0); ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--nb-max", type=float, default=2.0, help="only neighbours with U_peak below this value are used as warm starts (a low-load "
+                                                             "solution is propagated; neighbours that sit in the high-load basin themselves are not)")
     a = ap.parse_args()
     if a.backup and not os.path.exists(a.backup):
         shutil.copytree(a.grid, a.backup)
@@ -88,7 +90,7 @@ def main():
             nb = [(T2, m, ph) for T2 in Ts if T2 != T]
             nb += [(T, m, phis[(i - 1) % len(phis)]), (T, m, phis[(i + 1) % len(phis)])]
             nb += [(T, ms[j2], ph) for j2 in (j - 1, j + 1) if 0 <= j2 < len(ms)]
-            cand = [(sols[k][2], sols[k][0]) for k in nb if k in sols and sols[k][1]]
+            cand = [(sols[k][2], sols[k][0]) for k in nb if k in sols and sols[k][1] and sols[k][2] <= a.nb_max]
             cand = [c for c in sorted(cand) if ((not ok) or U > (1 + a.tol) * c[0]) and (os.path.basename(f), os.path.basename(c[1])) not in tried]
             if cand:
                 jobs.append((f, cand[0][1], ph, a.max_cpu))
@@ -108,8 +110,6 @@ def main():
                 json.dump(sorted(tried), open(tried_fn, "w"))
                 print(f"  {res['file']} <- {res['frm']}: U {res['old_U']:.3f} -> {res['new_U']:.3f} ok={res['new_ok']} improved={res['improved']} {res['solve_s']}s", flush=True)
         print(f"pass {ps}: {n_imp} of {len(jobs)} improved", flush=True)
-        if n_imp == 0:
-            break
     print("polish finished", flush=True)
 
 
