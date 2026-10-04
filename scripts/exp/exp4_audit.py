@@ -196,6 +196,9 @@ def main():
     ap.add_argument("--workers", type=int, default=12); ap.add_argument("--max-cpu", type=float, default=900.0)
     ap.add_argument("--parts", default="1,2,3,4", help="comma list of 1, 2, 2t, 3, 4"); ap.add_argument("--n-states", type=int, default=NSTATE)
     ap.add_argument("--max-cpu-tight", type=float, default=3000.0)
+    ap.add_argument("--fd-eps", type=float, nargs="+", default=[1e-3, 3e-3, 1e-2],
+                    help="step sizes of 4.2t in normalised coordinates; steps already in fd_check_tight.csv are kept (the re-solve "
+                         "noise of ~1e-3 in J hides the first-order change below eps ~ 0.03)")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     ref = a.ref or os.path.join(a.grid, "sol_ref_T18_m66_phi0.250.pkl")
@@ -232,7 +235,7 @@ def main():
         tasks = [dict(task_key=f"base_k{k:03d}", ref=ref, k=k, out=a.out, max_cpu=a.max_cpu_tight) for k in knots]
         db = pool_map(task_fd_base, tasks, a.workers, os.path.join(a.out, "fd_tight_base.csv"), "exp4.2t-base")
         tasks = [dict(task_key=f"fdt_k{k:03d}_{dn}_{eps:g}", ref=ref, k=k, dir=d.tolist(), dir_name=dn, eps=eps, scales=sc.tolist(), out=a.out, max_cpu=a.max_cpu_tight)
-                 for k in knots for dn, d in dirs.items() for eps in (1e-3, 3e-3, 1e-2)]
+                 for k in knots for dn, d in dirs.items() for eps in a.fd_eps]
         dt_ = pool_map(task_fd_tight, tasks, a.workers, os.path.join(a.out, "fd_check_tight.csv"), "exp4.2t")
         if len(dt_) and "rel_err" in dt_:
             ok = dt_[dt_["ok"] == 1].merge(db[["k", "noise"]], on="k", how="left")
@@ -247,6 +250,11 @@ def main():
                         same_active_set=dict(n=int(len(smooth)), rel_err_median=float(smooth["rel_err"].median()) if len(smooth) else None),
                         by_eps={f"{e:g}": dict(median=float(g["rel_err"].median()), sign=float(g["sign_ok"].mean())) for e, g in ok.groupby("eps")},
                         by_dir={dn: float(g["rel_err"].median()) for dn, g in ok.groupby("dir")})
+            summ["by_eps_detail"] = {f"{e:g}": dict(n=int(len(g)), resolvable=int(g["resolvable"].sum()), rel_err_median=float(g["rel_err"].median()),
+                                                     rel_err_median_resolvable=float(g[g["resolvable"] == 1]["rel_err"].median()) if g["resolvable"].sum() else None,
+                                                     sign=float(g["sign_ok"].mean()), corr=float(np.corrcoef(g["D_dual"], g["D_fd"])[0, 1]) if len(g) > 2 else None,
+                                                     slope=float(np.polyfit(g["D_dual"], g["D_fd"], 1)[0]) if len(g) > 2 else None,
+                                                     active_set_changed=float(g["active_set_changed"].mean())) for e, g in ok.groupby("eps")}
             ok.to_csv(os.path.join(a.out, "fd_check_tight_merged.csv"), index=False)
             save_json(summ, os.path.join(a.out, "fd_tight_summary.json")); print(json.dumps(summ, indent=1))
     if "3" in parts and os.path.exists(a.models):
