@@ -47,7 +47,11 @@ def rd(*p):
 
 # ===================================================================================================== experiment 1
 def exp1():
-    U = rd("exp1", "U_peak_by_objective.csv").set_index("cond"); E = rd("exp1", "effort_by_objective.csv").set_index("cond")
+    t = rd("exp1", "table.csv"); t = t[t["ok"] == True]                 # solves that did not converge are shown as "---"
+    conds = sorted(rd("exp1", "table.csv")["cond"].unique())
+    U = t.pivot_table(index="cond", columns="obj", values="U_peak").reindex(conds); E = t.pivot_table(index="cond", columns="obj", values="effort").reindex(conds)
+    for k in ("lexico1", "lexico2", "w100", "current", "w1"):
+        if k not in U: U[k] = np.nan; E[k] = np.nan
     ok = U[(U["lexico1"] < 2.0)].index                                  # conditions inside the feasible region (U <= 2)
     names = {"lexico1": "容量最優先（$\\min U$）", "lexico2": "辞書式（$U \\leq 1.01\\,\\hat{U}$ の下で努力最小）", "w100": "$w_U=100$", "current": "$w_U=10$（本稿）", "w1": "$w_U=1$"}
     order = ["lexico1", "lexico2", "w100", "current", "w1"]
@@ -68,13 +72,19 @@ def exp1():
     mac("objNcond", len(ok)); mac("objNall", len(U))
     mac("objCurMax", dU["current"].max(), 1); mac("objCurMed", dU["current"].median(), 1)
     mac("objWhundredMax", dU["w100"].max(), 1); mac("objWoneMax", dU["w1"].max(), 1); mac("objWoneMed", dU["w1"].median(), 1)
+    mac("objWhundredAbs", dU["w100"].abs().max(), 1)
+    mac("objLexTwoWorse", int((E.loc[ok, "lexico2"] > E.loc[ok, "lexico1"]).sum()))
+    hi = U[(U["lexico1"] >= 2.0)].index                                 # converged, but only as a high-load solution
+    mac("objNhigh", len(hi)); mac("objNfail", int(U["lexico1"].isna().sum()))
+    mac("objHighCurMax", (100 * (U.loc[hi, "current"] / U.loc[hi, "lexico1"] - 1)).max() if len(hi) else np.nan, 1)
+    mac("objHighUmin", U.loc[hi, "current"].min() if len(hi) else np.nan, 1); mac("objHighUmax", U.loc[hi, "current"].max() if len(hi) else np.nan, 1)
     mac("objLexEffMin", dE["lexico1"].min(), 0); mac("objLexEffMax", dE["lexico1"].max(), 0)
     mac("objLexTwoEffMed", dE["lexico2"].median(), 0)
     rows = []
     for c in U.index:
         T, m, ph = re.match(r"T(\d+)_m(\d+)_phi([0-9.]+)", c).groups()
         f = lambda v: "---" if not np.isfinite(v) else f"{v:.3f}"
-        rows.append([m, f"{float(ph):.3f}"] + [f(U.loc[c, k]) for k in order] + [f"{E.loc[c, k]:.2f}" if np.isfinite(E.loc[c, k]) else "---" for k in ("lexico1", "current", "w1")])
+        rows.append([m, f"{float(ph):.4f}".rstrip("0")] + [f(U.loc[c, k]) for k in order] + [f"{E.loc[c, k]:.2f}" if np.isfinite(E.loc[c, k]) else "---" for k in ("lexico1", "current", "w1")])
     tab("tab_x1", ["$m$ [kg]", "$\\phi_\\ell$", "容量最優先", "辞書式", "$w_U{=}100$", "$w_U{=}10$", "$w_U{=}1$", "$E$：容量最優先", "$E$：$w_U{=}10$", "$E$：$w_U{=}1$"], rows, "rr|rrrrr|rrr")
 
 
@@ -669,7 +679,11 @@ PAT = re.compile(r"sol_ref_T(?P<T>[0-9.]+)_m(?P<m>[0-9.]+)_phi(?P<phi>[0-9.]+)\.
 
 
 def grid_summary(gdir, cache):
-    if os.path.exists(cache) and os.path.getmtime(cache) > max(os.path.getmtime(f) for f in glob.glob(os.path.join(gdir, "sol_ref_*.pkl"))):
+    pk = glob.glob(os.path.join(gdir, "sol_ref_*.pkl"))
+    if not pk:                                                          # no solutions on this machine: the tracked summary
+        alt = os.path.join(ROOT, "results", "suite_final", os.path.basename(cache))
+        return pd.read_csv(cache if os.path.exists(cache) else alt)
+    if os.path.exists(cache) and os.path.getmtime(cache) > max(os.path.getmtime(f) for f in pk):
         return pd.read_csv(cache)
     rows = []
     for f in sorted(glob.glob(os.path.join(gdir, "sol_ref_T*_m*_phi*.pkl"))):
@@ -690,7 +704,7 @@ def grid_summary(gdir, cache):
 def grid():
     d = grid_summary(os.path.join(ROOT, "results", "grid"), os.path.join(FIG, "grid_final.csv"))
     pre_dir = os.path.join(ROOT, "results", "grid_prepolish")
-    pre = grid_summary(pre_dir, os.path.join(FIG, "grid_prepolish.csv")) if os.path.isdir(pre_dir) else None
+    pre = grid_summary(pre_dir, os.path.join(FIG, "grid_prepolish.csv")) if (os.path.isdir(pre_dir) or os.path.exists(os.path.join(FIG, "grid_prepolish.csv"))) else None
     d["Uok"] = np.where(d["ok"] == 1, d["U"], np.nan)
     ms = sorted(d["m"].unique()); Ts = sorted(d["T"].unique()); phis = sorted(d["phi"].unique())
     mac("gridN", len(d)); mac("gridNok", int(d["ok"].sum())); mac("gridNT", len(Ts)); mac("gridNm", len(ms)); mac("gridNphi", len(phis))

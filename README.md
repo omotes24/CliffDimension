@@ -102,6 +102,36 @@ finger-hook capacity on both cliffs, sliding hook on B, bracing contact with B's
 zero-order hold of the torque commands. Controllers (`katsumi/learn/`): dual-field MPC (`swing_mpc.py`), oracle-in-the-loop
 MPC (`oracle_mpc.py`), landing reflex shared by all methods (`reflex.py`).
 
+## Experiment suite of the paper (experiments 0–9)
+
+Frozen evaluation rules: `scripts/exp/exp0_config.py` (`F_ref` = 1300 N is the display unit, `F_max` = c·`F_ref` the capacity
+allowed in closed loop, headline c = 2.0; success = rest start → release before the deadline → catch → 2 s hold).
+```
+bash scripts/exp/run_suite.sh        # solver lane (exp1, exp9, exp2, exp3) and learning lane (exp4 → training → exp5 → exp6 → exp7) on CPU + GPU
+bash scripts/exp/run_extra.sh        # exp8 (generalisation, envelope transfer) and the 0.8 s horizon ablation of exp6
+bash scripts/exp/run_followup.sh     # exp3 re-solve, exp4 tight finite-difference check of the costates
+python scripts/exp/exp9_polish.py --grid results/grid --tag ref --workers 22 --passes 12    # lattice-neighbour continuation of the 864-case grid
+python scripts/exp/exp1_objective.py --grid results/grid --out results/suite/exp1           # objective weights, from the polished grid
+MUJOCO_GL=osmesa python scripts/fig_3d.py --ref results/grid/sol_ref_T18_m66_phi0.250.pkl --out results/figs   # 3D figures
+python scripts/paper_final.py --parts all      # every figure, table and number of the manuscript (paper/numbers_final.tex)
+bash scripts/package_paper.sh outputs          # PDF + self-contained LaTeX source
+```
+| experiment | script | question |
+|---|---|---|
+| 1 | `exp1_objective.py` | does the objective weight change the required capacity? |
+| 2 | `exp2_replay.py` | why does the replay of a plan fail (control period, release time, mesh, start phase)? |
+| 3 | `exp3_margins.py` | do constraint margins or release-time scenarios make plans executable? |
+| 4 | `exp4_audit.py` | are the dual labels correct (dependence on the last command, finite differences, trajectory labels)? |
+| 5 | `exp5_ranking.py` | does the learned field rank candidate actions like the oracle? |
+| 6 | `exp6_compare.py` | closed loop: dual-field MPC against the same MPC without dual labels, and the other controllers |
+| 7 | `exp7_data.py` | amount of data against how it is collected (reference neighbourhood / visited states) |
+| 8 | `exp8_general.py` | extrapolation in mass, period and stature; first-order transfer by the envelope theorem |
+| 9 | `exp9_physics.py`, `exp9_polish.py` | which phase sets the required capacity; the complete 864-case grid |
+
+`results/suite/` is working data and is not tracked; `results/suite_final/` is the tracked snapshot of its tables
+(CSV / JSON, the summary of the grid before and after the continuation, the continuation log). `scripts/paper_final.py`
+reads `results/suite` and falls back to `results/suite_final`.
+
 ## Conventions
 
 `T` is the FULL device period (one cycle out and back); the one-way travel time is `T/2`.

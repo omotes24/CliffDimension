@@ -75,8 +75,12 @@ $\times$ はどの周期でも解が得られなかった位相．破線は $\Fr
 比べたのは，本稿の重み $w_U=10$，その 10 倍と 10 分の 1，$\Upk$ だけを最小化する容量最優先，
 および容量最優先の最小値 $\hat U$ の 1.01 倍以内という制約のもとで努力を最小化する辞書式の 5 通りである．
 $\Upk\le2$ で解けた \objNcond 条件では，本稿の重みによる $\Upk$ は容量最優先の最小値より最大 \objCurMax\,\%（中央値 \objCurMed\,\%）大きいだけである．
-重みを 100 にすると差は \objWhundredMax\,\%以下になり，1 にすると最大 \objWoneMax\,\%になる．
+重みを 100 にすると容量最優先との差は \objWhundredAbs\,\%以内になり，1 にすると最大 \objWoneMax\,\%になる．
 容量最優先の解は努力が \objLexEffMin〜\objLexEffMax\,\%増える．
+辞書式の第 2 段（努力の最小化）は，\objLexTwoWorse 条件で第 1 段より努力の大きい解に収束した．これは局所解であり，辞書式の努力の値は上界として読む．
+残りの条件のうち \objNhigh 条件は高負荷の解（$\Upk=$\objHighUmin〜\objHighUmax）で，\objNfail 条件（$m=75$\,kg，$\phi_\ell=0.375$）はどの目的関数でも収束しなかった．
+高負荷の条件でも，目的関数による $\Upk$ の違いは \objHighCurMax\,\%以下である．
+高負荷の解になるかどうかは目的関数の重みでは決まらず，条件（と初期解）で決まっている．
 $w_U\ge10$ であれば，必要把持容量についての結論は重みに依らない．
 \begin{figure*}[t]
 \centering
@@ -87,7 +91,7 @@ $w_U\ge10$ であれば，必要把持容量についての結論は重みに依
 \end{figure*}
 \begin{table*}[t]
 \centering\scriptsize
-\caption{目的関数ごとの必要把持容量 $\Upk$ と努力 $E$（$T=18$\,s）．---は収束しなかった条件．}
+\caption{目的関数ごとの必要把持容量 $\Upk$ と努力 $E$（$T=18$\,s）．---は収束しなかった条件．格子の連続法の後の解を初期値にした．}
 \label{tab:objective}
 \IfFileExists{tab_x1.tex}{\input{tab_x1}}{（計算中）}
 \end{table*}
