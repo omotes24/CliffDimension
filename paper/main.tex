@@ -4,29 +4,22 @@
 \usepackage{amsmath,amssymb,bm}
 \usepackage{booktabs}
 \usepackage{url}
-\IfFileExists{numbers.tex}{\input{numbers.tex}}{}
 \IfFileExists{numbers_dfl.tex}{\input{numbers_dfl.tex}}{}
+\IfFileExists{numbers_final.tex}{\input{numbers_final.tex}}{}
 \makeatletter
 \renewcommand{\signame}{}          % ヘッダの回次・シンポジウム名を空欄にする
 \makeatother
 \newcommand{\Upk}{U_{\mathrm{peak}}}
 \newcommand{\Eeff}{E_{\mathrm{eff}}}
-% 未計算の数値のための既定値（numbers_dfl.tex が上書きする）
-\providecommand{\costateFD}{0.4}\providecommand{\costateDense}{2.3}
-\providecommand{\dflNsolve}{---}\providecommand{\dflNok}{---}\providecommand{\dflNrows}{---}\providecommand{\dflNref}{---}
-\providecommand{\elastTau}{---}\providecommand{\elastTauMean}{---}\providecommand{\elastTauTen}{---}
-\providecommand{\capHoldShare}{---}\providecommand{\capCatchShare}{---}\providecommand{\capSwingShare}{---}
-\providecommand{\dflWidth}{384}\providecommand{\dflDepth}{3}
-\providecommand{\fitVhold}{---}\providecommand{\fitTauhold}{---}\providecommand{\fitPhold}{---}\providecommand{\fitPholdNoSob}{---}\providecommand{\fitUhold}{---}
+\newcommand{\Fref}{F_{\mathrm{ref}}}
+\newcommand{\Fmax}{F_{\max}}
+\newcommand{\tgo}{t_{\mathrm{go}}}
+\newcommand{\taucap}{\tau^{\mathrm{cap}}}
+% まだ計算されていない数値の既定値（numbers_final.tex が上書きする）
+\providecommand{\fdBigCorr}{---}\providecommand{\fdBigSign}{---}\providecommand{\fdBigRel}{---}\providecommand{\fdBigN}{---}\providecommand{\fdBigResolvable}{---}
 \providecommand{\rlSuccessAll}{0}\providecommand{\rlEpisodesAll}{---}
-\providecommand{\winlo}{0.25}\providecommand{\winhi}{0.31}
-\providecommand{\vthreecapmin}{---}\providecommand{\vthreecapmax}{---}
-\providecommand{\closedloopSummary}{（閉ループ評価は計算中）}
-\providecommand{\fitRhohold}{---}\providecommand{\fitSignhold}{---}\providecommand{\fitRhoval}{---}\providecommand{\fitSignval}{---}\providecommand{\fitRhoholdNoSob}{---}\providecommand{\fitSignholdNoSob}{---}\providecommand{\fitRhovalNoSob}{---}\providecommand{\fitSignvalNoSob}{---}\providecommand{\fitVval}{---}\providecommand{\fitTauval}{---}\providecommand{\fitUval}{---}\providecommand{\fitNtrain}{---}\providecommand{\fitNval}{---}\providecommand{\fitNhold}{---}
-\providecommand{\gridNsolved}{---}\providecommand{\gridNcases}{---}\providecommand{\winNfeasible}{---}
-\providecommand{\execRelZohTwenty}{---}\providecommand{\execRelHalfTwenty}{---}\providecommand{\execRelFour}{---}\providecommand{\execCatchFour}{---}\providecommand{\execHoldFour}{---}
-\providecommand{\valueRmseHold}{---}\providecommand{\valueRmseVal}{---}\providecommand{\valueStd}{---}\providecommand{\valueChangeH}{---}\providecommand{\valueChangeHlong}{---}\providecommand{\tauRmseHold}{---}\providecommand{\tauRmseVal}{---}
-\providecommand{\execRelFourComp}{---}\providecommand{\execCatchFourComp}{---}\providecommand{\execHoldFourComp}{---}\providecommand{\execErrFour}{---}\providecommand{\execErrTwenty}{---}
+\setcounter{topnumber}{3}\setcounter{dbltopnumber}{3}\setcounter{totalnumber}{5}
+\renewcommand{\topfraction}{0.95}\renewcommand{\dbltopfraction}{0.95}\renewcommand{\textfraction}{0.04}\renewcommand{\floatpagefraction}{0.75}\renewcommand{\dblfloatpagefraction}{0.75}
 
 \begin{document}
 \title{世界モデルによるクリフディメンション攻略}
@@ -35,170 +28,18 @@
 \maketitle
 
 \section*{概要}
-クリフディメンションの背面飛び移りを，3\,cm 突起の有限な把持容量を含む力学課題として定式化し，前腕干渉を含む
-平面 5 リンク人体の多相軌道最適化から離手位相・装置周期・体重ごとの必要把持容量を求めた．実行可能な離手位相は
-往路の狭い窓に限られ，必要容量は捕捉後の保持で決まる．さらに，最適化の KKT 双対変数（価値・costate・影の価格）を
-学習対象とする双対場学習を提案し，同一物理のコンパイル環境で行動模倣・強化学習・オラクル MPC と閉ループ比較した．
-執行系の離散化と活性制約上の最適解が閉ループの成否を支配することを示す．
+\input{abstract}
 
-\section{はじめに}
-クリフディメンションは，上下に動く突起（クリフ A）に両手でぶら下がった状態から体を振って離手し，
-空中で向きを変え，左右に動く突起（クリフ B）を両手で捕捉する課題である．
-突起の奥行きは 3\,cm であり，成否は重心の放物線だけでなく，手先の相対速度・掛かり代・指の把持容量に依存する．
-本研究の最終目標は，身長・体重・筋力の異なる誰にとっても「どう飛べば届くか」を計算し，
-それを学習器が自律的に獲得できるようにすることである．
-3\,cm 突起の捕捉は報酬が極端に疎で，成功軌道が一度も観測されないまま学習が停滞する（第~\ref{sec:learning}節で実測する）．
-そこで本稿は二段構えを採る．
-第一段（第~\ref{sec:model}--\ref{sec:results}節）は，学習に先立ち「物理的に何が要求されるか」を決定論的に確定させる．
-第二段（第~\ref{sec:dfl}--\ref{sec:learning}節）は，その最適化が副産物として与える\textbf{双対変数}を学習の教師と表現にする
-新しい原理を提案し，小規模実験で検証する．
-貢献は，
-(i)~前腕干渉を含む修正モデルによる離手位相の実行可能窓と必要把持容量の $T$--$m$--体格マップ，
-その乗数による支配制約の同定と能力弾性，
-(ii)~双対場学習の定式化（オラクルの双対ラベル，Sobolev 学習，Pontryagin 制御と短地平線 MPC，包絡線定理による転移），
-(iii)~最適化器と同一物理の高速環境と，オラクル・行動模倣・強化学習の同一土俵での比較，
-および閉ループ失敗の執行系への分解（制御周期・標本化・活性制約上の最適解），である．
-
+\input{sec_intro}
 \input{sec_related}
-
-\section{問題設定}
-\label{sec:problem}
-\subsection{装置と座標系}
-$+x$ を A から B，$+y$ を鉛直上向きとし，B の把持面高さを $y=0$ に置く．
-装置周期を $T$（片道 $T/2$），$u=t \bmod T$，位相 $\phi=u/T\in[0,1)$ とし，
-先端点を $\bm p_A(t)=(0,h(t))$，$\bm p_B(t)=(x(t),0)$，
-$x=1.80+0.90\rho_\epsilon(\phi)$，$h=0.90(1-\rho_\epsilon(\phi))$ [m] とする（図~\ref{fig:device}）．
-$\rho_\epsilon$ は端点で速度が 0 になる平滑化三角波（折り返し時間 $\epsilon=0.20$\,s）で，
-$\phi<0.5$ が往路（A 下降・B 遠ざかる），$\phi\ge0.5$ が復路である．
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{../results/figs/device_motion.pdf}
-\caption{装置運動（$T=20$\,s）．左：先端間距離 $x$ と高低差 $h$．右：装置速度（平滑化と三角波）．}
-\label{fig:device}
-\end{figure}
-\subsection{突起形状と成功条件}
-突起は前面から 3\,cm 張り出し，鉛直高さ 5\,cm，その下 15\,cm が本体前面（手首・前腕の移動を制限する面），
-それより下は開放空間である．先端上縁には手への食い込みを避ける R\,5\,mm の丸みを与えた．
-A を両手で把持し胸を A に向けた静止状態から開始し，1 周期 $T$ 以内に離手，B を両手で捕捉して 2.0\,s 保持できれば成功とする．
-把持負荷は両手合計の突起反力 $\bm R$ に対し $U=\|\bm R\|/F_{\mathrm{cap}}$，$\Upk=\max_t U$ で表す
-（$F_{\mathrm{cap}}$：両手の把持容量，基準値 1300\,N）．努力指標は
-\begin{equation}
-\Eeff=\frac{1}{t_{\mathrm{ref}}}\int\Bigl\{\frac1{n_j}\sum_j\Bigl(\frac{\tau_j}{\tau_j^{\mathrm{cap}}}\Bigr)^2+U^2\Bigr\}\,dt
-\end{equation}
-とする（$t_{\mathrm{ref}}=1$\,s）．
-
-\section{縮約モデルと軌道最適化}
-\label{sec:model}
-\label{sec:opt}
-\subsection{平面 5 リンク人体}
-前腕＋手，上腕，体幹＋頭部，大腿，下腿の 5 リンク（左右合算）を，de~Leva~\cite{deleva1996} の質量比・重心位置・回転半径から
-体重 $m$ と身長 $H$（基準 1.75\,m，全リンク長を $H/1.75$ でスケール）に合わせて構成した．
-両手の掛かり線（PIP）を基底座標 $\bm p_h$ とし，$\bm q=(\bm p_h,\theta_1,\dots,\theta_5)$ の運動方程式
-$\bm M(\bm q)\ddot{\bm q}+\bm h(\bm q,\dot{\bm q})=\bm B\bm\tau+\bm J^\top\bm R$ を CasADi で記号導出した．
-把持中は $\bm p_h$ が装置に従属し，$\bm R$ は拘束力として第 1,2 行から得られる．
-肘・肩・股・膝のトルク上限（両側合計 120/160/300/240\,N\,m），関節可動域（肩の過伸展 35 度まで），関節角速度 10\,rad/s，
-指令トルク変化率 $10\tau^{\mathrm{cap}}$/s を課した．
-\textbf{前腕干渉}：把持中の前腕は突起面に沿って垂れ下がるので，掛かり線から 8\,cm と 16\,cm の前腕上の点が
-突起面より手前（1\,cm，2\,cm の余裕）に留まる制約を全相で課す．
-初期実装にはこの制約がなく，最適化器は前腕を突起板に食い込ませて振り上げる非物理解を返していた
-（3 次元モデルの構築中に発見）．本稿の結果はすべて修正モデル（v3）で再計算したものである．
-\subsection{相構成と捕捉モデル}
-待機（静止把持）→振り（A に拘束）→飛行（自由鎖，内部トルクのみ）→捕捉→保持（B に拘束 2.0\,s）の多相問題とした．
-捕捉は掛かり線が B 先端に一致し，手先が把持面へ向かう（$v_{\mathrm{rel},y}\le0$，壁から離れる速度 $\le0.5$\,m/s，
-$\|\bm v_{\mathrm{rel}}\|\le4$\,m/s）ときの完全非弾性衝突として扱い，
-衝撃力積 $\bm\Lambda$ を $\bm M(\dot{\bm q}^+-\dot{\bm q}^-)=\bm J^\top\bm\Lambda$ から求める．
-捕捉負荷は，力積を $\Delta_c=50$\,ms に均した力と捕捉直後の持続張力 $\bm R_H(0)$ の重ね合わせ
-\begin{equation}
-U_{\mathrm{catch}}=\frac{\dfrac{\|\bm\Lambda\|}{\Delta_c}+\|\bm R_H(0)\|}{F_{\mathrm{cap}}}
-\end{equation}
-とした．順応捕捉（剛性 40\,kN/m，減衰 1.5\,kN\,s/m の Hunt--Crossley 型フック）を最適化の内部に置く定式化も実装し，
-剛体衝突との差を比較する．
-突起反力には片側支持 $R_y\ge0$ と摩擦・引っ掛かり錐（壁から離れる向き $\mu_{\mathrm{out}}=1.0$，
-壁へ向かう向き $\mu_{\mathrm{in}}=2.0$）を課し，壁・突起との干渉は各部位の平滑化 max 制約で除いた．
-\subsection{目的関数と数値法}
-「必要把持容量の最小化」を主目的とし，$J=w_U\Upk+w_E\Eeff$（$w_U=10,w_E=1$）を最小化した．
-$\Upk$ は epigraph 変数で，$\Upk\times1300$\,N がその離手位相で成功するために必要な両手容量である．
-離散化は圧縮型 Hermite--Simpson（振り 150，飛行 30，保持 60 区間，暗黙力学），求解は IPOPT~\cite{wachter2006}（CasADi~\cite{andersson2019}）である．
-非凸性への対処として，各条件を複数の振り初期解（振幅・周期・立ち上がりの異なる 6 種）から解き，
-さらに位相方向に隣接解を暖機初期値とする連続法を往復させて下包絡線を取った．
-飛行中の重心放物線・角運動量保存を許容帯付き制約として追加し，全解を RK4 1\,ms で再積分して一致を監査した．
-\subsection{双対変数と感度}
-関節トルク容量・摩擦係数・関節速度上限・捕捉速度上限を Opti のパラメータとして定式化し，
-解の乗数からラグランジアンのパラメータ勾配 $\partial J^*/\partial\ln p$（包絡線定理）を得る．
-これは「その能力が 1\,\%増えたとき必要容量がどれだけ減るか」という影の価格である．
-同様に，制約種別（摩擦錐・可動域・関節速度・壁・捕捉幾何）ごとの乗数量と，
-容量エピグラフ制約の乗数の相別配分（振り・捕捉・保持）を記録する．
-後者は「$\Upk$ をどの瞬間が決めているか」を，$U$ が $\Upk$ に達しているかどうかではなく乗数で判定する
-（ミニマックス解では等振動により複数箇所が同時に $\Upk$ に触れるため，到達だけでは支配性を判定できない）．
-
-\section{3 次元人体モデル}
-\label{sec:spatial}
-体幹 6 自由度と左右独立の肩 2・肘 1・股 1・膝 1 をもつ 14 自由度のひねりモデルを CasADi で構築し，
-左右の手の離手・捕捉の時間差と把持幅を持つ戦略ごとに同じ多相最適化を解く枠組みを実装した
-（片手ごとの把持負荷，Baumgarte 型の拘束安定化，2 段階求解）．
-両手を合算する平面モデルは衝撃が先に触れる手に集中する効果を過小評価するので，
-片手容量の要求は平面値より大きい．その掃引は計算中であり，本稿では枠組みと予備結果のみ報告する．
-MuJoCo~\cite{todorov2012} 上の 31 関節＋指開閉の人体環境と有限容量把持モデルも構築し，受入試験を自動化した．
-
-\section{結果 I：物理}
-\label{sec:results}
-\subsection{離手位相の実行可能窓}
-修正モデルの再計算は $T\in\{16,\dots,24\}$\,s $\times$ $m\in\{60,\dots,75\}$\,kg $\times$ 16 位相の 864 条件について進行中で，
-本稿執筆時点で \gridNcases 条件（$T=16$--$19$\,s）が終わっている．
-その範囲で，離手位相 $\phi_\ell$ の実行可能範囲は明確な窓をもつ（図~\ref{fig:reqcap}，表~\ref{tab:window}）．
-往路の $\phi_\ell\in[\winlo,\winhi]$ では全身体で $\Upk=$\vthreecapmin--\vthreecapmax
-（両手 1300\,N 基準；体重比では 2.3--2.7\,BW）で解が得られる．
-$\phi_\ell=0.375$ では必要容量が 2.4--3.7（5--7\,BW，超人的）へ跳ね上がり，$\phi_\ell\ge0.44$ では
-片側からの振りでは先端間距離 2.5--2.7\,m の水平射出速度が得られず（到達不足 3--15\,cm），実行不能である．
-復路の谷は，これまでに計算できた $m=60$\,kg（$T=17,18$\,s）で $\phi_\ell\approx0.69$--$0.81$ に往路と同等の容量で現れる
-（他の体重の復路は計算中）．
-旧モデル（前腕干渉なし）の「全位相で 2.3--2.9\,BW の二谷構造」は，前腕を板に食い込ませた振りに依存した
-見かけの結果であり，修正モデルでは成立しない．
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\linewidth]{../results/figs/reqcap_vs_phase.pdf}
-\caption{離手位相 $\phi_\ell$ と必要両手把持容量（修正モデル，\gridNcases 条件計算済み；グリッドは計算継続中）．
-$\triangle$ は 2（両手 2600\,N，超人的）を超える解，$\times$ は実行不能（到達不足），灰色は復路．}
-\label{fig:reqcap}
-\end{figure*}
-\begin{table}[t]
-\centering\scriptsize
-\caption{実行可能窓の要約（位相について最小化した必要容量 [両手 1300\,N 比 / BW]）．}
-\label{tab:window}
-\IfFileExists{tab_window.tex}{\input{tab_window}}{（計算中）}
-\end{table}
-
-\subsection{支配制約と能力弾性}
-容量エピグラフの乗数は保持相 \capHoldShare\,\%・捕捉 \capCatchShare\,\%・振り \capSwingShare\,\%に配分され，
-必要把持容量を決めているのは捕捉後に振れ戻る身体を支える保持である（振りの $U$ は 0.5--0.8 にすぎない）．
-関節トルク容量の弾性 $\partial\ln J^*/\partial\ln\tau^{\rm cap}$ は中央値 \elastTau で，
-筋力（トルク容量）が 10\,\%増えれば必要把持容量はおよそ \elastTauTen\,\%減る．
-引っ掛かり係数 $\mu_{\rm out}$ の価格はその 1/10 以下，関節角速度上限と捕捉速度上限の価格は 0（拘束的でない）である．
-体重については，能力を絶対値で固定すると必要容量は体重比でも増え（60\,kg で 2.3，72\,kg で 2.7\,BW），
-身長は長いほど有利である（第~\ref{sec:learning}節の身体掃引，計算中）．
-
-\subsection{モデル誤差と順位の保存}
-剛体衝突を順応捕捉に置き換えると，最適化の内部で手先の接近速度が下がり，必要容量の変化は小さい
-（$T=18$\,s，$m=66$\,kg で $+2.3$\,\%）．
-一方，実行誤差に対する余裕は無い：最適解は可動域端・壁・錐の上を通るため，執行系の離散化（20\,ms の零次保持）だけで振りが崩れ，
-2\,ms の執行系でも捕捉幾何の余裕は先端から 2--3\,cm である（第~\ref{sec:executor}節）．
-モデル変種（$\mu_{\rm out}\pm$，関節能力 $\pm$，身長）に対して最良位相の順位が保たれるかどうかの解析
-（Spearman/Kendall）は，修正モデルの再計算後に表として示す（計算中）．
-
+\input{sec_problem}
+\input{sec_model}
+\input{sec_physics}
 \input{sec_dfl}
+\input{sec_protocol}
+\input{sec_exec}
 \input{sec_learning}
-\input{sec_robotics}
-
-\section{まとめ}
-クリフディメンションの背面飛び移りを，装置運動・3\,cm 突起・有限把持容量・前腕干渉を含む力学課題として定式化し，
-決定論的な軌道最適化により離手位相の実行可能窓と必要把持容量を求め，乗数によって支配制約（捕捉後の保持）と
-能力弾性（関節トルク）を同定した．
-さらに，その双対変数を学習の対象とする双対場学習を提案し，costate ラベルの厳密性，未知身体への汎化，
-Pontryagin 制御の条件の悪さと短地平線 MPC による解決，強化学習の疎報酬下での停滞を同一環境で示した．
-閉ループでは，最適解がすべての活性制約の上を通るため執行系の離散化（20\,ms 零次保持）だけでオラクル軌道が崩れること，
-2\,ms の執行系と着地反射で参照解の捕捉・保持が再現されること，学習した双対場 MPC が同じ執行系で
-オラクル・イン・ザ・ループ MPC とどこまで並ぶかを定量化した．
-コードと結果は \url{https://github.com/omotes24/CliffDimension} にある．
+\input{sec_discussion}
 
 \begin{thebibliography}{99}
 \bibitem{bertram1999} J. E. A. Bertram, A. Ruina, C. E. Cannon, Y. H. Chang, and M. J. Coleman, ``A point-mass model of gibbon locomotion,'' J. Exp. Biol., vol.~202, pp.~2609--2617, 1999.

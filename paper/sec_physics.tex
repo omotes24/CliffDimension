@@ -1,0 +1,136 @@
+% ---------------------------------------------------------------------------------------------------------
+% 結果 I：物理（864 条件グリッド，実験 1，実験 9）
+% ---------------------------------------------------------------------------------------------------------
+\section{結果 I：物理}
+\label{sec:results}
+\subsection{最適解の構造}
+図~\ref{fig:oracle3d} に，$T=18$\,s，$m=66$\,kg，離手位相 $\phi_\ell=0.25$ の最適解を示す．
+挑戦者は \refDw\,s 待ってから振り始め，\refDs\,s かけて勢いをつけ，体をほぼ一直線に伸ばして離手する．
+\refDf\,s の飛行の間に体を丸めて向きを変え，B を捕捉する．
+捕捉後は勢いで体が B の壁の下をくぐって前方へ振れ，振れ戻って 2\,s の保持を終える．
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{../results/figs/oracle3d.pdf}
+\caption{最適解の 3 次元連続図（$T=18$\,s，$m=66$\,kg，$\phi_\ell=0.25$）．$t$ は振り開始からの時間．
+各コマの装置はその時刻の位置にある（A は下降し，B は遠ざかる）．
+平面モデルは体の向きの反転を空中で自由に行えるとするので，飛行の前半は A 向き，後半は B 向きで描いた．矢状面内の関節の位置はモデルの解そのものである．}
+\label{fig:oracle3d}
+\end{figure*}
+図~\ref{fig:timeseries} は同じ解の時間履歴である．三つのことが読み取れる．
+第一に，把持利用率 $U$ は振りの大部分で 0.5 程度であり，離手の直前と捕捉の直後に $\Upk=$\refUpeak に達して平らになる．
+最適化は，離手の直前と保持の最初の \refHoldPlateau\,s の両方が同時に上限に触れるように負荷を配分している．
+捕捉の衝撃そのものは小さい（力積を均した負荷は \refImp）．手と突起の相対速度が小さくなるように飛行を選んでいるためである．
+第二に，関節トルクは離手の前に肘が上限に張り付き，保持では逆向きに張り付く．
+第三に，可動域の端までの余裕と壁との隙間は，振りの間に何度も 0 になる．
+最適解は可動域の端，壁，錐の境界の上を通っており，実行の誤差に対する余裕をもたない．このことが第~\ref{sec:exec}節の結果を決める．
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{../results/figs/solution_timeseries.pdf}
+\caption{図~\ref{fig:oracle3d} の解の時間履歴．上から，把持利用率 $U$（破線は $\Upk$），正規化した関節トルク，
+各関節が可動域の端までどれだけ離れているか，体と壁の隙間の最小値．背景の色は相（白：振り，薄茶：飛行，薄青：保持）．}
+\label{fig:timeseries}
+\end{figure*}
+
+\subsection{離手位相と必要把持容量}
+\label{sec:grid}
+装置周期 $T\in\{16,17,\dots,24\}$\,s，体重 $m\in\{60,63,\dots,75\}$\,kg，離手位相 $\phi_\ell\in\{0,1/16,\dots,15/16\}$ の \gridN 条件を解いた
+（図~\ref{fig:grid}，図~\ref{fig:gridmap}，表~\ref{tab:grid}）．\gridNok 条件で解が収束した．
+
+\textbf{連続法の必要性．}一つの $(T,m)$ について離手位相を順に送りながら前の解を初期値にして解く方法（連鎖掃引）だけでは，
+解は一度 $\Upk\approx3$ の局所解に落ちると，その後の位相でもそこから抜けられなかった．
+同じ位相が隣の周期では $\Upk\approx1.1$ で解けているにもかかわらず，である．
+周期・体重・位相の格子上で隣り合う条件の解を初期値にして解き直す連続法を加えると，\polImproved 条件で解が改善し，
+うち \polBig 条件は $\Upk>2$ から $\Upk\le2$ へ移った．
+$\Upk\le2$ の条件数は \preFeasTwo から \gridFeasTwo に増えた（図~\ref{fig:gridmap}(b)）．
+以下の結果は連続法を加えた後のものである．局所解である可能性は残るので，得られた $\Upk$ は必要容量の上界と読むべきである．
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{../results/figs/grid_capacity.pdf}
+\caption{離手位相 $\phi_\ell$ と必要把持容量 $\Upk$（体重ごと）．細い青線は 9 通りの装置周期のそれぞれ，太い黒線は周期についての最小値．
+$\times$ はどの周期でも解が得られなかった位相．破線は $\Fref$（$\Upk=1$）と見出しの許容容量 $\Fmax$（$\Upk=2$）．灰色の背景は復路．縦軸は対数．}
+\label{fig:grid}
+\end{figure*}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{../results/figs/grid_map.pdf}
+\caption{(a)~必要把持容量 $\Upk$ の地図（各体重・各離手位相について装置周期についての最小値）．
+(b)~$\Upk\le2$ で解けた条件の数（各位相につき 9 周期 $\times$ 6 体重の 54 条件）．灰色は連鎖掃引だけの結果，青は格子上の連続法を加えた後．}
+\label{fig:gridmap}
+\end{figure*}
+\begin{table*}[t]
+\centering\scriptsize
+\caption{体重ごとの必要把持容量（装置周期と離手位相についての最小値）と，実行可能な位相．}
+\label{tab:grid}
+\IfFileExists{tab_grid.tex}{\input{tab_grid}}{（計算中）}
+\end{table*}
+
+\IfFileExists{grid_paragraph.tex}{\input{grid_paragraph}}{}
+
+\subsection{目的関数の重み}
+\label{sec:objective}
+式~\eqref{eq:objective} の重みが結論を変えないかを，$T=18$\,s の 12 条件（3 体重 $\times$ 4 位相）で調べた（図~\ref{fig:objective}，表~\ref{tab:objective}）．
+比べたのは，本稿の重み $w_U=10$，その 10 倍と 10 分の 1，$\Upk$ だけを最小化する容量最優先，
+および容量最優先の最小値 $\hat U$ の 1.01 倍以内という制約のもとで努力を最小化する辞書式の 5 通りである．
+$\Upk\le2$ で解けた \objNcond 条件では，本稿の重みによる $\Upk$ は容量最優先の最小値より最大 \objCurMax\,\%（中央値 \objCurMed\,\%）大きいだけである．
+重みを 100 にすると差は \objWhundredMax\,\%以下になり，1 にすると最大 \objWoneMax\,\%になる．
+容量最優先の解は努力が \objLexEffMin〜\objLexEffMax\,\%増える．
+$w_U\ge10$ であれば，必要把持容量についての結論は重みに依らない．
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{../results/figs/x1_objective.pdf}
+\caption{目的関数の重みと解（実験 1）．点は $\Upk\le2$ で解けた条件のそれぞれ，線はその範囲．
+左：容量最優先の解に対する $\Upk$ の増分．右：本稿の重み（$w_U=10$）の解に対する努力の増分．}
+\label{fig:objective}
+\end{figure*}
+\begin{table*}[t]
+\centering\scriptsize
+\caption{目的関数ごとの必要把持容量 $\Upk$ と努力 $E$（$T=18$\,s）．---は収束しなかった条件．}
+\label{tab:objective}
+\IfFileExists{tab_x1.tex}{\input{tab_x1}}{（計算中）}
+\end{table*}
+
+\subsection{何が必要容量を決めているか}
+\label{sec:interventions}
+\textbf{乗数による判定．}残り最適化問題 \dsNok 個の解で，$U(t)\le\Upk$ の乗数を相ごとに合計すると，
+保持が \shareHold\,\%，捕捉が \shareCatch\,\%，振りが \shareSwing\,\%を占めた．乗数は，必要容量を決めているのが保持であることを示す．
+
+\textbf{介入による確認．}乗数は一次の量なので，実際に制約を変えて解き直して確かめた（図~\ref{fig:interventions}(a)）．
+一つの相だけ把持容量の上限を 10\,\%緩めると，保持を緩めた場合に $\Upk$ は \relHoldMin〜\relHoldMax\,\%下がる．
+緩めた分（$1/1.1$ で 9.1\,\%）がほぼそのまま効いている．
+振りを緩めても \relSwingMax\,\%以下，捕捉を緩めても \relCatchMax\,\%以下しか下がらない．
+保持の時間を 2\,s から 0.5\,s に縮めると $\Upk$ は \holdHalfMin〜\holdHalfMax\,\%下がるが，1\,s では \holdOneMax\,\%以下，3\,s に延ばしても \holdThreeMax\,\%以下しか変わらない．
+保持の負荷を決めているのは，捕捉の直後から約 1\,s の間の，振れる体を支える力である．
+
+\textbf{関節トルク．}全関節のトルク上限を変えて解き直すと（図~\ref{fig:interventions}(b)，表~\ref{tab:capsens}），
+$m=60$，66\,kg では $\Upk$ の弾性（上限が 1\,\%増えたときの $\Upk$ の変化率）は $-$\elastUmin〜$-$\elastUmax である．
+筋力が 10\,\%増えても必要把持容量は 1〜2\,\%しか下がらない．
+$m=75$\,kg は限界に近く，上限を 5\,\%下げると解が得られなくなる．関節ごとに見ると肘の寄与が最も大きい（$m=75$\,kg で肘だけ 5\,\%下げると $\Upk$ は \elbowHeavy\,\%増える）．
+乗数から求めた感度 $\partial J^*/\partial\ln\taucap$ と，解き直しによる有限差分の比は \sensRatioMin〜\sensRatioMax であった．
+乗数は感度の符号と大きさの程度を正しく与えるが，$\pm$数\,\%の変化に対する値としては 3〜5 割の誤差がある．
+残り最適化問題の解での価格の統計を表~\ref{tab:prices} に示す．関節角速度の上限と捕捉速度の上限は一度も拘束的にならなかった．
+
+\textbf{捕捉モデル．}衝撃力積を均す時間 $\Delta_c$ を 25\,ms や 100\,ms に変えても $\Upk$ の変化は \dcatchMax\,\%以下である（図~\ref{fig:interventions}(c)）．
+最適解は衝撃が小さくなる捕捉を選ぶので，衝撃の見積もり方は結論に効かない．
+捕捉を順応モデルに置き換えると $\Upk$ は \compVsImpactMin〜\compVsImpactMax\,\%下がる．
+順応モデルの剛性を半分にすると \kHalfMin〜\kHalfMax\,\%下がり，2 倍にすると \kDoubleMin〜\kDoubleMax\,\%上がる．
+必要把持容量の絶対値は捕捉のモデルに 1 割程度依存する．
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{../results/figs/x9_interventions.pdf}
+\caption{制約や能力を変えて解き直したときの必要把持容量の変化（実験 9；$T=18$\,s，$\phi_\ell=0.25$）．
+(a)~一つの相だけ把持容量の上限を 10\,\%緩めた場合と，保持時間を変えた場合．(b)~関節トルクの上限を変えた場合．
+(c)~捕捉モデルを変えた場合（$\Delta_c$ は剛体衝突モデル，剛性と減衰は順応捕捉モデルで，それぞれのモデルの基準解に対する変化）．}
+\label{fig:interventions}
+\end{figure*}
+\begin{table}[t]
+\centering\scriptsize
+\caption{関節トルク上限についての感度：解き直しによる有限差分と乗数．}
+\label{tab:capsens}
+\IfFileExists{tab_x9sens.tex}{\resizebox{\linewidth}{!}{\input{tab_x9sens}}}{（計算中）}
+\end{table}
+\begin{table*}[t]
+\centering\scriptsize
+\caption{能力パラメータの影の価格 $\partial J^*/\partial\ln p$（残り最適化問題 \dsNok 個の解）．弾性は $J^*$ で割った値．}
+\label{tab:prices}
+\IfFileExists{tab_prices2.tex}{\input{tab_prices2}}{（計算中）}
+\end{table*}

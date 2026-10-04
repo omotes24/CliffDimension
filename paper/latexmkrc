@@ -1,5 +1,4 @@
-$latex = 'platex';
+$latex = 'platex -interaction=nonstopmode -halt-on-error %O %S';
 $bibtex = 'pbibtex';
 $dvipdf = 'dvipdfmx %O -o %D %S';
-$pdf_mode = 3; # generates pdf via dvipdfmx
-
+$pdf_mode = 3;
