@@ -695,7 +695,7 @@ def grid():
     ms = sorted(d["m"].unique()); Ts = sorted(d["T"].unique()); phis = sorted(d["phi"].unique())
     mac("gridN", len(d)); mac("gridNok", int(d["ok"].sum())); mac("gridNT", len(Ts)); mac("gridNm", len(ms)); mac("gridNphi", len(phis))
     # ---- required capacity vs release phase, one panel per body mass
-    fig, ax = plt.subplots(2, 3, figsize=(7.1, 3.9), sharex=True, sharey=True)
+    fig, ax = plt.subplots(2, 3, figsize=(7.1, 3.4), sharex=True, sharey=True)
     for a, m in zip(ax.ravel(), ms):
         g = d[d.m == m]
         a.axvspan(0.5, 1.0, color="#f1efe9", lw=0)
@@ -713,7 +713,9 @@ def grid():
         a.set_xlabel("離手位相 $\\phi_\\ell$")
     for a in ax[:, 0]:
         a.set_ylabel("$U_{\\mathrm{peak}}$")
-    ax[1, 2].legend(fontsize=6.3, loc="center left", bbox_to_anchor=(0.30, 0.42)); ax[0, 2].text(0.75, 1.03, "$F_{\\mathrm{ref}}$", fontsize=6.5, color=INK2, ha="center", va="bottom"); ax[0, 2].text(0.75, 2.06, "$F_{\\max}$", fontsize=6.5, color=INK2, ha="center", va="bottom")
+    hd, lb = ax[1, 2].get_legend_handles_labels()
+    fig.legend(hd, lb, fontsize=6.8, loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.09), frameon=False)
+    ax[0, 2].text(0.47, 1.02, "$F_{\\mathrm{ref}}$", fontsize=6.5, color=INK2, ha="center", va="bottom"); ax[0, 2].text(0.47, 2.06, "$F_{\\max}$", fontsize=6.5, color=INK2, ha="center", va="bottom")
     ax[0, 1].text(0.75, 5.2, "復路", fontsize=7, color=INK2, ha="center"); ax[0, 1].text(0.22, 5.2, "往路", fontsize=7, color=INK2, ha="center")
     fig.subplots_adjust(wspace=0.06, hspace=0.22)
     fs.save(fig, FIG, "grid_capacity")
@@ -722,7 +724,7 @@ def grid():
     fig, ax = plt.subplots(1, 2, figsize=(7.1, 2.35), gridspec_kw=dict(width_ratios=[1.75, 1.0]))
     a = ax[0]
     im = a.imshow(np.log(best.values), aspect="auto", cmap="Blues", vmin=0.0, vmax=np.log(4.0), origin="lower")
-    a.set_xticks(range(len(best.columns))); a.set_xticklabels([f"{p:.2f}".rstrip("0").rstrip(".") if i % 2 == 0 else "" for i, p in enumerate(best.columns)])
+    a.set_xticks(range(len(best.columns))); a.set_xticklabels([(f"{round(p * 16) / 16:.4f}".rstrip("0").rstrip(".") if p > 0 else "0") if i % 2 == 0 else "" for i, p in enumerate(best.columns)])
     a.set_yticks(range(len(ms))); a.set_yticklabels([f"{m:g}" for m in ms]); a.grid(False)
     for i in range(best.shape[0]):
         for j in range(best.shape[1]):
@@ -735,11 +737,11 @@ def grid():
         fp = pre[(pre["ok"] == 1) & (pre["U"] <= 2.0)].groupby("phi").size().reindex(phis, fill_value=0)
         a.bar(np.arange(len(phis)) - 0.2, fp.values, width=0.38, color=fs.NEUTRAL, edgecolor="white", linewidth=0.6, label="連鎖掃引のみ")
         a.bar(np.arange(len(phis)) + 0.2, feas.values, width=0.38, color=C["blue"], edgecolor="white", linewidth=0.6, label="格子近傍からの連続法の後")
-        a.legend(fontsize=6.3, loc="upper right")
+        a.legend(fontsize=6.3, loc="upper center", ncol=1)
     else:
         a.bar(np.arange(len(phis)), feas.values, width=0.6, color=C["blue"])
     a.set_xticks(range(0, len(phis), 4)); a.set_xticklabels([f"{phis[i]:.2f}" for i in range(0, len(phis), 4)]); a.set_xlabel("離手位相 $\\phi_\\ell$"); a.set_ylabel("$U_{\\mathrm{peak}}\\leq2$ の条件数（54 中）".replace("\\leq", "\\leq "))
-    a.set_title("(b) 連続法の効果", loc="left"); a.grid(axis="x", visible=False); a.set_ylim(0, 62)
+    a.set_title("(b) 連続法の効果", loc="left"); a.grid(axis="x", visible=False); a.set_ylim(0, 80); a.set_yticks([0, 18, 36, 54])
     fig.subplots_adjust(wspace=0.22)
     fs.save(fig, FIG, "grid_map")
     # ---- numbers
@@ -751,61 +753,110 @@ def grid():
         both = dm.join(pm[["ok", "U"]], rsuffix="_pre")
         imp = both[(both["ok"] == 1) & ((both["ok_pre"] == 0) | (both["U"] < both["U_pre"] - 1e-3))]
         mac("polImproved", len(imp)); mac("polBig", int(((imp["ok_pre"] == 1) & (imp["U_pre"] > 2.0) & (imp["U"] <= 2.0)).sum())); mac("polNewOk", int((imp["ok_pre"] == 0).sum()))
-    wide = best.copy()
-    feas_phi = [p for p in phis if (best[p] <= 2.0).all()]            # phases feasible (U <= 2) for every body mass
-    part_phi = [p for p in phis if (best[p] <= 2.0).any() and not (best[p] <= 2.0).all()]
-    none_phi = [p for p in phis if not (best[p] <= 2.0).any()]
-    f3 = lambda L: "，".join(f"{p:.3f}".rstrip("0") for p in L) if L else "なし"
-    MAC["phiAllFeasible"] = f3(feas_phi); MAC["phiPartFeasible"] = f3(part_phi); MAC["phiNoneFeasible"] = f3(none_phi)
-    mac("nPhiAllFeasible", len(feas_phi)); mac("nPhiNone", len(none_phi))
+    ex = lambda p: round(p * 16) / 16                                   # file names carry phi to 3 decimals; the grid is k/16
+    f4 = lambda p: (f"{ex(p):.4f}".rstrip("0").rstrip(".") if ex(p) > 0 else "0")
+    rng_ = lambda L: (f"{f4(min(L))}$〜${f4(max(L))}" if len(L) > 1 else f4(L[0])) if len(L) else "\\text{なし}"
+    out_ph = [p for p in phis if p < 0.5]; ret_ph = [p for p in phis if p >= 0.5]
+    n_le2 = d[(d["ok"] == 1) & (d["U"] <= 2.0)].groupby("phi").size().reindex(phis, fill_value=0)
+    n_ok = d.groupby("phi")["ok"].sum().reindex(phis, fill_value=0); n_all = len(Ts) * len(ms)
+    full = [p for p in phis if n_le2[p] == n_all]                       # every period and body mass solved with U <= 2
+    full_out = [p for p in full if p < 0.5]; full_ret = [p for p in full if p >= 0.5]
+    dead = [p for p in phis if n_ok[p] == 0]                            # nothing converged
+    high = [p for p in phis if n_ok[p] > 0 and n_le2[p] == 0]           # converged, but only above the headline capacity
+    part = [p for p in phis if 0 < n_le2[p] < n_all]
+    MAC["phiFullOut"] = rng_(full_out).replace("$", ""); MAC["phiFullRet"] = rng_(full_ret).replace("$", "")
+    mac("nPhiFull", len(full)); mac("nPhiDead", len(dead)); mac("gridNfail", int((d["ok"] == 0).sum()))
+    fail_ph = sorted(d[d["ok"] == 0]["phi"].unique())
+    MAC["phiFail"] = rng_(fail_ph).replace("$", "")
+    # mirror phases (same device position, opposite direction of motion)
+    mir = {p: (best[[q for q in phis if abs(ex(q) - (1 - ex(p))) < 1e-9][0]] / best[p]) for p in out_ph if ex(p) > 0}
+    close = [p for p in mir if np.isfinite(mir[p]).all() and (100 * (mir[p] - 1).abs()).max() <= 1.5]
+    mac("mirrorMax", max((100 * (mir[p] - 1).abs()).max() for p in close) if close else np.nan, 1)
     bm = best.min(axis=1)
     rows = []
     for m in ms:
-        row = best.loc[m]; lo = row.min(); win = [p for p in phis if row[p] <= 1.10 * lo]
-        out = row[[p for p in phis if p < 0.5]].min(); ret = row[[p for p in phis if p >= 0.5]].min()
+        row = best.loc[m]; lo = row.min()
+        wo = [p for p in out_ph if row[p] <= 1.10 * lo]; wr = [p for p in ret_ph if row[p] <= 1.10 * lo]
+        out = row[out_ph].min(); ret = row[ret_ph].min()
         nfe = int((row <= 2.0).sum())
-        rows.append([f"{m:g}", f"{lo:.3f}", f"{lo * 1300:.0f}", f"{lo * 1300 / (m * 9.81):.2f}", f"{out:.3f}", f"{ret:.3f}", f"{nfe}/{len(phis)}", f"{min(win):.3f}〜{max(win):.3f}（{len(win)}）"])
+        rows.append([f"{m:g}", f"{lo:.3f}", f"{lo * 1300:.0f}", f"{lo * 1300 / (m * 9.81):.2f}", f"{out:.3f}（{f4(row[out_ph].idxmin())}）", f"{ret:.3f}（{f4(row[ret_ph].idxmin())}）",
+                     f"{nfe}/{len(phis)}", rng_(wo).replace("$", ""), rng_(wr).replace("$", "")])
         tg = {60.0: "Sixty", 63.0: "SixtyThree", 66.0: "SixtySix", 69.0: "SixtyNine", 72.0: "SeventyTwo", 75.0: "SeventyFive"}[m]
         mac(f"cap{tg}", lo, 2); mac(f"capBW{tg}", lo * 1300 / (m * 9.81), 2); mac(f"capRet{tg}", ret, 2); mac(f"capOut{tg}", out, 2)
-    tab("tab_grid", ["$m$ [kg]", "最小 $\\Upk$", "必要容量 [N]", "体重比 [BW]", "往路の最小", "復路の最小", "$\\Upk\\le2$ の位相数", "最小の 1.1 倍以内の位相（個数）"], rows, "rrrrrrrl")
+    tab("tab_grid", ["$m$ [kg]", "最小 $\\Upk$", "必要容量 [N]", "体重比 [BW]", "往路の最小（位相）", "復路の最小（位相）", "$\\Upk\\le2$ の位相数",
+                     "1.1 倍以内（往路）", "同（復路）"], rows, "rrrrrrrll")
     mac("capBWmin", (bm * 1300 / (bm.index.values * 9.81)).min(), 2); mac("capBWmax", (bm * 1300 / (bm.index.values * 9.81)).max(), 2)
-    # dependence on the period at phi = 0.25
-    q = okd[okd["phi"] == 0.25].groupby("m")["U"].agg(["min", "median", "max"])
-    sp = okd[(okd["phi"] == 0.25) & (okd["U"] < 2)].groupby("m")["U"].agg(lambda x: 100 * (x.max() / x.min() - 1))
+    mac("capNmin", (bm * 1300).min(), 0); mac("capNmax", (bm * 1300).max(), 0)
+    # dependence on the period: spread of U_peak over the 9 periods, phases where every condition is solved with U <= 2
+    okd2 = okd[okd["phi"].isin(full)]
+    sp = okd2.groupby(["m", "phi"])["U"].agg(lambda x: 100 * (x.max() / x.min() - 1))
     mac("periodSpreadMax", sp.max(), 1); mac("periodSpreadMed", sp.median(), 1)
-    # which phase of the motion carries the peak (best solutions with U <= 2)
+    sp25 = okd[okd["phi"] == 0.25].groupby("m")["U"].agg(lambda x: 100 * (x.max() / x.min() - 1))
+    mac("periodSpreadQuarterMax", sp25.max(), 1)
+    # which phase of the motion carries the peak (solutions with U <= 2)
     lowU = okd[okd["U"] <= 2.0]
     if "U_hold" in lowU:
         mac("holdAtPeak", pct((lowU["U_hold"] >= 0.995 * lowU["U"]).mean())); mac("swingAtPeak", pct((lowU["U_swing"] >= 0.995 * lowU["U"]).mean()))
         mac("impShareMed", pct((lowU["U_imp"] / lowU["U"]).median()))
     mac("flightMin", lowU["d_f"].quantile(0.05), 2); mac("flightMax", lowU["d_f"].quantile(0.95), 2); mac("swingDurMin", lowU["d_s"].quantile(0.05), 1); mac("swingDurMax", lowU["d_s"].quantile(0.95), 1)
+    hi = okd[okd["U"] > 2.0]
+    mac("gridHighN", len(hi)); mac("gridHighUmin", hi["U"].min() if len(hi) else np.nan, 1); mac("gridHighUmax", hi["U"].max() if len(hi) else np.nan, 1)
     # ---- text of the result paragraph (statements chosen from the data)
-    out_ph = [p for p in phis if p < 0.5]; ret_ph = [p for p in phis if p >= 0.5]
-    f3 = lambda p: f"{p:.3f}".rstrip("0").rstrip(".") if p > 0 else "0"
-    rng_ = lambda L: (f"{f3(min(L))}$〜${f3(max(L))}" if len(L) > 1 else f3(L[0])) if L else "\\text{なし}"
-    all_out = [p for p in out_ph if (best[p] <= 2.0).all()]; all_ret = [p for p in ret_ph if (best[p] <= 2.0).all()]
-    any_ret = [p for p in ret_ph if (best[p] <= 2.0).any()]
-    dead = [p for p in phis if not (best[p] <= 2.0).any()]
-    ret_m = [m for m in ms if (best.loc[m, ret_ph] <= 2.0).any()]
+    from katsumi import device
+    xa = lambda p: device.device_state(ex(p) * 18.0, 18.0, 0.2)["x"]
     txt = []
-    txt.append("\\textbf{実行可能な位相．}見出しの許容容量 $\\Upk\\le2$ で解が得られる離手位相は，往路では $\\phi_\\ell=" + rng_(all_out) + "$ が全体重に共通である"
-               + ("．" if len(all_out) else "（共通の位相はない）．"))
-    if len(all_ret) == 0 and len(ret_m) < len(ms):
-        txt.append("復路で $\\Upk\\le2$ の解が得られたのは $m=$" + "，".join(f"{m:g}" for m in ret_m) + "\\,kg だけで，位相は $\\phi_\\ell=" + rng_(any_ret) + "$ である．")
-    elif len(all_ret):
-        txt.append("復路でも $\\phi_\\ell=" + rng_(all_ret) + "$ が全体重で実行可能である．")
-        txt.append("復路の必要容量は往路とほぼ同じで，体重ごとの最小値の比（復路／往路）は " + f"{(best[ret_ph].min(axis=1) / best[out_ph].min(axis=1)).min():.2f}〜{(best[ret_ph].min(axis=1) / best[out_ph].min(axis=1)).max():.2f}" + " である．"
-                   "復路の位相 $1-\\phi$ では，装置は往路の位相 $\\phi$ と同じ位置にあり，動く向きだけが逆である．")
+    t0 = ("\\textbf{実行可能な位相．}見出しの許容容量（$\\Upk\\le2$）で，" + f"{len(Ts)} 周期 $\\times$ {len(ms)} 体重の {n_all} 条件すべてが解けた離手位相は，")
+    if full_out and full_ret:
+        t0 += "往路の $\\phi_\\ell=" + rng_(full_out) + "$ と復路の $\\phi_\\ell=" + rng_(full_ret) + "$ である（図~\\ref{fig:gridmap}）．"
+    elif full_out:
+        t0 += "往路の $\\phi_\\ell=" + rng_(full_out) + "$ だけである（図~\\ref{fig:gridmap}）．"
     else:
-        txt.append("復路では $\\phi_\\ell=" + rng_(any_ret) + "$ で一部の体重に解がある．")
-    if dead:
-        txt.append("$\\phi_\\ell=" + rng_(dead) + "$ では，どの体重でも $\\Upk\\le2$ の解は得られなかった．B が最も遠い $\\phi=0.5$ の前後で，先端間距離は 2.6〜2.7\\,m になり，"
-                   "A は最も低い位置にある．片側からの振りでは，この距離を越える離手の速度と高さが得られない．")
+        t0 += "存在しなかった（図~\\ref{fig:gridmap}）．"
+    txt.append(t0)
+    if close:
+        txt.append("復路の位相 $1-\\phi$ では，装置は往路の位相 $\\phi$ と同じ位置にあり，動く向きだけが逆である．"
+                   "$\\phi_\\ell=" + rng_(close) + "$ とその対の位相では，必要把持容量の差は \\mirrorMax\\,\\%以内であった．"
+                   "必要容量を決めるのは離手の瞬間の装置の位置であり，装置が近づいているか遠ざかっているかはほとんど効かない．")
+    if dead or high:
+        t1 = ""
+        if dead:
+            t1 += "B が最も遠く A が最も低い $\\phi_\\ell=" + rng_(dead) + f"$（先端間距離 {max(xa(p) for p in dead):.2f}\\,m）では，{n_all * len(dead)} 条件のどれも収束しなかった．"
+        if high:
+            t1 += "$\\phi_\\ell=" + rng_(high) + f"$ では収束した {int(sum(n_ok[p] for p in high))} 条件のすべてが $\\Upk>3$ であった．"
+        txt.append(t1)
+    far = [p for p in part if xa(p) > 2.3]; near = [p for p in part if xa(p) <= 2.3]
+    if far:
+        hv = best[far].values; hv = hv[np.isfinite(hv) & (hv > 2.0)]
+        nph = (best <= 2.0).sum(axis=1)
+        t2 = ("その外側の $\\phi_\\ell=" + "$，$".join(f4(p) for p in far) + f"$（先端間距離 {min(xa(p) for p in far):.2f}〜{max(xa(p) for p in far):.2f}\\,m）では，"
+              f"軽い体は $\\Upk\\le2$ で解けるが，重い体では $\\Upk={hv.min():.1f}$〜${hv.max():.1f}$ の高負荷の解しか得られない条件がある（図~\\ref{{fig:gridmap}}(a)）．"
+              f"$\\Upk\\le2$ で解ける位相の数は，$m={ms[0]:g}$\\,kg の {int(nph.loc[ms[0]])} から $m={ms[-1]:g}$\\,kg の {int(nph.loc[ms[-1]])} へ減る（表~\\ref{{tab:grid}}）．")
+        # a high-load solution whose mirror phase is solved with U <= 2: evidence that some of them are local solutions
+        cand = []
+        for p in far:
+            q = [q for q in phis if abs(ex(q) - (1 - ex(p))) < 1e-9][0]
+            for m in ms:
+                if np.isfinite(best.loc[m, p]) and best.loc[m, p] > 2.0 and best.loc[m, q] <= 2.0:
+                    cand.append((best.loc[m, p] / best.loc[m, q], m, p, q))
+        if cand:
+            _, m_, p_, q_ = max(cand)
+            t2 += ("高負荷の解は，離手の直前に把持力を大きく使って振り上げる別の運動である．"
+                   f"装置の位置が同じである対の位相で $\\Upk\\le2$ の解が得られている条件が {len(cand)} 組あり"
+                   f"（例：$m={m_:g}$\\,kg の $\\phi_\\ell={f4(p_)}$ は {best.loc[m_, p_]:.2f}，対の ${f4(q_)}$ は {best.loc[m_, q_]:.2f}），"
+                   "高負荷の解の少なくとも一部は局所解である．実行可能な位相の境界は，この意味で控えめな見積もりである．")
+        txt.append(t2)
+    if near:
+        p0 = near[0]; inc = 100 * (best[p0] / bm - 1)
+        t3 = ("B が最も近く A が最も高い $\\phi_\\ell=" + f4(p0) + f"$（先端間距離 {xa(p0):.2f}\\,m，高低差 0.90\\,m）でも解は得られるが，"
+              f"必要容量は最小値より {inc.min():.0f}〜{inc.max():.0f}\\,\\%大きい")
+        over = [m for m in ms if not best.loc[m, p0] <= 2.0]
+        t3 += ("（$m=" + "，".join(f"{m:g}" for m in over) + "$\\,kg では 2 を超える）．" if over else "．")
+        t3 += "A と B の落差が大きいほど，捕捉のときの体の運動エネルギーが大きく，捕捉後に支える負荷が増えるためと考えられる．"
+        txt.append(t3)
     txt.append("\n\\textbf{体重と装置周期．}必要把持容量の最小値は，$m=60$\\,kg の \\capSixty から $m=75$\\,kg の \\capSeventyFive へ体重とともに増える"
-               "（体重比では \\capBWmin〜\\capBWmax\\,BW）．関節トルクの上限を体重によらず固定しているので，重い体ほど振りに使える余力が小さく，体重比でも要求が増える．"
-               "装置周期への依存は小さい．$\\phi_\\ell=0.25$ では，9 通りの周期の間の $\\Upk$ の違いは最大 \\periodSpreadMax\\,\\%（中央値 \\periodSpreadMed\\,\\%）である．"
-               "装置の速さは 0.08〜0.11\\,m/s で，離手のときの体の速さ（数 m/s）に比べて小さい．飛行時間は \\flightMin〜\\flightMax\\,s で，その間に装置が動く距離は 5\\,cm 以下である．"
-               "効くのは離手の瞬間の装置の位置であって，速さではない．")
+               "（\\capNmin〜\\capNmax\\,N，体重比では \\capBWmin〜\\capBWmax\\,BW；表~\\ref{tab:grid}）．関節トルクの上限を体重によらず固定しているので，重い体ほど振りに使える余力が小さく，体重比でも要求が増える．"
+               "装置周期への依存は小さい．全条件が解けた位相では，9 通りの周期の間の $\\Upk$ の違いは中央値で \\periodSpreadMed\\,\\%（最大 \\periodSpreadMax\\,\\%），$\\phi_\\ell=0.25$ では最大 \\periodSpreadQuarterMax\\,\\%である．"
+               "装置の速さは 0.08〜0.11\\,m/s で，離手のときの体の速さ（数 m/s）に比べて小さい．飛行時間は \\flightMin〜\\flightMax\\,s で，その間に装置が動く距離は約 5\\,cm である．")
     txt.append("\n\\textbf{最大負荷が生じる相．}$\\Upk\\le2$ で解けた \\gridFeasTwo 条件のうち，保持の最大負荷が $\\Upk$ に達しているものは \\holdAtPeak\\,\\%，"
                "振りの最大負荷が $\\Upk$ に達しているものは \\swingAtPeak\\,\\%である．多くの解で両方が同時に上限に触れている．"
                "どちらが必要容量を決めているかは，到達しているかどうかでは分からない．これを第~\\ref{sec:interventions}節で調べる．")

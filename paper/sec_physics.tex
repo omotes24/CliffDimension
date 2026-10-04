@@ -35,13 +35,16 @@
 \label{sec:grid}
 装置周期 $T\in\{16,17,\dots,24\}$\,s，体重 $m\in\{60,63,\dots,75\}$\,kg，離手位相 $\phi_\ell\in\{0,1/16,\dots,15/16\}$ の \gridN 条件を解いた
 （図~\ref{fig:grid}，図~\ref{fig:gridmap}，表~\ref{tab:grid}）．\gridNok 条件で解が収束した．
+収束しなかった \gridNfail 条件（実行不可能と判定されたものが \gridInfeasible，時間または反復の上限に達したものが \gridTimeout）は，
+すべて $\phi_\ell=$\phiFail にある．
 
 \textbf{連続法の必要性．}一つの $(T,m)$ について離手位相を順に送りながら前の解を初期値にして解く方法（連鎖掃引）だけでは，
 解は一度 $\Upk\approx3$ の局所解に落ちると，その後の位相でもそこから抜けられなかった．
 同じ位相が隣の周期では $\Upk\approx1.1$ で解けているにもかかわらず，である．
-周期・体重・位相の格子上で隣り合う条件の解を初期値にして解き直す連続法を加えると，\polImproved 条件で解が改善し，
-うち \polBig 条件は $\Upk>2$ から $\Upk\le2$ へ移った．
+そこで，周期・体重・位相の格子上で隣り合う条件の解を初期値にして解き直す連続法を，改善がなくなるまで繰り返した．
+\polImproved 条件で解が改善し，うち \polBig 条件は $\Upk>2$ から $\Upk\le2$ へ移った．
 $\Upk\le2$ の条件数は \preFeasTwo から \gridFeasTwo に増えた（図~\ref{fig:gridmap}(b)）．
+連鎖掃引だけの結果では復路がほとんど実行不可能に見えたが，これは局所解によるものであった．
 以下の結果は連続法を加えた後のものである．局所解である可能性は残るので，得られた $\Upk$ は必要容量の上界と読むべきである．
 \begin{figure*}[t]
 \centering
@@ -59,9 +62,9 @@ $\times$ はどの周期でも解が得られなかった位相．破線は $\Fr
 \end{figure*}
 \begin{table*}[t]
 \centering\scriptsize
-\caption{体重ごとの必要把持容量（装置周期と離手位相についての最小値）と，実行可能な位相．}
+\caption{体重ごとの必要把持容量（装置周期と離手位相についての最小値）と，実行可能な位相．「1.1 倍以内」は，周期についての最小値が体重ごとの最小 $\Upk$ の 1.1 倍以内に収まる離手位相の範囲．}
 \label{tab:grid}
-\IfFileExists{tab_grid.tex}{\input{tab_grid}}{（計算中）}
+\IfFileExists{tab_grid.tex}{\resizebox{\textwidth}{!}{\input{tab_grid}}}{（計算中）}
 \end{table*}
 
 \IfFileExists{grid_paragraph.tex}{\input{grid_paragraph}}{}
