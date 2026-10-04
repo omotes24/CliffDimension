@@ -1,0 +1,10 @@
+{
+ "n": 30,
+ "V_rel_err_median": 0.00647031851038956,
+ "V_rel_err_max": 0.015295130412648869,
+ "tau_err_median_s": 0.02406828288432261,
+ "U_resolve_vs_label_median": 0.005745242191661504,
+ "p_cos_median": 0.9682634187838639,
+ "p_rel_err_median": 0.3176182944971454,
+ "past_peak_binding_frac": 0.0
+}

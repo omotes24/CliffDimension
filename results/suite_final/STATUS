@@ -1,0 +1,24 @@
+=== [2026-10-01 01:41:26] solver lane: exp1 (objective weights)
+=== [2026-10-01 01:41:26] learning lane: exp4 (label audit)
+=== [2026-10-01 04:10:15] learning lane: training (GPU)
+=== [2026-10-01 04:18:40] learning lane: exp5 (candidate ranking)
+=== [2026-10-01 05:56:42] learning lane: exp6 (main comparison)
+=== [2026-10-01 07:11:02] solver lane: exp9 (physics interventions)
+=== [2026-10-01 11:17:43] solver lane: exp2 (replay decomposition)
+=== [2026-10-01 11:36:55] learning lane: exp7 (data scaling / visited states)
+=== [2026-10-01 11:51:38] solver lane: exp3 (plan margins)
+=== [2026-10-01 11:52:57] learning lane: done
+=== [2026-10-01 15:43:54] learning lane: training (GPU)
+=== [2026-10-01 15:53:17] solver lane: exp8 (generalisation / transfer)
+=== [2026-10-01 16:22:22] learning lane: exp5 scoring (candidates already simulated and solved)
+=== [2026-10-01 16:22:27] learning lane: exp6 (main comparison, learned controllers)
+=== [2026-10-01 23:06:59] solver lane: done
+=== [2026-10-01 23:06:59] suite finished
+=== [2026-10-01 23:07:05] extra: exp8 (closed loop on new bodies, envelope transfer)
+=== [2026-10-01 23:13:44] followup: exp3 re-solve (joint margins at the straight-limb stops fixed; robust variants with 7200 s)
+=== [2026-10-02 10:14:10] extra: exp6 horizon ablation (H = 40, 0.8 s)
+=== [2026-10-02 15:30:09] learning lane: exp7 (data scaling / visited states)
+=== [2026-10-02 16:46:33] extra: done
+=== [2026-10-02 20:22:03] followup: exp4.2t (tight finite-difference costate check)
+=== [2026-10-03 00:45:34] followup: done
+=== [2026-10-03 13:37:42] learning lane: done

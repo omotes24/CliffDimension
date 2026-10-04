@@ -14,7 +14,9 @@ sys.path.insert(0, ROOT); sys.path.insert(0, os.path.join(ROOT, "scripts"))
 import figstyle as fs
 from figstyle import plt, C, CAT, INK, INK2, GRID, MUTED, METHOD_COL, METHOD_JP
 
-S = os.path.join(ROOT, "results", "suite")
+S = os.path.join(ROOT, "results", "suite")              # working copy synced from hades (untracked)
+if not os.path.isdir(S):
+    S = os.path.join(ROOT, "results", "suite_final")    # tracked snapshot of the tables (CSV / JSON)
 FIG = os.path.join(ROOT, "results", "figs")
 PAPER = os.path.join(ROOT, "paper")
 MAC = {}

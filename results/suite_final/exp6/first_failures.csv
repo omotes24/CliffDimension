@@ -1,0 +1,8 @@
+method,grip capacity exceeded,hit B's face,hit wall,lost hook,missed B,no release,none,slipped off A
+BC,10,0,17,0,0,0,0,93
+ORACLE,4,30,0,0,6,0,0,0
+ORACLE+,8,10,0,9,8,0,5,0
+REPLAY,1,5,12,1,0,0,14,7
+SMPC,7,0,33,0,8,39,0,33
+TRACK,1,0,0,0,33,0,0,6
+VMPC,11,0,30,0,0,35,0,44

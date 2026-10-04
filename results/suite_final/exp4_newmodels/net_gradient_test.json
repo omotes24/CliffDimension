@@ -1,0 +1,24 @@
+{
+ "n": 200,
+ "autograd_vs_fd_rel_median": 0.0088267270475626,
+ "autograd_vs_fd_rel_max": 3.78562593460083,
+ "label_units": "raw dJ/dx (same as autograd p)",
+ "pbar_scale_check": {
+  "s_V": 2.2612879276275635,
+  "s_x": [
+   0.2624315619468689,
+   0.6494987607002258,
+   0.7694916725158691,
+   1.1314890384674072,
+   1.6523568630218506,
+   1.5238462686538696,
+   2.657447099685669,
+   2.645517349243164,
+   3.9986867904663086,
+   5.546942234039307
+  ],
+  "pbar_abs_median": 0.034076396375894547
+ },
+ "label_vs_net_sign_agreement": 0.865,
+ "notes": "loss uses p in raw units with a robust MAD scale; no s_i/s_V factor is needed"
+}

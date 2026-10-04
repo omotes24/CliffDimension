@@ -1,0 +1,155 @@
+{
+ "F_REF": 1300.0,
+ "F_MAX_LEVELS": [
+  1.0,
+  1.25,
+  1.5,
+  1.75,
+  2.0,
+  2.25,
+  2.5
+ ],
+ "F_MAX_HEADLINE": 2.0,
+ "U_CAP_RUN": 2.5,
+ "ENV_KW": {
+  "control_dt": 0.002,
+  "sub_dt": 0.0005,
+  "hook_cap_B": 0.1,
+  "hook_cap": 0.1,
+  "hold": "zoh",
+  "U_cap": 2.5,
+  "k_wall": 100000.0,
+  "d_wall": 2000.0,
+  "wall_fail_C": 0.1,
+  "joint_stop_k": 15.0,
+  "stop_damp": 0.01,
+  "K_att": 40000.0,
+  "D_att": 1500.0,
+  "hook_tol": 0.025,
+  "catch_box": [
+   0.03,
+   -0.005,
+   0.05
+  ],
+  "u_rate": 10.0,
+  "release_thresh": 0.8
+ },
+ "REFLEX_KW": {
+  "kp": 1.0,
+  "kd": 0.1,
+  "reach_gain": 0.25,
+  "kp_hold": 3.0,
+  "kd_hold": 0.3,
+  "hold_mode": "track"
+ },
+ "TRACK_KW": {
+  "kp": 1.0,
+  "kd": 0.1
+ },
+ "git": "ce203d2",
+ "device": {
+  "X0": 1.8,
+  "XT": 2.7,
+  "H0": 0.9,
+  "D_LEDGE": 0.03,
+  "LEDGE_HEIGHT": 0.05,
+  "WALL_BOTTOM_OFFSET": 0.2,
+  "eps": 0.2
+ },
+ "body": {
+  "tau_cap": [
+   120.0,
+   160.0,
+   300.0,
+   240.0
+  ],
+  "f_cap": 1300.0,
+  "mu_out": 1.0,
+  "mu_in": 2.0,
+  "qd_max": 10.0,
+  "clearance": [
+   0.04,
+   0.12,
+   0.12,
+   0.07,
+   0.1
+  ],
+  "forearm_clearance": [
+   0.01,
+   0.02
+  ],
+  "stature_ref": 1.75
+ },
+ "nlp_defaults": {
+  "eps": 0.2,
+  "T_hold": 2.0,
+  "release_deadline_factor": 1.0,
+  "N_S": 180,
+  "N_F": 30,
+  "N_H": 60,
+  "d_s_bounds": [
+   0.3,
+   12.0
+  ],
+  "d_f_bounds": [
+   0.1,
+   1.2
+  ],
+  "v_rel_max": 4.0,
+  "v_away_max": 0.5,
+  "delta_catch": 0.05,
+  "approach_clear": 0.05,
+  "wall_smooth": 0.01,
+  "edge_radius": 0.005,
+  "tol_com": 0.005,
+  "tol_comv": 0.02,
+  "tol_L": 0.1,
+  "u_rate": 10.0,
+  "t_ref": 1.0,
+  "w_E": 1.0,
+  "w_U": 10.0,
+  "U_max": 6.0,
+  "fixed_release_phase": null,
+  "wait_in_cost": true,
+  "w_smooth": 0.001,
+  "rel_lo_face_neg": [
+   0.0,
+   -4.2,
+   -2.1,
+   0.0
+  ],
+  "rel_hi_face_neg": [
+   2.6,
+   0.6,
+   0.35,
+   2.6
+  ],
+  "catch_model": "impact",
+  "K_catch": 40000.0,
+  "D_catch": 1500.0,
+  "ramp_catch": 0.01,
+  "d_c": 0.1,
+  "N_C": 40,
+  "hook_loss": 0.06,
+  "settle_v": 0.3,
+  "robust_deltas": [],
+  "robust_shared_flight": true,
+  "robust_nsub": 2,
+  "N_H_scen": 40,
+  "from_state": false,
+  "cone_abs": 0.0,
+  "u0": null,
+  "u0_dt": 0.02,
+  "wall_margin": 0.0,
+  "joint_margin": 0.0,
+  "mu_scale": 1.0,
+  "cap_relax": [],
+  "tau_scale": [
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ "success_rule": "rest start; release before the deadline; catch; 2 s hold; U(t) <= F_MAX / F_REF for all t; no wall penetration > 2 cm while swinging / flying; bracing on B's panel allowed"
+}

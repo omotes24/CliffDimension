@@ -32,3 +32,7 @@ results/compliant/
 results/dfl_exec_v1/
 results/dfl_exec_v2a/
 results/suite_test/
+results/grid_prepolish/
+results/grid_old_v2/
+results/suite/
+results/figs/*.pkl
