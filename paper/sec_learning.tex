@@ -23,7 +23,7 @@ $(J^*_+-J^*_-)/2\delta$ は $\bm p^{*\top}\bm d$ に一致する．12 個の状�
 （\fdSmallN 組のうち信号がずれを上回ったのは \fdSmallResolvable 組）．
 最適解の近くでは価値が平坦で，ほぼ同じ価値をもつ解が多数あることを意味する．
 乗数そのものは再現する：同じ状態を 2 回解いた costate の方向余弦は \fdRepCos 以上であった．
-刻みを 0.03 から 0.3 に広げた結果を表~\ref{tab:fd} に示す．
+そこで刻みを 0.03，0.1，0.3 に広げた（表~\ref{tab:fd}；基準の解が得られた \fdBaseOk 状態の \fdPairsAll 組のうち，$\pm$の両方が収束したのは \fdPairsOk 組）．
 \IfFileExists{fd_paragraph.tex}{\input{fd_paragraph}}{}
 
 \textbf{ネットワークの勾配は正しく計算されているか．}学習で使う自動微分の勾配を，ネットワークの出力の有限差分と比べた．
@@ -37,7 +37,8 @@ costate のラベルは方向については信頼できるが，大きさには
 \centering
 \includegraphics[width=\linewidth]{../results/figs/x4_audit.pdf}
 \caption{双対ラベルの検査（実験 4）．(a)~直前の指令を変えて解き直したときの $J^*$ の差．
-(b)~costate による方向微分（横軸）と，解き直しによる有限差分（縦軸）．色は刻み $\delta$．対角線に乗れば一致．
+(b)~costate による方向微分（横軸）と，解き直しによる有限差分（縦軸）．刻み $\delta\ge0.03$ の組を示す．色のついた点は costate による変化が解き直しのばらつきを上回った組，
+白抜きの点はばらつき以下の組（縦軸の範囲で切っている）．対角線に乗れば一致．
 (c)~軌道の節点から作った価値ラベルと，その状態から独立に解き直した価値．}
 \label{fig:audit}
 \end{figure*}

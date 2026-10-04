@@ -389,5 +389,13 @@
 "clReplaySuccInt": "35",
 "clOracleSuccInt": "0",
 "clOraclePlusSuccInt": "12",
-"clTrackSuccInt": "0"
+"clTrackSuccInt": "0",
+"fdBigN": "25",
+"fdBigResolvable": "15",
+"fdBigCorr": "0.95",
+"fdBigSign": "100",
+"fdBigRel": "0.31",
+"fdPairsAll": "144",
+"fdPairsOk": "109",
+"fdOutlier": "2"
 }
