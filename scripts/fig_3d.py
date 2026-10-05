@@ -43,6 +43,8 @@ class Scene:
         self.data = mujoco.MjData(self.model)
         self.body = make_body(m, stature=stature)
         self.w, self.h = w, h
+        self.model.vis.global_.offwidth = max(self.model.vis.global_.offwidth, w)      # offscreen buffer for large stills
+        self.model.vis.global_.offheight = max(self.model.vis.global_.offheight, h)
         self.renderer = mujoco.Renderer(self.model, h, w)
         mo = self.model
         self.mocapA = mo.body_mocapid[mo.body("cliffA").id]; self.mocapB = mo.body_mocapid[mo.body("cliffB").id]

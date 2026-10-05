@@ -113,6 +113,7 @@ bash scripts/exp/run_followup.sh     # exp3 re-solve, exp4 tight finite-differen
 python scripts/exp/exp9_polish.py --grid results/grid --tag ref --workers 22 --passes 12    # lattice-neighbour continuation of the 864-case grid
 python scripts/exp/exp1_objective.py --grid results/grid --out results/suite/exp1           # objective weights, from the polished grid
 MUJOCO_GL=osmesa python scripts/fig_3d.py --ref results/grid/sol_ref_T18_m66_phi0.250.pkl --out results/figs   # 3D figures
+MUJOCO_GL=osmesa python scripts/render_jump_images.py --out results/images    # standalone stills of the jump (key moments, multiple exposures)
 python scripts/paper_final.py --parts all      # every figure, table and number of the manuscript (paper/numbers_final.tex)
 bash scripts/package_paper.sh outputs          # PDF + self-contained LaTeX source
 ```
